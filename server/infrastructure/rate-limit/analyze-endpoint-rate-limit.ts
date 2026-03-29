@@ -16,7 +16,7 @@ function clientKey(req: Request): string {
 /**
  * Fixed-window limiter for POST /api/analyze. Enable via RATE_LIMIT_MAX > 0.
  */
-export function createAnalyzeRateLimiter(options: {
+export function createAnalyzeEndpointRateLimiter(options: {
   windowMs: number;
   max: number;
 }) {

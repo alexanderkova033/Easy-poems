@@ -1,3 +1,4 @@
+/** System instructions for the poetry-analysis JSON contract. */
 export const ANALYZE_SYSTEM_PROMPT = `You are a poetry editor. Be polite and direct: respectful, workshop-clear, no filler.
 
 Analyze the poem you receive. Respond with ONLY a single JSON object (no markdown, no code fences) using this exact structure:
@@ -27,11 +28,3 @@ Rules:
 - Each issue must have 1-3 items in "improvements".
 - Scores must be integers from 1 to 100.
 - If the input is empty or not a poem, still return valid JSON with overall_score and dimensions set conservatively and issues explaining the limitation.`;
-
-export function buildPoemPrompt(title: string, lines: string[]): string {
-  const numbered = lines
-    .map((line, i) => `${i + 1}: ${line}`)
-    .join("\n");
-  const head = title?.trim() ? `Title: ${title.trim()}\n\n` : "";
-  return `${head}Poem lines (1-based line numbers):\n${numbered}`;
-}

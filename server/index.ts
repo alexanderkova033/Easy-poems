@@ -1,7 +1,7 @@
 import "dotenv/config";
 import OpenAI from "openai";
-import { createApp } from "./app.js";
-import { createRequestLogger } from "./lib/logger.js";
+import { createApp } from "./http/create-app.js";
+import { createRequestLogger } from "./infrastructure/logging/request-logger.js";
 
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 const PORT = Number(process.env.PORT ?? 8787);

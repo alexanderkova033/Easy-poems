@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, it } from "node:test";
 import request from "supertest";
-import { createApp } from "../app.js";
+import { createApp } from "../http/create-app.js";
 import type OpenAI from "openai";
 
 function mockOpenAI(contentJson: object): OpenAI {

@@ -15,7 +15,7 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 ## Machine-readable contract
 
 - OpenAPI 3.1: [`server/openapi.yaml`](../server/openapi.yaml) (paths, schemas, `X-Request-Id`).
-- Shared TypeScript shapes: [`server/types/analyze.ts`](../server/types/analyze.ts) (import from `web/` or other clients to stay aligned).
+- Shared TypeScript shapes: [`server/poem-analysis/domain/analysis-types.ts`](../server/poem-analysis/domain/analysis-types.ts) (the web app imports these via the `@poem-analysis/*` alias in `web/tsconfig.json` / `web/vite.config.ts`).
 
 ## Endpoint (MVP)
 

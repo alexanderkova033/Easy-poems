@@ -1,4 +1,4 @@
-import type { AnalyzeSuccessResponse } from "../types/analyze.js";
+import type { AnalyzeSuccessResponse } from "./analysis-types.js";
 
 export function clampInt(n: unknown, min: number, max: number): number | null {
   const x = Number(n);

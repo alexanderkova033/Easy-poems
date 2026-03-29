@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { normalizeResponse } from "../lib/analyze.js";
+import { normalizeResponse } from "../poem-analysis/domain/normalize-analysis-response.js";
 
 describe("normalizeResponse", () => {
   it("accepts a well-formed model payload", () => {

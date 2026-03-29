@@ -1,10 +1,10 @@
-import type { AnalyzeSuccessResponse } from "../../server/types/analyze";
+import type { AnalyzeSuccessResponse } from "@poem-analysis/domain/analysis-types";
 
 export interface AnalyzeErrorBody {
   error: string;
 }
 
-export async function analyzePoem(body: {
+export async function analyzePoemViaHttp(body: {
   title?: string;
   lines: string[];
 }): Promise<AnalyzeSuccessResponse> {

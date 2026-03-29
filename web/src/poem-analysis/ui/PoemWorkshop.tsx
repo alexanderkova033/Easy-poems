@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { AnalyzeSuccessResponse } from "../../server/types/analyze";
-import { analyzePoem } from "./analyzeApi";
-import { loadDraft, saveDraft, type DraftState } from "./draftStorage";
-import "./App.css";
+import type { AnalyzeSuccessResponse } from "@poem-analysis/domain/analysis-types";
+import { analyzePoemViaHttp } from "../adapters/http-analyze-poem";
+import {
+  loadDraft,
+  saveDraft,
+  type DraftState,
+} from "../../poem-draft/local-draft-storage";
+import "./PoemWorkshop.css";
 
 function linesFromBody(body: string): string[] {
   const raw = body.split("\n");
@@ -20,7 +24,7 @@ function formatWhen(iso?: string): string | null {
   });
 }
 
-export function App() {
+export function PoemWorkshop() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [lastAnalyzedAt, setLastAnalyzedAt] = useState<string | undefined>();
@@ -64,7 +68,7 @@ export function App() {
     setLoading(true);
     setResult(null);
     try {
-      const data = await analyzePoem({
+      const data = await analyzePoemViaHttp({
         title: title.trim() || undefined,
         lines,
       });
@@ -82,7 +86,7 @@ export function App() {
   const whenLabel = formatWhen(lastAnalyzedAt);
 
   return (
-    <div className="app">
+    <div className="poem-workshop">
       <header className="hero">
         <h1>Easy-poems</h1>
         <p className="tagline">
