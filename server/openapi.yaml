@@ -59,7 +59,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/AnalyzeSuccessResponse"
         "400":
-          description: Invalid body
+          description: Invalid body or exceeds MAX_POEM_LINES
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "429":
+          description: Rate limit exceeded (when RATE_LIMIT_MAX is set)
+          headers:
+            Retry-After:
+              schema:
+                type: integer
           content:
             application/json:
               schema:
@@ -72,6 +82,12 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "502":
           description: Upstream or unrecoverable model response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "504":
+          description: Analysis timed out (OpenAI or server request timeout)
           content:
             application/json:
               schema:
@@ -90,6 +106,9 @@ components:
     AnalyzeRequest:
       type: object
       required: [lines]
+      description: |
+        Each array element is one visual line (1-based indexing for AI).
+        Server rejects more than MAX_POEM_LINES (default 500).
       properties:
         title:
           type: string

@@ -15,7 +15,7 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 ## Machine-readable contract
 
 - OpenAPI 3.1: [`server/openapi.yaml`](../server/openapi.yaml) (paths, schemas, `X-Request-Id`).
-- TypeScript shapes for clients: [`server/types/analyze.d.ts`](../server/types/analyze.d.ts).
+- Shared TypeScript shapes: [`server/types/analyze.ts`](../server/types/analyze.ts) (import from `web/` or other clients to stay aligned).
 
 ## Endpoint (MVP)
 
@@ -32,6 +32,7 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 
 - **`lines`**: one array element per **visual line** of the poem (same numbering as FR-03 in requirements).
 - Max payload ~256 KB (server enforces a limit).
+- Max line count: **`MAX_POEM_LINES`** (default **500**, hard cap 10 000).
 
 ### Success response
 
@@ -77,9 +78,11 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 
 | Status | Meaning |
 |--------|---------|
-| `400` | Missing/invalid body |
-| `500` | Missing API key, provider error, or unrecoverable parse failure |
-| `502` | Upstream OpenAI error (message sanitized) |
+| `400` | Missing/invalid body, or too many lines |
+| `429` | Rate limit exceeded (only when `RATE_LIMIT_MAX` is set); may include `Retry-After` |
+| `500` | Missing API key (misconfiguration) |
+| `502` | Upstream OpenAI error or invalid/unusable model JSON (message sanitized) |
+| `504` | Analysis timed out (OpenAI or server request timeout) |
 
 ## Environment variables (`server/.env`)
 
@@ -92,6 +95,11 @@ Optional:
 - **`OPENAI_MODEL`** — default `gpt-4o-mini`
 - **`PORT`** — default `8787`
 - **`CORS_ORIGIN`** — e.g. `http://localhost:5173` for local Vite; omit in dev for permissive `*` (tighten in production)
+- **`OPENAI_TIMEOUT_MS`** — OpenAI client timeout (default `90000`)
+- **`SERVER_REQUEST_TIMEOUT_MS`** — Node HTTP `requestTimeout` (default `120000`)
+- **`MAX_POEM_LINES`** — reject requests over this many lines (default `500`, max `10000`)
+- **`RATE_LIMIT_MAX`** — if set to a positive number, caps `POST /api/analyze` per client IP per window
+- **`RATE_LIMIT_WINDOW_MS`** — window for the limiter (default `60000`)
 
 ## Privacy copy (for UI)
 
@@ -102,8 +110,8 @@ Optional:
 ## Frontend contract
 
 `fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, lines }) })`  
-Use the **same origin** as the site if the API is reverse-proxied, or set `CORS_ORIGIN` and call the absolute API base URL.
+Use the **same origin** as the site if the API is reverse-proxied, or set `CORS_ORIGIN` and call the absolute API base URL. The **`web/`** app uses the Vite dev proxy to `server/` on port `8787`.
 
 ---
 
-*Version: 1.0 — matches `server/` implementation*
+*Version: 1.1 — TypeScript server, hardening envs, `web/` client*

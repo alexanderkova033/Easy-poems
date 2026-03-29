@@ -1,0 +1,253 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.editor-panel,
+.results,
+.privacy {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.15rem;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.row label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.title-row input,
+.body-row textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.body-row textarea {
+  resize: vertical;
+  min-height: 12rem;
+  line-height: 1.45;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin-top: 0.25rem;
+}
+
+button.primary {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (prefers-color-scheme: light) {
+  button.primary {
+    color: #fff;
+  }
+}
+
+button.primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.save-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.save-hint.visible {
+  opacity: 1;
+}
+
+.last-run {
+  font-size: 0.85rem;
+}
+
+.last-run.muted {
+  color: var(--muted);
+}
+
+.error {
+  margin: 0.75rem 0 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.results h2,
+.results h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+}
+
+.results h3 {
+  margin-top: 1.25rem;
+  font-size: 1rem;
+}
+
+.model-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.model-meta code {
+  font-size: 0.85em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.score-block {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 560px) {
+  .score-block {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+}
+
+.overall {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.overall .label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.overall .score {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overall .suffix {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.dimensions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.dimensions li {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.dimensions meter {
+  width: 100%;
+  height: 0.55rem;
+}
+
+.dim-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.issues {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.issue-head {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.excerpt {
+  display: block;
+  margin-top: 0.2rem;
+  font-weight: 400;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.rationale {
+  margin: 0.35rem 0 0.4rem;
+  font-size: 0.92rem;
+}
+
+.improvements {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.privacy-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.privacy p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.privacy a {
+  color: var(--accent);
+}

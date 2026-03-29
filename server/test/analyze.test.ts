@@ -39,7 +39,7 @@ describe("normalizeResponse", () => {
       dimensions: { imagery: 50, musicality: 50, originality: 50 },
       issues: [],
     };
-    assert.equal(normalizeResponse(raw, 1, "m"), null);
+    assert.equal(normalizeResponse(raw as Record<string, unknown>, 1, "m"), null);
   });
 
   it("clamps scores and line ranges", () => {

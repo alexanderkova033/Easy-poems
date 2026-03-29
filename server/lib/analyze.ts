@@ -1,10 +1,6 @@
-/**
- * @param {unknown} n
- * @param {number} min
- * @param {number} max
- * @returns {number | null}
- */
-export function clampInt(n, min, max) {
+import type { AnalyzeSuccessResponse } from "../types/analyze.js";
+
+export function clampInt(n: unknown, min: number, max: number): number | null {
   const x = Number(n);
   if (!Number.isFinite(x)) return null;
   return Math.min(max, Math.max(min, Math.round(x)));
@@ -12,14 +8,14 @@ export function clampInt(n, min, max) {
 
 /**
  * Normalizes raw model JSON into the public API shape (or null if invalid).
- * Shapes: see `types/analyze.d.ts` and `openapi.yaml`.
- * @param {Record<string, unknown>} raw
- * @param {number} lineCount
- * @param {string} model
  */
-export function normalizeResponse(raw, lineCount, model) {
+export function normalizeResponse(
+  raw: Record<string, unknown>,
+  lineCount: number,
+  model: string
+): AnalyzeSuccessResponse | null {
   const overall_score = clampInt(raw?.overall_score, 1, 100);
-  const d = raw?.dimensions ?? {};
+  const d = (raw?.dimensions ?? {}) as Record<string, unknown>;
   const dimensions = {
     imagery: clampInt(d.imagery, 1, 100),
     musicality: clampInt(d.musicality, 1, 100),
@@ -35,10 +31,10 @@ export function normalizeResponse(raw, lineCount, model) {
   }
 
   const issuesIn = Array.isArray(raw?.issues) ? raw.issues : [];
-  const issues = [];
+  const issues: AnalyzeSuccessResponse["issues"] = [];
 
   for (let i = 0; i < issuesIn.length; i++) {
-    const it = issuesIn[i];
+    const it = issuesIn[i] as Record<string, unknown>;
     const ls = clampInt(it?.line_start, 1, lineCount);
     const le = clampInt(it?.line_end ?? it?.line_start, 1, lineCount);
     if (ls === null || le === null) continue;
@@ -67,7 +63,7 @@ export function normalizeResponse(raw, lineCount, model) {
   return {
     meta: { model, analyzedAt: new Date().toISOString() },
     overall_score,
-    dimensions,
+    dimensions: dimensions as AnalyzeSuccessResponse["dimensions"],
     issues: issues.slice(0, 8),
   };
 }

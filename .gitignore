@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
 
+# Builds
+server/dist/
+web/dist/
+
 # Secrets
 .env
 .env.local

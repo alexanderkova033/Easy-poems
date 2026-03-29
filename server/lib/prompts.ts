@@ -28,11 +28,7 @@ Rules:
 - Scores must be integers from 1 to 100.
 - If the input is empty or not a poem, still return valid JSON with overall_score and dimensions set conservatively and issues explaining the limitation.`;
 
-/**
- * @param {string} title
- * @param {string[]} lines
- */
-export function buildPoemPrompt(title, lines) {
+export function buildPoemPrompt(title: string, lines: string[]): string {
   const numbered = lines
     .map((line, i) => `${i + 1}: ${line}`)
     .join("\n");

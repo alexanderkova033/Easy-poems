@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { after, before, describe, it } from "node:test";
+import { after, beforeEach, describe, it } from "node:test";
 import request from "supertest";
 import { createApp } from "../app.js";
+import type OpenAI from "openai";
 
-function mockOpenAI(contentJson) {
+function mockOpenAI(contentJson: object): OpenAI {
   return {
     chat: {
       completions: {
@@ -12,16 +13,20 @@ function mockOpenAI(contentJson) {
         }),
       },
     },
-  };
+  } as unknown as OpenAI;
 }
 
 describe("HTTP API", () => {
   const prevKey = process.env.OPENAI_API_KEY;
   const prevCors = process.env.CORS_ORIGIN;
+  const prevRate = process.env.RATE_LIMIT_MAX;
+  const prevLines = process.env.MAX_POEM_LINES;
 
-  before(() => {
+  beforeEach(() => {
     process.env.OPENAI_API_KEY = "test-key";
     delete process.env.CORS_ORIGIN;
+    delete process.env.RATE_LIMIT_MAX;
+    delete process.env.MAX_POEM_LINES;
   });
 
   after(() => {
@@ -29,6 +34,10 @@ describe("HTTP API", () => {
     else process.env.OPENAI_API_KEY = prevKey;
     if (prevCors === undefined) delete process.env.CORS_ORIGIN;
     else process.env.CORS_ORIGIN = prevCors;
+    if (prevRate === undefined) delete process.env.RATE_LIMIT_MAX;
+    else process.env.RATE_LIMIT_MAX = prevRate;
+    if (prevLines === undefined) delete process.env.MAX_POEM_LINES;
+    else process.env.MAX_POEM_LINES = prevLines;
   });
 
   it("GET /health returns model and propagates X-Request-Id", async () => {
@@ -73,6 +82,17 @@ describe("HTTP API", () => {
     assert.ok(res.body.error);
   });
 
+  it("POST /api/analyze 400 when too many lines", async () => {
+    process.env.MAX_POEM_LINES = "2";
+    const openai = mockOpenAI({});
+    const app = createApp({ openai, model: "m" });
+    const res = await request(app)
+      .post("/api/analyze")
+      .send({ lines: ["a", "b", "c"] })
+      .expect(400);
+    assert.ok(String(res.body.error).includes("Too many lines"));
+  });
+
   it("POST /api/analyze 500 when API key missing", async () => {
     const openai = mockOpenAI({});
     const app = createApp({
@@ -93,5 +113,31 @@ describe("HTTP API", () => {
       .post("/api/analyze")
       .send({ lines: ["a"] })
       .expect(502);
+  });
+
+  it("POST /api/analyze 429 when rate limit exceeded", async () => {
+    process.env.RATE_LIMIT_MAX = "1";
+    process.env.RATE_LIMIT_WINDOW_MS = "60000";
+    const modelPayload = {
+      overall_score: 50,
+      dimensions: {
+        imagery: 50,
+        musicality: 50,
+        originality: 50,
+        clarity: 50,
+      },
+      issues: [],
+    };
+    const openai = mockOpenAI(modelPayload);
+    const app = createApp({ openai, model: "m" });
+    await request(app)
+      .post("/api/analyze")
+      .send({ lines: ["a"] })
+      .expect(200);
+    const res = await request(app)
+      .post("/api/analyze")
+      .send({ lines: ["b"] })
+      .expect(429);
+    assert.ok(res.body.error);
   });
 });
