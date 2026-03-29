@@ -20,5 +20,7 @@ npm install
 npm run dev
 ```
 
+- Tests: `npm test` (contract normalization + HTTP smoke with mocked OpenAI).
+
 - Health: `GET http://localhost:8787/health`
 - Analyze: `POST http://localhost:8787/api/analyze` with JSON body `{ "title": "...", "lines": ["..."] }`

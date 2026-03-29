@@ -123,6 +123,21 @@ The suggestion is **integrated** as the default architecture:
 - **Budget / rate limits** per IP or per deploy (optional guardrails).
 - **`gpt-4o-mini` vs `gpt-4o`** per environment—validate with real poems.
 
+## 11. Future exploration (not committed)
+
+Possible later direction: **community poems** with **anonymous ratings** so readers can engage with others’ work, while authors control **whether they see ratings** (e.g. submit for community feedback only, blind scoring until a chosen moment, or never show the author their own aggregate—exact UX TBD).
+
+Implications to resolve before building:
+
+| Topic | Notes |
+|--------|--------|
+| **Accounts / identity** | Anonymous *to other users* still usually needs sign-in or device-bound tokens for abuse prevention and consent records; legal/privacy copy must match reality. |
+| **“AI learns”** | Default OpenAI API usage does **not** mean the public model “learns” from your users’ poems. Product-side “learning” typically means **your** stored data (with consent) used for **RAG**, **analytics**, or **separate fine-tuning**—each with different cost, quality, and policy requirements. |
+| **Consent & retention** | Opt-in to share text for community or model improvement; retention windows; right to withdraw; alignment with provider and regional privacy rules. |
+| **Safety** | Moderation, reporting, and rules for published/shared content. |
+
+Until this is scoped, it remains **out of scope** for the English local-first MVP in §9.
+
 ---
 
-*Version: 0.3 — OpenAI + proxy integrated (see [AI_INTEGRATION.md](./AI_INTEGRATION.md))*
+*Version: 0.4 — Future community/rating exploration (§11); OpenAI + proxy (see [AI_INTEGRATION.md](./AI_INTEGRATION.md))*

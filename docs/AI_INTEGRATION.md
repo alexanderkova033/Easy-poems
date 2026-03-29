@@ -12,6 +12,11 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 | Transport | HTTPS **POST** from the website to your deploy of `server/` |
 | Response shape | **JSON object** validated server-side (see schema below) |
 
+## Machine-readable contract
+
+- OpenAPI 3.1: [`server/openapi.yaml`](../server/openapi.yaml) (paths, schemas, `X-Request-Id`).
+- TypeScript shapes for clients: [`server/types/analyze.d.ts`](../server/types/analyze.d.ts).
+
 ## Endpoint (MVP)
 
 **`POST /api/analyze`**
