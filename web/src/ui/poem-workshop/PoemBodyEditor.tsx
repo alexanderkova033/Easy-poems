@@ -7,8 +7,13 @@ import {
   poemEditorTheme,
   poemSpellExtensions,
   spellSyncFacet,
-} from "../../../infrastructure/editor/spell-highlight";
-import type { SpellMode } from "../../../domain/draft/local-draft-storage";
+} from "../../functionality/editor/spell-highlight";
+import type { SpellMode } from "../../functionality/draft/local-draft-storage";
+
+/** Facet must change on the same render as spellMode (not only after a spellBump effect). */
+function spellFacetValue(spellBump: number, spellMode: SpellMode): number {
+  return spellBump * 2 + (spellMode === "strict" ? 1 : 0);
+}
 
 export interface PoemBodyEditorProps {
   value: string;
@@ -36,7 +41,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         theme="none"
         extensions={[
           EditorView.contentAttributes.of({ spellcheck: "false" }),
-          spellSyncFacet.of(props.spellBump),
+          spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
           poemEditorTheme,
           ...poemSpellExtensions,
           ...basicSetup(),

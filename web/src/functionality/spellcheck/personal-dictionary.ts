@@ -1,3 +1,8 @@
+import {
+  trySessionStorageSetItem,
+  tryLocalStorageSetItem,
+} from "../infrastructure/browser-storage";
+
 const KEY_DICT = "easy-poems:spell:personal:v1";
 const KEY_IGNORE = "easy-poems:spell:ignore-session:v1";
 
@@ -13,20 +18,20 @@ function readJsonSet(key: string): Set<string> {
   }
 }
 
-function writeJsonSet(key: string, s: Set<string>): void {
-  localStorage.setItem(key, JSON.stringify([...s]));
+function writeJsonSet(key: string, s: Set<string>): boolean {
+  return tryLocalStorageSetItem(key, JSON.stringify([...s]));
 }
 
 export function loadPersonalDictionary(): Set<string> {
   return readJsonSet(KEY_DICT);
 }
 
-export function addToPersonalDictionary(word: string): void {
+export function addToPersonalDictionary(word: string): boolean {
   const w = word.toLowerCase().trim();
-  if (!w) return;
+  if (!w) return true;
   const s = loadPersonalDictionary();
   s.add(w);
-  writeJsonSet(KEY_DICT, s);
+  return writeJsonSet(KEY_DICT, s);
 }
 
 export function loadSessionIgnores(): Set<string> {
@@ -41,10 +46,10 @@ export function loadSessionIgnores(): Set<string> {
   }
 }
 
-export function ignoreWordForSession(word: string): void {
+export function ignoreWordForSession(word: string): boolean {
   const w = word.toLowerCase().trim();
-  if (!w) return;
+  if (!w) return true;
   const s = loadSessionIgnores();
   s.add(w);
-  sessionStorage.setItem(KEY_IGNORE, JSON.stringify([...s]));
+  return trySessionStorageSetItem(KEY_IGNORE, JSON.stringify([...s]));
 }

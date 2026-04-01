@@ -2,7 +2,7 @@
 
 ## 1. Vision
 
-Make writing, revising, and understanding poetry faster and clearer through **interactive AI feedback**, **lightweight writing aids** (spelling, meter, structure), and **transparent “why this rating / suggestion”** explanations—not a black box.
+Make writing, revising, and understanding poetry faster and clearer through **lightweight writing aids** (spelling, meter, structure) in the browser, with a path to **optional interactive AI feedback** later and **transparent “why this rating / suggestion”** when that ships—not a black box.
 
 ## 2. Goals
 
@@ -21,35 +21,37 @@ Make writing, revising, and understanding poetry faster and clearer through **in
 | **Language** | **English only** for poem tools, spellcheck, and UI at launch. |
 | **Rating scale** | **1–100** overall, plus **dimensional sub-scores** on the same scale (or clearly defined sub-ranges) so the total score is explainable. |
 | **AI tone** | **Not user-configurable.** Single voice: **polite and direct** (respectful, workshop-clear, no fluff). |
-| **Poem storage** | **Local only** in the browser (e.g. IndexedDB / local storage). **No export feature required** for MVP. |
-| **Core loop** | User **reads feedback → edits in the editor → runs analysis again** on the new text. |
-| **Writing tools** | **Maximize useful built-in tools** (syllables, counts, and as many reliable English poetry aids as practical—rhyme/sound/meter where feasible). |
-| **AI stack** | **OpenAI API** through a **server-side proxy** (`server/`). Default model **`gpt-4o-mini`**; optional **`gpt-4o`**. Contract: [AI_INTEGRATION.md](./AI_INTEGRATION.md). |
+| **Poem storage** | **Local only** in the browser (poem library + snapshots); **export** and **JSON backup** supported. |
+| **Core loop (shipping)** | **Local tools + revise + export/backup**; optional external feedback (e.g. ChatGPT in another tab). |
+| **Core loop (optional AI)** | When enabled: **reads feedback → edits → runs analysis again** on the new text. |
+| **Writing tools** | **Maximize useful built-in tools** (syllables, counts, rhyme/sound/meter heuristics, etc.). |
+| **AI stack** | **Deferred** (optional). Planned: **OpenAI** via **`server/`** per [AI_INTEGRATION.md](./AI_INTEGRATION.md). |
 
 ## 4. Assumptions
 
-- **One poem** (or one active document) in early versions unless you later add a library of saved drafts.
-- Text is sent to a **remote LLM API** for analysis unless you adopt a **local model** (see §9); poem **drafts** stay on device except for those API requests.
+- **Multiple drafts** in one browser (poem library); user picks the active draft.
+- **Optional in-app AI** would send text to a **remote LLM API** only when that feature is on; **drafts** stay on device otherwise.
 - Internationalization of UI/other languages is **out of scope** until after English MVP.
 
-## 5. AI integration (chosen)
+## 5. AI integration (optional / deferred)
 
-The suggestion is **integrated** as the default architecture:
+The **shipping** web app is **static** and does **not** call OpenAI. When you choose to add critique:
 
-- **Provider:** OpenAI.
-- **Models:** **`gpt-4o-mini`** by default; set **`OPENAI_MODEL=gpt-4o`** if critiques need more depth.
-- **Proxy:** A small **Node** server in `server/` exposes **`POST /api/analyze`**; the **API key stays on the server**.
-- **Payload / JSON shape:** Defined in [AI_INTEGRATION.md](./AI_INTEGRATION.md) (1–100 scores, issues with line ranges, improvements).
+- **Provider (planned):** OpenAI.
+- **Models:** **`gpt-4o-mini`** by default; **`OPENAI_MODEL=gpt-4o`** for more depth.
+- **Proxy:** **`server/`** would expose **`POST /api/analyze`**; **API key stays on the server**.
+- **Contract:** [AI_INTEGRATION.md](./AI_INTEGRATION.md) (1–100 scores, issues with line ranges, improvements).
 
-**Alternatives later:** Anthropic, Gemini, or a local LLM remain valid if requirements change; swap the call inside the proxy and keep the same response contract for the frontend.
+**Alternatives later:** Anthropic, Gemini, or a local LLM; keep the same response contract for the frontend.
 
 ## 6. User stories (summary)
 
 - As a poet, I want **spell/grammar suggestions** that respect poetic license (e.g. dialect, invented words) so I am not forced into “correct” prose.
 - As a poet, I want **syllable counts** and **other sound/structure hints** per line so I can tune form.
-- As a poet, I want **AI to highlight what it dislikes** (lines, phrases, or patterns) and **suggest directions**, not only a single score.
-- As a poet, I want an **overall 1–100 rating** with **dimensions** (e.g. imagery, sound, originality, clarity) so I know what the score means.
-- As a poet, I want to **edit after feedback** and **run analysis again** on the latest version without losing my draft locally.
+- As a poet, I want **several drafts** in the same browser and a way to **back them up** so I do not lose work.
+- As a poet, I want **AI to highlight what it dislikes** (lines, phrases, or patterns) and **suggest directions**, not only a single score—**when** in-app AI is enabled.
+- As a poet, I want an **overall 1–100 rating** with **dimensions** when using AI critique.
+- As a poet, I want to **edit after feedback** and **run analysis again** on the latest version without losing my draft locally—**when** AI is enabled.
 
 ## 7. Functional requirements
 
@@ -59,6 +61,7 @@ The suggestion is **integrated** as the default architecture:
 |----|-------------|----------|
 | FR-01 | Editor with **title** and **line-based** poem body; optional metadata (e.g. form) as needed. | Must |
 | FR-02 | **Autosave** to **local** persistence; recovery if the tab closes. | Must |
+| FR-02b | **Multiple poems** in one browser (library); **per-poem** revision snapshots; **import/export workshop backup** (JSON). | Must |
 | FR-03 | **Line-based addressing** so AI and tools refer to “line N” consistently. | Must |
 
 ### 7.2 Spelling and language assistance
@@ -79,31 +82,31 @@ The suggestion is **integrated** as the default architecture:
 | FR-23 | **Stress / meter hints** for English (e.g. pattern visualization per line)—accuracy bounded by NLP limits; label uncertainty in UI. | Should |
 | FR-24 | Additional **high-value, low-ambiguity** tools as identified in implementation (e.g. line length stats, repeated word highlights). | Could |
 
-### 7.4 Interactive AI analysis
+### 7.4 Interactive AI analysis (not in default static build)
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-30 | User explicitly **runs analysis** (button); optional **debounced auto-run** after idle (toggle later). | Must |
-| FR-31 | Output includes **issues**: what the model flags, tied to **lines or spans**. | Must |
-| FR-32 | Per issue: **short rationale** + **1–3 improvement directions**; voice **polite and direct**. | Must |
-| FR-33 | **Overall score 1–100** plus **dimensional scores 1–100** (e.g. imagery, musicality, originality, clarity)—definitions stable in prompt/UI. | Must |
-| FR-34 | After edits, user can **re-run analysis** on current text; show **which version** or **timestamp** of last run to avoid confusion. | Must |
-| FR-35 | **Expand/collapse** issues; **click feedback → jump to line** in editor. | Should |
+| FR-30 | User explicitly **runs analysis** (button); optional **debounced auto-run** after idle (toggle later). | Future (when AI on) |
+| FR-31 | Output includes **issues**: what the model flags, tied to **lines or spans**. | Future |
+| FR-32 | Per issue: **short rationale** + **1–3 improvement directions**; voice **polite and direct**. | Future |
+| FR-33 | **Overall score 1–100** plus **dimensional scores 1–100** (e.g. imagery, musicality, originality, clarity)—definitions stable in prompt/UI. | Future |
+| FR-34 | After edits, user can **re-run analysis** on current text; show **which version** or **timestamp** of last run to avoid confusion. | Future |
+| FR-35 | **Expand/collapse** issues; **click feedback → jump to line** in editor. | Future |
 | FR-36 | **Regenerate** alternative phrasing for one issue (optional). | Could |
 
 ### 7.5 Privacy, safety, and content
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-40 | Clear copy: **drafts stay local**; on **Analyze**, text goes to **your backend** then **OpenAI**. Cite **OpenAI** and link to their API/data terms in the UI or About page. | Must |
-| FR-41 | Align with **OpenAI** on **data retention**; prefer settings/tiers that minimize retention if available. | Must |
+| FR-40 | Clear copy: **drafts stay local** by default; if **Analyze** exists, text goes to **your backend** then **OpenAI**—cite terms in UI. | Must |
+| FR-41 | When AI is on: align with **OpenAI** on **data retention**; prefer minimal retention if available. | Should |
 | FR-42 | **Content policy** for harmful requests (refusal, safe messaging)—define before public launch. | Should |
 
 ## 8. Non-functional requirements
 
 | ID | Requirement | Target |
 |----|-------------|--------|
-| NFR-01 | Analysis latency (typical short poem) | Under ~10–30 s P95, or streaming partial results |
+| NFR-01 | Analysis latency (when AI exists; typical short poem) | Under ~10–30 s P95, or streaming partial results |
 | NFR-02 | Editor responsiveness | Typing stays smooth; heavy work off main thread or debounced |
 | NFR-03 | Accessibility | Keyboard nav, readable contrast, screen reader for core panels |
 | NFR-04 | Future i18n | English-only UI now; avoid hard-coding strings in a way that blocks later translation |
@@ -111,7 +114,7 @@ The suggestion is **integrated** as the default architecture:
 ## 9. Out of scope (initial release)
 
 - User accounts and **cloud sync** of poems.
-- **Export** of poems (not required for MVP).
+- **Automatic** cloud backup (manual JSON backup and per-poem export are supported).
 - Full collaborative real-time co-editing.
 - Paid marketplace for poems.
 - Training custom models on user corpora.

@@ -6,9 +6,9 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import type { SpellMode } from "../../domain/draft/local-draft-storage";
-import { loadPersonalDictionary, loadSessionIgnores } from "../../domain/spellcheck/personal-dictionary";
-import { spellErrorRangesFromText } from "../../domain/spellcheck/scan";
+import type { SpellMode } from "../draft/local-draft-storage";
+import { loadPersonalDictionary, loadSessionIgnores } from "../spellcheck/personal-dictionary";
+import { spellErrorRangesFromText } from "../spellcheck/scan";
 
 export const spellSyncFacet = Facet.define<number, number>({
   combine: (xs) => xs[xs.length - 1] ?? 0,

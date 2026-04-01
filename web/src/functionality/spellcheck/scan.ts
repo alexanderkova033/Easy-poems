@@ -1,5 +1,5 @@
 import type { SpellMode } from "../draft/local-draft-storage";
-import { normalizeWordToken, wordSpansInLine } from "../writing/tokenize";
+import { normalizeWordToken, wordSpansInLine } from "../tools/tokenize";
 import { suggestCorrections } from "./suggest";
 
 export interface SpellHit {
@@ -11,10 +11,13 @@ export interface SpellHit {
 
 function shouldSkipPermissive(token: string, normalized: string): boolean {
   if (normalized.length <= 1) return true;
+  if (normalized.length <= 2) return true;
   if (/\d/.test(token)) return true;
   if (/[^a-zA-Z']/.test(token.replace(/'/g, ""))) return true;
   if (token === token.toUpperCase() && token.length >= 2 && /[A-Z]/.test(token))
     return true;
+  if (/[a-z][A-Z]/.test(token)) return true;
+  if (/^[ivxlcdm]+$/i.test(normalized) && normalized.length >= 2) return true;
   return false;
 }
 

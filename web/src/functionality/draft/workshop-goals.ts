@@ -1,3 +1,8 @@
+import {
+  tryLocalStorageRemoveItem,
+  tryLocalStorageSetItem,
+} from "../infrastructure/browser-storage";
+
 const STORAGE_KEY = "easy-poems:goals:v1";
 
 /** Optional numeric targets; unset / empty fields = no constraint. */
@@ -36,7 +41,7 @@ export function loadWorkshopGoals(): WorkshopGoals {
   }
 }
 
-export function saveWorkshopGoals(goals: WorkshopGoals): void {
+export function saveWorkshopGoals(goals: WorkshopGoals): boolean {
   const payload: Record<string, number> = {};
   if (goals.minLines != null) payload.minLines = goals.minLines;
   if (goals.maxLines != null) payload.maxLines = goals.maxLines;
@@ -46,8 +51,7 @@ export function saveWorkshopGoals(goals: WorkshopGoals): void {
     payload.maxSyllablesPerLine = goals.maxSyllablesPerLine;
   }
   if (Object.keys(payload).length === 0) {
-    localStorage.removeItem(STORAGE_KEY);
-    return;
+    return tryLocalStorageRemoveItem(STORAGE_KEY);
   }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  return tryLocalStorageSetItem(STORAGE_KEY, JSON.stringify(payload));
 }

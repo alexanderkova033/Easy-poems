@@ -1,3 +1,7 @@
+import {
+  tryLocalStorageSetItem,
+} from "../infrastructure/browser-storage";
+
 const STORAGE_KEY = "easy-poems:draft:v2";
 
 export type SpellMode = "strict" | "permissive";
@@ -39,8 +43,8 @@ export function loadDraft(): DraftState | null {
   }
 }
 
-export function saveDraft(state: DraftState): void {
-  localStorage.setItem(
+export function saveDraft(state: DraftState): boolean {
+  return tryLocalStorageSetItem(
     STORAGE_KEY,
     JSON.stringify({
       title: state.title,
@@ -61,7 +65,7 @@ export function migrateLegacyDraftIfNeeded(): void {
     if (!v || typeof v !== "object") return;
     const o = v as Record<string, unknown>;
     if (typeof o.title !== "string" || typeof o.body !== "string") return;
-    saveDraft({
+    void saveDraft({
       title: o.title,
       body: o.body,
     });

@@ -1,10 +1,15 @@
 import type { DocumentStats } from "./line-stats";
 import type { GoalEvaluation } from "./goal-metrics";
+import type { ToolTab } from "../../ui/poem-workshop/workshop-helpers";
 
 export interface ChecklistItem {
   done: boolean;
   text: string;
   detail?: string;
+  /** When set, show a control that opens this tool tab (or title field). */
+  openToolTab?: ToolTab;
+  /** Focus the title field instead of switching tools. */
+  focusTitleField?: true;
 }
 
 export function buildPublicationChecklist(args: {
@@ -26,6 +31,7 @@ export function buildPublicationChecklist(args: {
       docStats.nonEmptyLines === 0
         ? "Add your poem before publishing."
         : undefined,
+    openToolTab: docStats.nonEmptyLines === 0 ? "lines" : undefined,
   });
 
   items.push({
@@ -35,6 +41,7 @@ export function buildPublicationChecklist(args: {
       title.trim().length === 0
         ? "Optional for some venues; still useful when sharing."
         : undefined,
+    focusTitleField: title.trim().length === 0 ? true : undefined,
   });
 
   items.push({
@@ -45,6 +52,8 @@ export function buildPublicationChecklist(args: {
       : spellingFlagCount > 0
         ? `${spellingFlagCount} unknown token(s) — may be names or intentional.`
         : undefined,
+    openToolTab:
+      !wordlistReady || spellingFlagCount > 0 ? "spell" : undefined,
   });
 
   items.push({
@@ -54,6 +63,8 @@ export function buildPublicationChecklist(args: {
       goalEvaluation.warnings.length > 0
         ? goalEvaluation.warnings[0]
         : undefined,
+    openToolTab:
+      goalEvaluation.warnings.length > 0 ? "goals" : undefined,
   });
 
   const tips: string[] = [

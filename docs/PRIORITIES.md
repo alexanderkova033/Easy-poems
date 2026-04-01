@@ -1,65 +1,59 @@
 # Demand & delivery priorities (MVP → later)
 
-This document turns [REQUIREMENTS.md](./REQUIREMENTS.md) into **what to build first**. Stakeholder choices: **website**, **English only**, **1–100 scores**, **polite/direct non-configurable tone**, **local poem storage**, **no export**, **edit → re-analyze loop**, **maximize writing tools**.
+This document turns [REQUIREMENTS.md](./REQUIREMENTS.md) into **what to build first**. **Current shipped focus:** English-only **local workshop**—multiple drafts, writing tools, snapshots, export, and backup—**without** built-in paid AI. Optional **ChatGPT** (external tab) is linked from the UI.
 
-## Core user flow (P0)
+Stakeholder choices that still apply: **website**, **English only**, **local poem storage**, **maximize writing tools**. **Deferred:** in-app **1–100 AI analysis** and server-side OpenAI until/unless you opt in to cost and operations (see [AI_INTEGRATION.md](./AI_INTEGRATION.md)).
 
-1. Write or paste poem in the browser → **local autosave**.
-2. Use **inline tools** (syllables, counts, spelling) while writing.
-3. **Run analysis** → see issues, rationales, improvements, **1–100** overall + dimensions.
-4. **Edit** → **Run analysis again** on the new text (show **last analyzed at** or simple version label).
+## Core user flow (current)
 
-## MoSCoW
+1. Pick or create a **draft** in the browser → **local autosave** (poem library + per-poem snapshots).
+2. Use **tools** while writing: syllables, line table, approximate **stress/meter**, rhyme/sound hints, repeats, spelling, goals, publication checklist.
+3. **Export** single poem (.txt / .md / .docx) or **backup** all drafts + snapshots as JSON; **import** backups to merge poems in.
+4. For human or third-party AI feedback: **copy/export** and paste where you choose (e.g. linked ChatGPT).
 
-### Must (first shippable slice)
+## MoSCoW (aligned with shipping app)
 
-- Poem editor with line structure, title, **local persistence**.
-- **Analyze** and **re-analyze** actions; results bound to “current text” with clear **last run** indication.
-- **1–100** overall + dimensional scores; issues with line/span refs; polite, direct copy.
-- Syllable counter per line + **word/character counts**.
-- Suggestive English spelling with ignore / personal dictionary (local).
-- Privacy copy: local drafts; on analyze, text goes to **`server/`** then **OpenAI** (document in UI).
-- Deploy **`server/`** (or equivalent) so **API keys never ship to the browser**—see [AI_INTEGRATION.md](./AI_INTEGRATION.md).
+### Must (delivered in tools-first MVP)
+
+- Poem editor with line structure, title, optional form note, **local persistence** (multiple drafts).
+- Syllable estimates, word/character counts, line table with **jump to line**.
+- Suggestive English spelling with ignore / personal dictionary (local); **poetry-friendly vs strict** modes.
+- **Revision snapshots** scoped to the active poem; compare and restore.
+- **Goals** and **publication checklist** (heuristic).
+- **Export** poem files; **workshop backup** import/export (JSON).
+- Privacy copy: drafts and tools stay in the browser unless the user exports/copies.
 
 ### Should (next)
 
-- Jump from feedback item to editor line; expand/collapse issues.
-- **Rhyme / sound hints** (heuristic).
-- **Stress / meter hints** with honest “approximate” labeling.
-- Debounced auto-analysis toggle (optional).
-- Spelling profile: permissive vs strict.
+- Jump from **more** tool hits to lines (ongoing polish).
+- Richer **meter** (dictionary-backed stress) if you add data or a library—still labeled approximate.
+- Optional **in-app AI** via `server/` proxy when budget/ops allow ([AI_INTEGRATION.md](./AI_INTEGRATION.md)).
 
 ### Could
 
-- Streaming partial AI results.
-- Regenerate one issue’s suggestions.
-- Extra local tools (repeated words, line-length visualization, reading-time if useful).
+- Debounced or streaming **AI** results; regenerate one suggestion.
+- Reading-time, stanza grouping, or other low-ambiguity stats.
 
 ### Won’t (for now)
 
-- Accounts, cloud sync, **export**.
+- Accounts and **cloud sync** (backups remain manual JSON + export).
 - Real-time multi-user editing.
-- Custom model training on user poems.
-- Non-English UI and poem tooling.
+- Non-English UI and poem tooling at launch.
 
 ## Rough phases
 
 | Phase | Focus |
 |-------|--------|
-| **P0** | Editor + local save + analyze/re-analyze + 1–100 UI + syllables + counts + spell + AI integration (one provider, structured output) |
-| **P1** | Feedback navigation + rhyme/sound + stress/meter + polish latency |
-| **P2** | Streaming, optional auto-run, extra heuristics |
+| **Done (tools)** | Editor + multi-draft library + autosave + syllables + lines + meter (heuristic) + rhyme/repeats + spell + goals + checklist + snapshots + export + backup |
+| **Next** | Tool polish, optional AI via server when desired |
+| **Later** | Streaming AI, advanced meter data |
 
-## Model tuning (engineering task)
+## Success metrics (tools-first)
 
-With **OpenAI** fixed, compare **`gpt-4o-mini`** vs **`gpt-4o`** on the same poem using **`POST /api/analyze`**. Record latency, cost per poem, and subjective critique quality; pick default per environment.
-
-## Success metrics (pick 2–3)
-
-- Time from open to first useful critique.
-- Users who **re-run analysis** after edits (loop engagement).
-- Clarity: “I understood why it scored this way” (survey or lightweight prompt).
+- Time from open to first useful **local** insight (stats, spell, line jump).
+- Users who **switch drafts** or **save snapshots** while revising.
+- Users who **export or backup** before closing the tab.
 
 ---
 
-*Version: 0.3 — OpenAI integration via `server/`*
+*Version: 0.4 — tools-first MVP; AI optional / deferred*
