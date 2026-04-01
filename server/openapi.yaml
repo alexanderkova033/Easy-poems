@@ -64,8 +64,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Model declined the request (content safety policy)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "429":
-          description: Rate limit exceeded (when RATE_LIMIT_MAX is set)
+          description: Rate limit exceeded (app or upstream OpenAI)
           headers:
             Retry-After:
               schema:
@@ -194,3 +200,6 @@ components:
       properties:
         error:
           type: string
+        code:
+          type: string
+          description: Stable machine-readable reason when present (e.g. content_policy, rate_limit)

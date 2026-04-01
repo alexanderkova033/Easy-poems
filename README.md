@@ -30,7 +30,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (default `http://localhost:5173`). The editor **autosaves to `localStorage`**; **Analyze** calls `POST /api/analyze`.
+Open the URL Vite prints (default `http://localhost:5173`). The editor **autosaves to `localStorage`**; **Analyze** calls `POST /api/analyze`. Use the **Writing tools** sidebar for syllable/word/character stats, a per-line table (with **jump to line**), rough rhyme and repetition hints, and **spelling** (local word list from `web/public/wordlist-en.txt`, plus your personal dictionary in this browser).
 
 - API tests: `cd server && npm test` (normalization + HTTP with mocked OpenAI).
 - API production build: `cd server && npm run build && npm start` (runs `dist/index.js`).

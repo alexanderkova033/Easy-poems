@@ -6,6 +6,7 @@ import {
   parseAnalyzePoemBody,
 } from "../poem-analysis/application/analyze-poem.js";
 import { createOpenAiJsonCompletion } from "../poem-analysis/adapters/openai/openai-json-completion.js";
+import { mapOpenAiAnalyzeError } from "../poem-analysis/adapters/openai/map-openai-analyze-error.js";
 import { createRequestLogger, newRequestId } from "../infrastructure/logging/request-logger.js";
 import { createAnalyzeEndpointRateLimiter } from "../infrastructure/rate-limit/analyze-endpoint-rate-limit.js";
 
@@ -117,12 +118,23 @@ export function createApp({
         }
         case "openai_error": {
           const durationMs = Math.round(performance.now() - t0);
+          const mapped = mapOpenAiAnalyzeError({
+            httpStatus: f.httpStatus,
+            code: f.code,
+            message: f.message,
+          });
           req.log.error("analyze.openai_error", {
             upstreamStatus: f.httpStatus ?? null,
             durationMs,
             message: f.message,
+            mappedKind: mapped.kind,
+            clientStatus: mapped.clientStatus,
           });
-          res.status(502).json({ error: f.message });
+          const errBody: { error: string; code?: string } = {
+            error: mapped.publicMessage,
+          };
+          if ("code" in mapped && mapped.code) errBody.code = mapped.code;
+          res.status(mapped.clientStatus).json(errBody);
           return;
         }
         default: {

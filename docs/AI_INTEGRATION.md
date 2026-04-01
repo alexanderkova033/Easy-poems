@@ -76,12 +76,15 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 
 ### Errors
 
+JSON body is `{ "error": string, "code"?: string }`. Stable `code` values include `content_policy` and `rate_limit` when applicable.
+
 | Status | Meaning |
 |--------|---------|
 | `400` | Missing/invalid body, or too many lines |
-| `429` | Rate limit exceeded (only when `RATE_LIMIT_MAX` is set); may include `Retry-After` |
+| `422` | Model declined the request (content safety); safe explanation in `error`, often `code: "content_policy"` |
+| `429` | Rate limit (your `RATE_LIMIT_MAX` limiter or upstream OpenAI); may include `Retry-After`; may include `code: "rate_limit"` |
 | `500` | Missing API key (misconfiguration) |
-| `502` | Upstream OpenAI error or invalid/unusable model JSON (message sanitized) |
+| `502` | Other upstream OpenAI errors or invalid/unusable model JSON (message truncated) |
 | `504` | Analysis timed out (OpenAI or server request timeout) |
 
 ## Environment variables (`server/.env`)

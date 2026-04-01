@@ -14,7 +14,13 @@ export type AnalyzePoemFailure =
   | { type: "upstream_bad_json" }
   | { type: "invalid_scores_shape" }
   | { type: "timeout" }
-  | { type: "openai_error"; message: string; httpStatus?: number };
+  | {
+      type: "openai_error";
+      message: string;
+      httpStatus?: number;
+      /** OpenAI / SDK error code when present. */
+      code?: string;
+    };
 
 export type AnalyzePoemResult =
   | { ok: true; data: AnalyzeSuccessResponse }
@@ -112,16 +118,27 @@ export async function analyzePoem(
     if (isTimeoutError(err)) {
       return { ok: false, failure: { type: "timeout" } };
     }
+    const e = err && typeof err === "object" ? (err as Record<string, unknown>) : {};
     const status =
-      err && typeof err === "object" && "status" in err
-        ? (err as { status?: number }).status
-        : undefined;
+      "status" in e && typeof e.status === "number" ? e.status : undefined;
     const upstream =
-      err && typeof err === "object" && "response" in err
-        ? (err as { response?: { status?: number } }).response?.status
+      "response" in e &&
+      e.response &&
+      typeof e.response === "object" &&
+      "status" in (e.response as object)
+        ? (e.response as { status?: number }).status
         : undefined;
     const httpStatus = status ?? upstream;
-    const message =
+    let code: string | undefined =
+      "code" in e && typeof e.code === "string" ? e.code : undefined;
+    const nested =
+      "error" in e && e.error && typeof e.error === "object"
+        ? (e.error as Record<string, unknown>)
+        : null;
+    if (!code && nested && typeof nested.code === "string") code = nested.code;
+    if (!code && nested && typeof nested.type === "string") code = nested.type;
+
+    const rawMessage =
       httpStatus === 401
         ? "Invalid OpenAI API key"
         : err instanceof Error
@@ -131,8 +148,9 @@ export async function analyzePoem(
       ok: false,
       failure: {
         type: "openai_error",
-        message: String(message).slice(0, 200),
+        message: String(rawMessage).slice(0, 400),
         httpStatus,
+        code,
       },
     };
   }

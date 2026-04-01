@@ -2,6 +2,19 @@ import type { AnalyzeSuccessResponse } from "@poem-analysis/domain/analysis-type
 
 export interface AnalyzeErrorBody {
   error: string;
+  code?: string;
+}
+
+export class AnalyzeRequestError extends Error {
+  readonly code?: string;
+  readonly httpStatus: number;
+
+  constructor(message: string, httpStatus: number, code?: string) {
+    super(message);
+    this.name = "AnalyzeRequestError";
+    this.httpStatus = httpStatus;
+    this.code = code;
+  }
 }
 
 export async function analyzePoemViaHttp(body: {
@@ -23,7 +36,9 @@ export async function analyzePoemViaHttp(body: {
       "error" in data && typeof data.error === "string"
         ? data.error
         : `Request failed (${res.status})`;
-    throw new Error(msg);
+    const code =
+      "code" in data && typeof data.code === "string" ? data.code : undefined;
+    throw new AnalyzeRequestError(msg, res.status, code);
   }
 
   return data as AnalyzeSuccessResponse;
