@@ -3,7 +3,7 @@ import express from "express";
 import {
   createRequestLogger,
   newRequestId,
-} from "../infrastructure/logging/request-logger.js";
+} from "../../infrastructure/logging/request-logger.js";
 
 export function createApp() {
   const app = express();

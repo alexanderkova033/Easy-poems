@@ -1,5 +1,5 @@
-import type { SpellMode } from "../poem-draft/local-draft-storage";
-import { normalizeWordToken, wordSpansInLine } from "../writing-tools/tokenize";
+import type { SpellMode } from "../draft/local-draft-storage";
+import { normalizeWordToken, wordSpansInLine } from "../writing/tokenize";
 import { suggestCorrections } from "./suggest";
 
 export interface SpellHit {

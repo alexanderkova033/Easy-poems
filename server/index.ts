@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createApp } from "./http/create-app.js";
+import { createApp } from "./presentation/http/create-app.js";
 import { createRequestLogger } from "./infrastructure/logging/request-logger.js";
 
 const PORT = Number(process.env.PORT ?? 8787);

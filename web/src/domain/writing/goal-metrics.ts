@@ -1,5 +1,5 @@
 import type { DocumentStats } from "./line-stats";
-import type { WorkshopGoals } from "../poem-draft/workshop-goals";
+import type { WorkshopGoals } from "../draft/workshop-goals";
 
 export interface GoalEvaluation {
   /** Human-readable warnings for the draft vs targets. */

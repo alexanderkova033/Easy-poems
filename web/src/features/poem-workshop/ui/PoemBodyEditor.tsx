@@ -1,4 +1,4 @@
-import type { EditorView } from "@codemirror/view";
+import { EditorView } from "@codemirror/view";
 import type { MutableRefObject } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { basicSetup } from "@uiw/codemirror-extensions-basic-setup";
@@ -7,8 +7,8 @@ import {
   poemEditorTheme,
   poemSpellExtensions,
   spellSyncFacet,
-} from "../../codemirror/spell-highlight";
-import type { SpellMode } from "../../poem-draft/local-draft-storage";
+} from "../../../infrastructure/editor/spell-highlight";
+import type { SpellMode } from "../../../domain/draft/local-draft-storage";
 
 export interface PoemBodyEditorProps {
   value: string;
@@ -35,6 +35,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         height="auto"
         theme="none"
         extensions={[
+          EditorView.contentAttributes.of({ spellcheck: "false" }),
           spellSyncFacet.of(props.spellBump),
           poemEditorTheme,
           ...poemSpellExtensions,

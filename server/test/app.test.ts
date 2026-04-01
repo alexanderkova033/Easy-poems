@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, beforeEach, describe, it } from "node:test";
 import request from "supertest";
-import { createApp } from "../http/create-app.js";
+import { createApp } from "../presentation/http/create-app.js";
 
 describe("HTTP API", () => {
   const prevCors = process.env.CORS_ORIGIN;

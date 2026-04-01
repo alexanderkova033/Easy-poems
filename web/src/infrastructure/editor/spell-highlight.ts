@@ -6,9 +6,9 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from "@codemirror/view";
-import type { SpellMode } from "../poem-draft/local-draft-storage";
-import { loadPersonalDictionary, loadSessionIgnores } from "../spellcheck/personal-dictionary";
-import { spellErrorRangesFromText } from "../spellcheck/scan";
+import type { SpellMode } from "../../domain/draft/local-draft-storage";
+import { loadPersonalDictionary, loadSessionIgnores } from "../../domain/spellcheck/personal-dictionary";
+import { spellErrorRangesFromText } from "../../domain/spellcheck/scan";
 
 export const spellSyncFacet = Facet.define<number, number>({
   combine: (xs) => xs[xs.length - 1] ?? 0,
@@ -100,19 +100,20 @@ export const poemSpellExtensions = [spellField, spellPlugin];
 
 export const poemEditorTheme = EditorView.theme({
   "&": {
-    fontSize: "14px",
-    minHeight: "12rem",
+    fontSize: "16px",
+    minHeight: "13rem",
     backgroundColor: "var(--bg)",
     color: "var(--text)",
     borderRadius: "8px",
     border: "1px solid var(--border)",
+    transition: "border-color 0.2s ease",
   },
   ".cm-scroller": { fontFamily: "inherit" },
   ".cm-content": {
-    fontFamily: 'ui-monospace, "Cascadia Code", Consolas, monospace',
+    fontFamily: "var(--font-poem), Georgia, serif",
     caretColor: "var(--text)",
-    minHeight: "12rem",
-    padding: "0.55rem 0.65rem",
+    minHeight: "13rem",
+    padding: "0.6rem 0.7rem",
   },
   ".cm-gutters": {
     backgroundColor: "var(--surface)",
@@ -124,5 +125,16 @@ export const poemEditorTheme = EditorView.theme({
   ".cm-activeLineGutter": { backgroundColor: "transparent" },
   ".cm-activeLine": { backgroundColor: "transparent" },
   ".cm-lineNumbers .cm-gutterElement": { padding: "0 0.35rem 0 0.5rem" },
-  ".cm-focused": { outline: "2px solid var(--accent)", outlineOffset: "1px" },
+  /* Match global ::selection — avoid system / default light fill */
+  ".cm-selectionBackground": {
+    background: "var(--selection-bg) !important",
+  },
+  "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
+    background:
+      "color-mix(in srgb, var(--selection-bg) 92%, var(--accent)) !important",
+  },
+  ".cm-focused": {
+    outline: "2px solid color-mix(in srgb, var(--accent) 55%, var(--border))",
+    outlineOffset: "1px",
+  },
 });

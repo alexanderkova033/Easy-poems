@@ -1,25 +1,49 @@
 :root {
   color-scheme: light dark;
-  --bg: #0f1218;
-  --surface: #171b24;
-  --border: #2a3140;
-  --text: #e8eaef;
-  --muted: #9aa3b2;
-  --accent: #6b9fff;
-  --danger: #f07178;
-  font-family: "Segoe UI", system-ui, sans-serif;
-  line-height: 1.5;
+  --font-ui: "DM Sans", "Segoe UI", system-ui, sans-serif;
+  --font-poem: "Literata", Georgia, "Times New Roman", serif;
+  --font-metric: "IBM Plex Mono", ui-monospace, monospace;
+  --bg: #0a0f0d;
+  --surface: #121a17;
+  --border: #2a3832;
+  /* Softer than near-white for easier reading */
+  --text: #d5ddd7;
+  --muted: #84968d;
+  --accent: #7a9b7c;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 32%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #f08088;
+  --net-line: rgba(200, 230, 215, 0.048);
+  /* Cohesive teal & sage washes (no clashing violet/blue) */
+  --ambient-a: rgba(55, 145, 125, 0.055);
+  --ambient-b: rgba(40, 95, 78, 0.045);
+  --ambient-c: rgba(75, 135, 120, 0.04);
+  --ambient-d: rgba(100, 165, 145, 0.032);
+  --shine-top: rgba(170, 220, 200, 0.045);
+  --shine-mid: rgba(90, 150, 130, 0.028);
+  font-family: var(--font-ui);
+  line-height: 1.55;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #f6f7f9;
-    --surface: #fff;
-    --border: #d8dee9;
-    --text: #1a1d24;
-    --muted: #5c6575;
-    --accent: #2563eb;
-    --danger: #b91c1c;
+    --bg: #e8f0eb;
+    --surface: #f8fbfa;
+    --border: #c5d4cc;
+    --text: #1e2a22;
+    --muted: #4d5c53;
+    --accent: #3d6b47;
+    --selection-bg: color-mix(in srgb, var(--accent) 22%, #c9d5cd);
+    --selection-fg: var(--text);
+    --danger: #b42318;
+    --net-line: rgba(45, 75, 58, 0.065);
+    --ambient-a: rgba(70, 155, 125, 0.07);
+    --ambient-b: rgba(55, 110, 90, 0.055);
+    --ambient-c: rgba(95, 165, 135, 0.05);
+    --ambient-d: rgba(120, 190, 155, 0.045);
+    --shine-top: rgba(255, 255, 255, 0.38);
+    --shine-mid: rgba(100, 170, 135, 0.04);
   }
 }
 
@@ -27,17 +51,184 @@
   box-sizing: border-box;
 }
 
+html {
+  min-height: 100%;
+  font-size: 17px;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--bg);
+  position: relative;
+  isolation: isolate;
+  background-color: var(--bg);
   color: var(--text);
+  font-family: var(--font-ui);
+}
+
+::selection {
+  background: var(--selection-bg);
+  color: var(--selection-fg);
+}
+
+::-moz-selection {
+  background: var(--selection-bg);
+  color: var(--selection-fg);
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Calm mesh: fixed anchors, very slow drift */
+body::before {
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px);
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    40px 40px,
+    40px 40px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    75% 55%,
+    center -1px,
+    center -1px;
+  animation: ambient-drift 140s ease-in-out infinite alternate;
+}
+
+/* Soft zenith glow — matches sage palette */
+body::after {
+  background:
+    radial-gradient(
+      95% 55% at 50% -12%,
+      var(--shine-top),
+      var(--shine-mid) 38%,
+      transparent 68%
+    );
+  animation: studio-light 48s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+
+@media (prefers-color-scheme: light) {
+  body::after {
+    mix-blend-mode: multiply;
+    opacity: 0.28;
+    animation: studio-light-soft 48s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes ambient-drift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 6%,
+      48% 100%,
+      72% 58%,
+      center -1px,
+      center -1px;
+  }
+  50% {
+    background-position:
+      8% 6%,
+      92% 2%,
+      52% 94%,
+      68% 52%,
+      center -1px,
+      center -1px;
+  }
+  100% {
+    background-position:
+      4% 4%,
+      96% 10%,
+      46% 96%,
+      78% 60%,
+      center -1px,
+      center -1px;
+  }
+}
+
+@keyframes studio-light {
+  0% {
+    opacity: 0.48;
+  }
+  100% {
+    opacity: 0.62;
+  }
+}
+
+@keyframes studio-light-soft {
+  0% {
+    opacity: 0.22;
+  }
+  100% {
+    opacity: 0.32;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::before,
+  body::after {
+    animation: none !important;
+  }
+
+  body::before {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 100%,
+      75% 55%,
+      center -1px,
+      center -1px;
+  }
+
+  body::after {
+    opacity: 0.75;
+  }
+}
+
+@media (prefers-color-scheme: light) and (prefers-reduced-motion: reduce) {
+  body::after {
+    opacity: 0.45;
+  }
 }
 
 #root {
-  max-width: 1120px;
+  max-width: 1320px;
   margin: 0 auto;
-  padding: 1.25rem 1rem 3rem;
+  padding: 1.5rem 1.25rem 3.25rem;
+  position: relative;
 }
 
 .sr-only {

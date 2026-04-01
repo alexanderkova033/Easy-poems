@@ -55,9 +55,65 @@ export function downloadTextFile(filename: string, content: string): void {
 
 export function exportFilename(
   title: string,
-  ext: "txt" | "md",
+  ext: "txt" | "md" | "docx",
 ): string {
   return `${slugBase(title)}.${ext}`;
+}
+
+export async function buildPoemDocxBlob(
+  title: string,
+  formNote: string | undefined,
+  body: string,
+): Promise<Blob> {
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import(
+    "docx"
+  );
+  const children: InstanceType<typeof Paragraph>[] = [];
+  const t = title.trim();
+  if (t) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.TITLE,
+        children: [new TextRun(t)],
+      }),
+    );
+  }
+  const f = formNote?.trim();
+  if (f) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: f, italics: true })],
+      }),
+    );
+  }
+  if (t || f) {
+    children.push(new Paragraph({ text: "" }));
+  }
+  for (const line of body.split("\n")) {
+    children.push(new Paragraph({ children: [new TextRun(line)] }));
+  }
+  const doc = new Document({
+    sections: [{ properties: {}, children }],
+  });
+  return Packer.toBlob(doc);
+}
+
+export async function downloadDocxFile(
+  filename: string,
+  title: string,
+  formNote: string | undefined,
+  body: string,
+): Promise<void> {
+  const blob = await buildPoemDocxBlob(title, formNote, body);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noreferrer";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 export async function copyTextToClipboard(text: string): Promise<void> {

@@ -1,11 +1,5 @@
 import type { EditorView } from "@codemirror/view";
 
-export function linesFromBody(body: string): string[] {
-  const raw = body.split("\n");
-  if (raw.length === 0) return [""];
-  return raw;
-}
-
 /** Select a logical line in a CodeMirror 6 view (1-based line numbers). */
 export function focusLineInEditor(
   view: EditorView,
