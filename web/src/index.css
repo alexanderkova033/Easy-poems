@@ -3,8 +3,22 @@
   --font-ui: "DM Sans", "Segoe UI", system-ui, sans-serif;
   --font-poem: "Literata", Georgia, "Times New Roman", serif;
   --font-metric: "IBM Plex Mono", ui-monospace, monospace;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 10%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 30%, transparent);
+  --focus-ring: 2px solid var(--accent);
   --bg: #0a0f0d;
   --surface: #121a17;
+  --surface-2: #16201c;
+  --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
   --border: #2a3832;
   /* Softer than near-white for easier reading */
   --text: #d5ddd7;
@@ -30,6 +44,8 @@
   :root {
     --bg: #e8f0eb;
     --surface: #f8fbfa;
+    --surface-2: #f1f7f3;
+    --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
     --border: #c5d4cc;
     --text: #1e2a22;
     --muted: #4d5c53;
@@ -44,6 +60,9 @@
     --ambient-d: rgba(120, 190, 155, 0.045);
     --shine-top: rgba(255, 255, 255, 0.38);
     --shine-mid: rgba(100, 170, 135, 0.04);
+    --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+    --shadow-2: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
+    --shadow-3: 0 14px 46px color-mix(in srgb, #000 34%, transparent);
   }
 }
 
@@ -225,10 +244,17 @@ body::after {
 }
 
 #root {
-  max-width: 1320px;
+  max-width: 1480px;
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 3.25rem;
+  padding: 1.1rem 1.05rem 2.5rem;
   position: relative;
+}
+
+@media (max-width: 899px) {
+  #root {
+    /* Room for the fixed mobile action bar. */
+    padding-bottom: 6.25rem;
+  }
 }
 
 .sr-only {

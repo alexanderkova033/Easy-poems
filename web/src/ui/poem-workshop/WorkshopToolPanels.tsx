@@ -22,6 +22,21 @@ import type { ToolTab } from "./workshop-helpers";
 const LINES_TABLE_MAX = 400;
 const METER_TABLE_MAX = 400;
 
+function EmptyState({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="tool-empty" role="status" aria-live="polite">
+      <p className="tool-empty-title">{title}</p>
+      <div className="tool-empty-body">{children}</div>
+    </div>
+  );
+}
+
 function checklistJumpLabel(item: ChecklistItem): string {
   if (item.focusTitleField) return "Focus title";
   switch (item.openToolTab) {
@@ -144,6 +159,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
   const [spellStep, setSpellStep] = useState(0);
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
+  const [meterHideBlank, setMeterHideBlank] = useState(true);
+  const [meterOnlyLowFit, setMeterOnlyLowFit] = useState(false);
+  const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
 
   useEffect(() => {
     setSpellStep(0);
@@ -153,6 +171,16 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     if (!hideEmptyLines) return docStats.lines;
     return docStats.lines.filter((r) => r.text.trim().length > 0);
   }, [docStats.lines, hideEmptyLines]);
+
+  const displayedMeterHints = useMemo(() => {
+    const rows = meterHints.slice(0, METER_TABLE_MAX);
+    return rows.filter((r) => {
+      if (meterHideBlank && !r.stressPattern) return false;
+      if (!meterOnlyLowFit) return true;
+      if (r.iambicFitPercent == null) return false;
+      return r.iambicFitPercent < meterLowFitThreshold;
+    });
+  }, [meterHideBlank, meterHints, meterLowFitThreshold, meterOnlyLowFit]);
 
   return (
     <div className="tool-tab-panel" key={toolTab}>
@@ -481,15 +509,48 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
         >
           <LiveSectionTitle>Stress &amp; meter (approx.)</LiveSectionTitle>
           <p className="muted small">
-            <strong>/</strong> = guessed stressed syllable, <strong>x</strong> =
-            unstressed. Function words are often marked weak; polysyllables skew
-            toward stress on the first beat. This is not pronunciation data—only a
-            sketch to compare lines.
+            <strong>/</strong> stressed, <strong>x</strong> unstressed (heuristic).
+            “Iambic-ish” is a loose weak‑strong fit score—use as a cue, not a verdict.
           </p>
-          <p className="muted small">
-            “Iambic-ish” is how well the pattern matches weak-strong alternation
-            from the first syllable—useful as a loose cue, not a verdict.
-          </p>
+
+          <div className="meter-controls" role="group" aria-label="Meter filters">
+            <label className="meter-toggle">
+              <input
+                type="checkbox"
+                checked={meterHideBlank}
+                onChange={(e) => setMeterHideBlank(e.target.checked)}
+              />{" "}
+              Hide blanks
+            </label>
+            <label className="meter-toggle">
+              <input
+                type="checkbox"
+                checked={meterOnlyLowFit}
+                onChange={(e) => setMeterOnlyLowFit(e.target.checked)}
+              />{" "}
+              Show low fit
+            </label>
+            {meterOnlyLowFit ? (
+              <label className="meter-threshold">
+                Below{" "}
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={meterLowFitThreshold}
+                  onChange={(e) =>
+                    setMeterLowFitThreshold(
+                      Number.isFinite(e.target.valueAsNumber)
+                        ? e.target.valueAsNumber
+                        : 60,
+                    )
+                  }
+                />{" "}
+                %
+              </label>
+            ) : null}
+          </div>
           <div className="table-wrap table-wrap-draft">
             <table
               className="line-table line-table-draft line-table-meter"
@@ -513,7 +574,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 </tr>
               </thead>
               <tbody>
-                {meterHints.slice(0, METER_TABLE_MAX).map((row) => (
+                {displayedMeterHints.map((row) => (
                   <tr
                     key={row.lineNumber}
                     className="line-table-data-row line-table-row-jump"
@@ -562,9 +623,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           </p>
           <h4 className="tool-subheading">Shared final letter pattern</h4>
           {rhymeClusters.length === 0 ? (
-            <p className="muted small">
-              No lines share the same final letter pattern yet.
-            </p>
+            <EmptyState title="No shared endings yet">
+              <p className="muted small">
+                Keep drafting—this fills in once multiple lines end the same way.
+              </p>
+            </EmptyState>
           ) : (
             <ul className="hint-list hint-list-draft">
               {rhymeClusters.slice(0, 10).map((c) => (
@@ -583,7 +646,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             hint.
           </p>
           {vowelTailClusters.length === 0 ? (
-            <p className="muted small">No matching vowel tails yet.</p>
+            <EmptyState title="No matching vowel tails yet">
+              <p className="muted small">
+                This catches “looks-similar” endings even when pronunciation differs.
+              </p>
+            </EmptyState>
           ) : (
             <ul className="hint-list hint-list-draft">
               {vowelTailClusters.slice(0, 10).map((c) => (
@@ -610,7 +677,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             number to jump.
           </p>
           {repeated.length === 0 ? (
-            <p className="muted small">None detected in this draft.</p>
+            <EmptyState title="No repeats detected">
+              <p className="muted small">
+                Nice—this list stays empty unless a non-stopword repeats.
+              </p>
+            </EmptyState>
           ) : (
             <ul className="hint-list hint-list-draft">
               {repeated.map((r) => (
@@ -676,7 +747,12 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 Local list + your additions—many “unknowns” are on purpose.
               </p>
               {spellHits.length === 0 ? (
-                <p className="muted small">Nothing flagged.</p>
+                <EmptyState title="No spelling flags">
+                  <p className="muted small">
+                    Looks clean under your current mode. Switch modes if you want a
+                    stricter scan.
+                  </p>
+                </EmptyState>
               ) : (
                 <>
                   <div className="spell-hit-nav" role="group" aria-label="Step through spelling flags">
@@ -813,12 +889,12 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
         >
           <h3 className="tool-heading-static">Outside feedback (ChatGPT)</h3>
           <p className="muted small feedback-lead">
-            Nothing leaves this tab until you copy from the draft. Open ChatGPT in
-            another tab and paste when you want a second reader.
+            Your writing stays in this tab until you copy/export it. Paste into ChatGPT
+            in another tab when you want a second reader.
           </p>
           <ul className="feedback-tips muted small">
-            <li>Copy from the editor or use Export for a clean file.</li>
-            <li>Do not paste secrets you would not send to a third party.</li>
+            <li>Use Export for a clean file.</li>
+            <li>Don’t paste anything sensitive.</li>
           </ul>
           <a
             className="secondary-link feedback-open-link"

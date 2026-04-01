@@ -31,6 +31,12 @@ import {
   type DraftLibrary,
 } from "../../functionality/draft/local-draft-library";
 import {
+  loadDraftMetaMap,
+  saveDraftMetaMap,
+  upsertDraftMeta,
+  type DraftMetaMap,
+} from "../../functionality/draft/library-meta";
+import {
   migrateLegacyDraftIfNeeded,
   type SpellMode,
 } from "../../functionality/draft/local-draft-storage";
@@ -72,10 +78,19 @@ import {
 
 const LAST_TOOL_TAB_KEY = "easy-poems:lastToolTab";
 
+function shouldForceSummaryTools(): boolean {
+  try {
+    return window.matchMedia("(max-width: 899px)").matches;
+  } catch {
+    return false;
+  }
+}
+
 function readSessionToolTab(): ToolTab {
   const allowed = new Set(TOOL_TABS.map((x) => x.id));
   try {
     const raw = sessionStorage.getItem(LAST_TOOL_TAB_KEY);
+    if (shouldForceSummaryTools()) return "totals";
     if (raw && allowed.has(raw as ToolTab)) return raw as ToolTab;
   } catch {
     /* sessionStorage unavailable */
@@ -97,6 +112,7 @@ export function usePoemWorkshopModel() {
     migrateLegacyDraftIfNeeded();
     return loadOrCreateLibrary();
   });
+  const [meta, setMeta] = useState<DraftMetaMap>(() => loadDraftMetaMap());
   const [title, setTitle] = useState("");
   const [formNote, setFormNote] = useState("");
   const [body, setBody] = useState("");
@@ -118,6 +134,8 @@ export function usePoemWorkshopModel() {
   const [copyExportFlash, setCopyExportFlash] = useState(false);
   const [quickCopyFlash, setQuickCopyFlash] = useState(false);
   const [docxExportErr, setDocxExportErr] = useState<string | null>(null);
+  const [jumpLine, setJumpLine] = useState<number | null>(null);
+  const [jumpBump, setJumpBump] = useState(0);
   const copyExportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const quickCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -292,6 +310,8 @@ export function usePoemWorkshopModel() {
   const goToLine = useCallback((line1Based: number) => {
     const view = editorViewRef.current;
     if (!view) return;
+    setJumpLine(line1Based);
+    setJumpBump((n) => n + 1);
     focusLineInEditor(view, line1Based);
   }, []);
 
@@ -329,6 +349,14 @@ export function usePoemWorkshopModel() {
         return;
       }
       setLibrary(next);
+      // Update last-opened metadata (best effort).
+      setMeta((prev) => {
+        const patched = upsertDraftMeta(prev, poemId, {
+          lastOpenedAt: new Date().toISOString(),
+        });
+        void saveDraftMetaMap(patched);
+        return patched;
+      });
       applyLoadedPoem(next);
     },
     [activePoemId, library, title, body, formNote, spellMode, applyLoadedPoem],
@@ -606,16 +634,53 @@ export function usePoemWorkshopModel() {
     () =>
       library.poems
         .slice()
-        .sort(
-          (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
-        )
+        .sort((a, b) => {
+          const ma = meta[a.id] ?? {};
+          const mb = meta[b.id] ?? {};
+          const pa = ma.pinned ? 1 : 0;
+          const pb = mb.pinned ? 1 : 0;
+          if (pa !== pb) return pb - pa;
+          const oa = ma.lastOpenedAt ? new Date(ma.lastOpenedAt).getTime() : 0;
+          const ob = mb.lastOpenedAt ? new Date(mb.lastOpenedAt).getTime() : 0;
+          if (oa !== ob) return ob - oa;
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+        })
         .map((p) => ({
           id: p.id,
-          label: p.title.trim() || "Untitled",
+          label:
+            (meta[p.id]?.label?.trim() ||
+              p.title.trim() ||
+              "Untitled"),
         })),
-    [library.poems],
+    [library.poems, meta],
   );
+
+  const setDraftLabel = useCallback((poemId: string, label: string) => {
+    setMeta((prev) => {
+      const patched = upsertDraftMeta(prev, poemId, { label });
+      void saveDraftMetaMap(patched);
+      return patched;
+    });
+  }, []);
+
+  const togglePinned = useCallback((poemId: string) => {
+    setMeta((prev) => {
+      const pinned = Boolean(prev[poemId]?.pinned);
+      const patched = upsertDraftMeta(prev, poemId, { pinned: !pinned });
+      void saveDraftMetaMap(patched);
+      return patched;
+    });
+  }, []);
+
+  const setDraftTags = useCallback((poemId: string, tags: string[]) => {
+    setMeta((prev) => {
+      const patched = upsertDraftMeta(prev, poemId, { tags });
+      void saveDraftMetaMap(patched);
+      return patched;
+    });
+  }, []);
 
   return {
     title,
@@ -675,8 +740,14 @@ export function usePoemWorkshopModel() {
     refreshSpell,
     updateGoal,
     onSpellPersistenceError,
+    jumpLine,
+    jumpBump,
     activePoemId,
     poemOptions,
+    draftMeta: meta,
+    setDraftLabel,
+    togglePinned,
+    setDraftTags,
     selectPoem,
     newPoem,
     duplicatePoem,
