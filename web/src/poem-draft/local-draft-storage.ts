@@ -8,8 +8,6 @@ export interface DraftState {
   /** Optional form or note (e.g. sonnet, free verse). */
   form?: string;
   spellMode?: SpellMode;
-  /** ISO timestamp of last successful analysis (from API meta.analyzedAt). */
-  lastAnalyzedAt?: string;
 }
 
 function readSpellMode(v: unknown): SpellMode | undefined {
@@ -25,10 +23,6 @@ export function loadDraft(): DraftState | null {
     if (!v || typeof v !== "object") return null;
     const o = v as Record<string, unknown>;
     if (typeof o.title !== "string" || typeof o.body !== "string") return null;
-    const last =
-      o.lastAnalyzedAt === undefined || o.lastAnalyzedAt === null
-        ? undefined
-        : String(o.lastAnalyzedAt);
     const form =
       o.form === undefined || o.form === null
         ? undefined
@@ -39,7 +33,6 @@ export function loadDraft(): DraftState | null {
       body: o.body,
       ...(form ? { form } : {}),
       ...(sm ? { spellMode: sm } : {}),
-      lastAnalyzedAt: last || undefined,
     };
   } catch {
     return null;
@@ -54,10 +47,7 @@ export function saveDraft(state: DraftState): void {
       body: state.body,
       ...(state.form ? { form: state.form } : {}),
       ...(state.spellMode ? { spellMode: state.spellMode } : {}),
-      ...(state.lastAnalyzedAt
-        ? { lastAnalyzedAt: state.lastAnalyzedAt }
-        : {}),
-    })
+    }),
   );
 }
 
@@ -74,10 +64,6 @@ export function migrateLegacyDraftIfNeeded(): void {
     saveDraft({
       title: o.title,
       body: o.body,
-      lastAnalyzedAt:
-        o.lastAnalyzedAt === undefined || o.lastAnalyzedAt === null
-          ? undefined
-          : String(o.lastAnalyzedAt),
     });
   } catch {
     /* ignore */

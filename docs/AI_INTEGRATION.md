@@ -1,6 +1,8 @@
 # AI integration — Easy-poems
 
-This is the **implemented product decision**: poem analysis runs through a **small backend** that calls the **OpenAI API**. Keys never ship to the browser.
+> **Status (current codebase):** server-side `POST /api/analyze` and the OpenAI-based flow described below **have been removed**. The web app is a **local-only workshop** (plus optional **ChatGPT** in your own browser tab). This document is kept as a **design / history reference** if you reintroduce an API later.
+
+Previously, the **implemented product decision** was: poem analysis ran through a **small backend** that called the **OpenAI API**. Keys never shipped to the browser.
 
 ## Stack
 
@@ -14,8 +16,8 @@ This is the **implemented product decision**: poem analysis runs through a **sma
 
 ## Machine-readable contract
 
-- OpenAPI 3.1: [`server/openapi.yaml`](../server/openapi.yaml) (paths, schemas, `X-Request-Id`).
-- Shared TypeScript shapes: [`server/poem-analysis/domain/analysis-types.ts`](../server/poem-analysis/domain/analysis-types.ts) (the web app imports these via the `@poem-analysis/*` alias in `web/tsconfig.json` / `web/vite.config.ts`).
+- ~~OpenAPI 3.1: `server/openapi.yaml`~~ (removed with the analyze endpoint.)
+- ~~Shared types under `server/poem-analysis/`~~ (removed; rebuild this tree if you restore analyze.)
 
 ## Endpoint (MVP)
 

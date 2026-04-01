@@ -1,6 +1,19 @@
 import type { EditorView } from "@codemirror/view";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { AnalyzeSuccessResponse } from "@poem-analysis/domain/analysis-types";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from "react";
+import {
+  buildMarkdownPoem,
+  buildPlainTextTitleBody,
+  copyTextToClipboard,
+  downloadTextFile,
+  exportFilename,
+} from "../../poem-draft/export-poem";
 import {
   loadDraft,
   migrateLegacyDraftIfNeeded,
@@ -9,6 +22,17 @@ import {
   type SpellMode,
 } from "../../poem-draft/local-draft-storage";
 import {
+  addRevision,
+  loadRevisions,
+  type RevisionSnapshot,
+  removeRevision,
+} from "../../poem-draft/revision-snapshots";
+import {
+  loadWorkshopGoals,
+  saveWorkshopGoals,
+  type WorkshopGoals,
+} from "../../poem-draft/workshop-goals";
+import {
   addToPersonalDictionary,
   ignoreWordForSession,
   loadPersonalDictionary,
@@ -16,14 +40,15 @@ import {
 } from "../../spellcheck/personal-dictionary";
 import { loadEnglishWordlist } from "../../spellcheck/wordlist";
 import { scanLinesForSpelling } from "../../spellcheck/scan";
+import { evaluateGoals } from "../../writing-tools/goal-metrics";
 import { focusLineInEditor, linesFromBody } from "../../writing-tools/line-model";
 import { computeDocumentStats } from "../../writing-tools/line-stats";
 import { findRepeatedWords } from "../../writing-tools/repeated-words";
-import { roughRhymeClusters } from "../../writing-tools/rhyme-hints";
+import { buildPublicationChecklist } from "../../writing-tools/publication-checklist";
 import {
-  AnalyzeRequestError,
-  analyzePoemViaHttp,
-} from "../adapters/http-analyze-poem";
+  lightVowelTailClusters,
+  roughRhymeClusters,
+} from "../../writing-tools/rhyme-hints";
 import { PoemBodyEditor } from "./PoemBodyEditor";
 import "./PoemWorkshop.css";
 
@@ -37,20 +62,38 @@ function formatWhen(iso?: string): string | null {
   });
 }
 
+function formatSnapshotWhen(iso: string): string {
+  return formatWhen(iso) ?? iso;
+}
+
+function parseGoalInput(raw: string): number | undefined {
+  const v = raw.trim();
+  if (v === "") return undefined;
+  const n = parseInt(v, 10);
+  if (!Number.isFinite(n) || n < 1) return undefined;
+  return n;
+}
+
 export function PoemWorkshop() {
   const [title, setTitle] = useState("");
   const [formNote, setFormNote] = useState("");
   const [body, setBody] = useState("");
   const [spellMode, setSpellMode] = useState<SpellMode>("permissive");
-  const [lastAnalyzedAt, setLastAnalyzedAt] = useState<string | undefined>();
-  const [result, setResult] = useState<AnalyzeSuccessResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [wordlist, setWordlist] = useState<Set<string> | null>(null);
   const [wordlistErr, setWordlistErr] = useState<string | null>(null);
   const [spellBump, setSpellBump] = useState(0);
+  const [revisions, setRevisions] = useState<RevisionSnapshot[]>(() =>
+    loadRevisions(),
+  );
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [compareLeftId, setCompareLeftId] = useState("");
+  const [compareRightId, setCompareRightId] = useState("");
+  const [goals, setGoals] = useState<WorkshopGoals>(() => loadWorkshopGoals());
+  const [copyExportFlash, setCopyExportFlash] = useState(false);
+  const copyExportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const compareIdsSeeded = useRef(false);
   const editorViewRef = useRef<EditorView | null>(null);
 
   useEffect(() => {
@@ -61,7 +104,6 @@ export function PoemWorkshop() {
       setBody(d.body);
       setFormNote(d.form ?? "");
       setSpellMode(d.spellMode ?? "permissive");
-      setLastAnalyzedAt(d.lastAnalyzedAt);
     }
   }, []);
 
@@ -75,6 +117,17 @@ export function PoemWorkshop() {
         setWordlistErr(e instanceof Error ? e.message : "Could not load word list.");
       });
   }, []);
+
+  useEffect(() => {
+    saveWorkshopGoals(goals);
+  }, [goals]);
+
+  useEffect(() => {
+    if (compareIdsSeeded.current || revisions.length === 0) return;
+    compareIdsSeeded.current = true;
+    setCompareLeftId(revisions[0]!.id);
+    setCompareRightId(revisions[1]?.id ?? revisions[0]!.id);
+  }, [revisions]);
 
   const persist = useCallback((next: DraftState) => {
     saveDraft(next);
@@ -90,15 +143,18 @@ export function PoemWorkshop() {
         body,
         form: formNote.trim() || undefined,
         spellMode,
-        lastAnalyzedAt,
       });
     }, 500);
     return () => clearTimeout(t);
-  }, [title, body, formNote, spellMode, lastAnalyzedAt, persist]);
+  }, [title, body, formNote, spellMode, persist]);
 
   const lines = useMemo(() => linesFromBody(body), [body]);
   const docStats = useMemo(() => computeDocumentStats(body), [body]);
   const rhymeClusters = useMemo(() => roughRhymeClusters(lines), [lines]);
+  const vowelTailClusters = useMemo(
+    () => lightVowelTailClusters(lines),
+    [lines],
+  );
   const repeated = useMemo(() => findRepeatedWords(lines), [lines]);
   const maxSyllables = useMemo(
     () => Math.max(1, ...docStats.lines.map((l) => l.syllables)),
@@ -116,6 +172,32 @@ export function PoemWorkshop() {
     );
   }, [lines, wordlist, spellMode, spellBump]);
 
+  const goalEvaluation = useMemo(
+    () => evaluateGoals(docStats, goals),
+    [docStats, goals],
+  );
+
+  const publication = useMemo(
+    () =>
+      buildPublicationChecklist({
+        title,
+        docStats,
+        spellingFlagCount: spellHits.length,
+        wordlistReady: Boolean(wordlist),
+        goalEvaluation,
+      }),
+    [title, docStats, spellHits.length, wordlist, goalEvaluation],
+  );
+
+  const compareLeft = useMemo(
+    () => revisions.find((s) => s.id === compareLeftId),
+    [revisions, compareLeftId],
+  );
+  const compareRight = useMemo(
+    () => revisions.find((s) => s.id === compareRightId),
+    [revisions, compareRightId],
+  );
+
   const goToLine = useCallback((line1Based: number) => {
     const view = editorViewRef.current;
     if (!view) return;
@@ -126,51 +208,108 @@ export function PoemWorkshop() {
     setSpellBump((n) => n + 1);
   }, []);
 
-  const onAnalyze = async () => {
-    setError(null);
-    const ls = linesFromBody(body);
-    const nonEmpty = ls.some((l) => l.trim().length > 0);
-    if (!nonEmpty) {
-      setError("Add at least one non-empty line before analyzing.");
-      return;
-    }
-    setLoading(true);
-    setResult(null);
-    try {
-      const data = await analyzePoemViaHttp({
-        title: title.trim() || undefined,
-        lines: ls,
-      });
-      setResult(data);
-      const at = data.meta.analyzedAt;
-      setLastAnalyzedAt(at);
-      persist({
-        title,
-        body,
-        form: formNote.trim() || undefined,
-        spellMode,
-        lastAnalyzedAt: at,
-      });
-    } catch (e) {
-      if (e instanceof AnalyzeRequestError) {
-        setError(e.message);
-      } else {
-        setError(e instanceof Error ? e.message : "Analysis failed.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const saveSnapshot = useCallback(() => {
+    const next = addRevision(revisions, {
+      title,
+      body,
+      form: formNote.trim() || undefined,
+      label: snapshotLabel.trim() || undefined,
+    });
+    setRevisions(next);
+    setSnapshotLabel("");
+    setCompareLeftId((left) =>
+      left && next.some((s) => s.id === left) ? left : (next[0]?.id ?? ""),
+    );
+    setCompareRightId((right) => {
+      if (right && next.some((s) => s.id === right)) return right;
+      return next[1]?.id ?? next[0]?.id ?? "";
+    });
+  }, [revisions, title, body, formNote, snapshotLabel]);
 
-  const whenLabel = formatWhen(lastAnalyzedAt);
+  const restoreRevision = useCallback(
+    (snap: RevisionSnapshot) => {
+      if (
+        !window.confirm(
+          "Replace the current draft with this snapshot? You can save a snapshot first if you need the current text.",
+        )
+      ) {
+        return;
+      }
+      setTitle(snap.title);
+      setBody(snap.body);
+      setFormNote(snap.form ?? "");
+    },
+    [],
+  );
+
+  const deleteRevision = useCallback(
+    (id: string) => {
+      const next = removeRevision(revisions, id);
+      setRevisions(next);
+      if (next.length === 0) {
+        setCompareLeftId("");
+        setCompareRightId("");
+        compareIdsSeeded.current = false;
+        return;
+      }
+      let newLeft = compareLeftId;
+      let newRight = compareRightId;
+      if (!next.some((s) => s.id === newLeft)) newLeft = next[0]!.id;
+      if (!next.some((s) => s.id === newRight)) {
+        newRight = next.find((s) => s.id !== newLeft)?.id ?? next[0]!.id;
+      }
+      if (newLeft === newRight) {
+        newRight = next.find((s) => s.id !== newLeft)?.id ?? newRight;
+      }
+      setCompareLeftId(newLeft);
+      setCompareRightId(newRight);
+    },
+    [revisions, compareLeftId, compareRightId],
+  );
+
+  const onDownloadTxt = useCallback(() => {
+    const text = buildPlainTextTitleBody(
+      title,
+      formNote.trim() || undefined,
+      body,
+    );
+    downloadTextFile(exportFilename(title, "txt"), text);
+  }, [title, formNote, body]);
+
+  const onDownloadMd = useCallback(() => {
+    const text = buildMarkdownPoem(
+      title,
+      formNote.trim() || undefined,
+      body,
+    );
+    downloadTextFile(exportFilename(title, "md"), text);
+  }, [title, formNote, body]);
+
+  const onCopyMarkdown = useCallback(async () => {
+    const text = buildMarkdownPoem(
+      title,
+      formNote.trim() || undefined,
+      body,
+    );
+    await copyTextToClipboard(text);
+    setCopyExportFlash(true);
+    if (copyExportTimer.current) clearTimeout(copyExportTimer.current);
+    copyExportTimer.current = setTimeout(() => setCopyExportFlash(false), 1200);
+  }, [title, formNote, body]);
+
+  const updateGoal =
+    (key: keyof WorkshopGoals) => (e: ChangeEvent<HTMLInputElement>) => {
+      const v = parseGoalInput(e.target.value);
+      setGoals((g) => ({ ...g, [key]: v }));
+    };
 
   return (
     <div className="poem-workshop">
       <header className="hero">
         <h1>Easy-poems</h1>
         <p className="tagline">
-          Draft stays in your browser until you run analysis. Writing tools and
-          spelling run locally in this tab.
+          Draft stays in this browser. Writing tools and spelling run locally in
+          this tab—use export or ChatGPT when you want outside feedback.
         </p>
       </header>
 
@@ -220,29 +359,31 @@ export function PoemWorkshop() {
               count as lines. Use the line table to jump to a line.
             </p>
           </div>
-          <div className="toolbar">
-            <button
-              type="button"
-              className="primary"
-              onClick={() => void onAnalyze()}
-              disabled={loading}
-            >
-              {loading ? "Analyzing…" : "Analyze"}
-            </button>
+          <div className="toolbar toolbar-saved">
             <span
               className={`save-hint ${savedFlash ? "visible" : ""}`}
               aria-live="polite"
             >
               Saved locally
             </span>
-            {whenLabel ? (
-              <span className="last-run">
-                Last analyzed:{" "}
-                <time dateTime={lastAnalyzedAt}>{whenLabel}</time>
-              </span>
-            ) : (
-              <span className="last-run muted">Not analyzed yet</span>
-            )}
+          </div>
+          <div className="export-row" aria-label="Export poem">
+            <span className="export-label">Export</span>
+            <button type="button" className="small-btn" onClick={onDownloadTxt}>
+              Download .txt
+            </button>
+            <button type="button" className="small-btn" onClick={onDownloadMd}>
+              Download .md
+            </button>
+            <button type="button" className="small-btn" onClick={() => void onCopyMarkdown()}>
+              Copy Markdown
+            </button>
+            <span
+              className={`export-copied ${copyExportFlash ? "visible" : ""}`}
+              aria-live="polite"
+            >
+              Copied
+            </span>
           </div>
           <div className="spell-mode-row" role="group" aria-label="Spelling mode">
             <span className="spell-mode-label">Spelling check</span>
@@ -265,11 +406,157 @@ export function PoemWorkshop() {
               Strict
             </label>
           </div>
-          {error ? (
-            <p className="error" role="alert">
-              {error}
+
+          <div className="revision-section" aria-label="Revision history">
+            <h3 className="revision-section-title">Revision snapshots</h3>
+            <p className="muted small">
+              Saved in this browser only ({revisions.length}/
+              50). Use before big edits or experiments.
             </p>
-          ) : null}
+            <div className="snapshot-save-row">
+              <input
+                type="text"
+                className="snapshot-label-input"
+                value={snapshotLabel}
+                onChange={(e) => setSnapshotLabel(e.target.value)}
+                placeholder="Optional label (e.g. “v2 opening”)"
+                autoComplete="off"
+                aria-label="Snapshot label"
+              />
+              <button type="button" className="small-btn" onClick={saveSnapshot}>
+                Save snapshot
+              </button>
+            </div>
+            {revisions.length === 0 ? (
+              <p className="muted small">No snapshots yet.</p>
+            ) : (
+              <ul className="revision-list">
+                {revisions.map((s) => (
+                  <li key={s.id} className="revision-list-item">
+                    <div className="revision-meta">
+                      <span className="revision-when">
+                        {formatSnapshotWhen(s.createdAt)}
+                      </span>
+                      {s.label ? (
+                        <span className="revision-label">{s.label}</span>
+                      ) : null}
+                    </div>
+                    <div className="revision-actions">
+                      <button
+                        type="button"
+                        className="linkish"
+                        onClick={() => restoreRevision(s)}
+                      >
+                        Restore
+                      </button>
+                      <button
+                        type="button"
+                        className="linkish danger-link"
+                        onClick={() => {
+                          if (window.confirm("Delete this snapshot?")) {
+                            deleteRevision(s.id);
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <h4 className="tool-subheading">Compare snapshots</h4>
+            {revisions.length < 2 ? (
+              <p className="muted small">
+                Save at least two snapshots to compare bodies side by side.
+              </p>
+            ) : (
+              <>
+                <div className="compare-select-row">
+                  <label className="compare-select">
+                    <span className="sr-only">Left snapshot</span>
+                    <span className="compare-select-label" aria-hidden>
+                      A
+                    </span>
+                    <select
+                      value={compareLeftId}
+                      onChange={(e) => setCompareLeftId(e.target.value)}
+                      aria-label="Left snapshot for compare"
+                    >
+                      {revisions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {formatSnapshotWhen(s.createdAt)}
+                          {s.label ? ` — ${s.label}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="compare-select">
+                    <span className="sr-only">Right snapshot</span>
+                    <span className="compare-select-label" aria-hidden>
+                      B
+                    </span>
+                    <select
+                      value={compareRightId}
+                      onChange={(e) => setCompareRightId(e.target.value)}
+                      aria-label="Right snapshot for compare"
+                    >
+                      {revisions.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {formatSnapshotWhen(s.createdAt)}
+                          {s.label ? ` — ${s.label}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                {compareLeftId === compareRightId ? (
+                  <p className="muted small">
+                    Choose two different snapshots to see a side-by-side diff
+                    view.
+                  </p>
+                ) : (
+                  <div className="compare-panels" aria-label="Snapshot bodies">
+                    <pre className="compare-pre">{compareLeft?.body ?? ""}</pre>
+                    <pre className="compare-pre">{compareRight?.body ?? ""}</pre>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div
+            className="external-ai-guide"
+            aria-label="Get feedback with ChatGPT"
+          >
+            <h3 className="external-ai-guide-title">Free feedback with ChatGPT</h3>
+            <p className="muted small external-ai-guide-lead">
+              Your draft stays in this tab until you copy it. ChatGPT runs at
+              OpenAI in another tab—you can paste your poem there for feedback.
+            </p>
+            <ol className="external-ai-guide-steps">
+              <li>
+                Click <strong>Open ChatGPT</strong> (new tab). Sign in if asked.
+              </li>
+              <li>
+                Copy your title and poem from above, then paste into ChatGPT.
+              </li>
+              <li>
+                Try a prompt like: &quot;You are a thoughtful poetry reader.
+                Comment on imagery, sound, clarity, and form. Be constructive.&quot;
+              </li>
+            </ol>
+            <p className="external-ai-guide-actions">
+              <a
+                className="secondary-link"
+                href="https://chat.openai.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open ChatGPT
+              </a>
+            </p>
+          </div>
         </section>
 
         <aside className="tools-panel" aria-label="Writing tools">
@@ -278,6 +565,106 @@ export function PoemWorkshop() {
             Syllables and rhyme hints are <strong>approximate</strong> (English
             heuristics, not a full pronunciation dictionary).
           </p>
+
+          <div className="tool-block">
+            <h3>Goals</h3>
+            <p className="muted small">
+              Optional targets. Leave blank to ignore. Warnings show below and in
+              the checklist.
+            </p>
+            <div className="goal-grid">
+              <label className="goal-field">
+                Min lines
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={goals.minLines ?? ""}
+                  onChange={updateGoal("minLines")}
+                />
+              </label>
+              <label className="goal-field">
+                Max lines
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={goals.maxLines ?? ""}
+                  onChange={updateGoal("maxLines")}
+                />
+              </label>
+              <label className="goal-field">
+                Min words
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={goals.minWords ?? ""}
+                  onChange={updateGoal("minWords")}
+                />
+              </label>
+              <label className="goal-field">
+                Max words
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={goals.maxWords ?? ""}
+                  onChange={updateGoal("maxWords")}
+                />
+              </label>
+              <label className="goal-field goal-field-span">
+                Max syllables / line (est.)
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={goals.maxSyllablesPerLine ?? ""}
+                  onChange={updateGoal("maxSyllablesPerLine")}
+                  placeholder="Flags heavy lines"
+                />
+              </label>
+            </div>
+            {goalEvaluation.warnings.length > 0 ? (
+              <ul className="goal-warnings">
+                {goalEvaluation.warnings.map((w) => (
+                  <li key={w}>{w}</li>
+                ))}
+              </ul>
+            ) : Object.values(goals).some((v) => v != null) ? (
+              <p className="muted small">Within your set targets.</p>
+            ) : null}
+          </div>
+
+          <div className="tool-block">
+            <h3>Publication checklist</h3>
+            <p className="muted small">
+              Local checks only — not legal or editorial approval.
+            </p>
+            <ul className="checklist" aria-label="Publication readiness">
+              {publication.items.map((item) => (
+                <li
+                  key={item.text}
+                  className={`checklist-item ${item.done ? "done" : "open"}`}
+                >
+                  <span className="checklist-mark" aria-hidden>
+                    {item.done ? "✓" : "○"}
+                  </span>
+                  <span className="checklist-text">
+                    {item.text}
+                    {item.detail ? (
+                      <span className="checklist-detail"> — {item.detail}</span>
+                    ) : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <ul className="checklist-tips">
+              {publication.tips.map((t) => (
+                <li key={t}>{t}</li>
+              ))}
+            </ul>
+          </div>
 
           <div className="tool-block">
             <h3>Totals</h3>
@@ -378,14 +765,36 @@ export function PoemWorkshop() {
           </div>
 
           <div className="tool-block">
-            <h3>Rhyme hint (end letters)</h3>
+            <h3>Rhyme &amp; sound hints</h3>
+            <p className="muted small">
+              Spelling-based only, not pronunciation. False positives are
+              normal.
+            </p>
+            <h4 className="tool-subheading">Shared last letters</h4>
             {rhymeClusters.length === 0 ? (
               <p className="muted small">
-                No lines share a matching word ending yet (very rough signal).
+                No lines share the same final letter pattern yet.
               </p>
             ) : (
               <ul className="hint-list">
-                {rhymeClusters.slice(0, 12).map((c) => (
+                {rhymeClusters.slice(0, 10).map((c) => (
+                  <li key={c.ending}>
+                    <span className="mono">…{c.ending}</span> — lines{" "}
+                    {c.lineNumbers.join(", ")}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <h4 className="tool-subheading">Shared “vowel tail”</h4>
+            <p className="muted small">
+              Same text from the <strong>last vowel</strong> onward (slant /
+              eye-rhyme style hint).
+            </p>
+            {vowelTailClusters.length === 0 ? (
+              <p className="muted small">No matching vowel tails yet.</p>
+            ) : (
+              <ul className="hint-list">
+                {vowelTailClusters.slice(0, 10).map((c) => (
                   <li key={c.ending}>
                     <span className="mono">…{c.ending}</span> — lines{" "}
                     {c.lineNumbers.join(", ")}
@@ -484,117 +893,14 @@ export function PoemWorkshop() {
         </aside>
       </div>
 
-      {result ? (
-        <section className="results" aria-label="Analysis results">
-          <h2>Results</h2>
-          <p className="model-meta">
-            Model: <code>{result.meta.model}</code>
-          </p>
-          <div className="score-block">
-            <div className="overall">
-              <span className="label">Overall</span>
-              <span className="score">{result.overall_score}</span>
-              <span className="suffix">/ 100</span>
-            </div>
-            <ul className="dimensions">
-              {(
-                [
-                  ["Imagery", result.dimensions.imagery],
-                  ["Musicality", result.dimensions.musicality],
-                  ["Originality", result.dimensions.originality],
-                  ["Clarity", result.dimensions.clarity],
-                ] as const
-              ).map(([label, value]) => (
-                <li key={label}>
-                  <span>{label}</span>
-                  <meter
-                    min={1}
-                    max={100}
-                    low={35}
-                    high={70}
-                    optimum={85}
-                    value={value}
-                  >
-                    {value}
-                  </meter>
-                  <span className="dim-num">{value}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <h3>Issues</h3>
-          {result.issues.length === 0 ? (
-            <p className="muted">
-              No issues returned — try editing and re-running.
-            </p>
-          ) : (
-            <ul className="issues-details">
-              {result.issues.map((issue) => (
-                <li key={issue.id}>
-                  <details>
-                    <summary className="issue-summary">
-                      <span className="issue-summary-text">
-                        Lines {issue.line_start}
-                        {issue.line_end !== issue.line_start
-                          ? `–${issue.line_end}`
-                          : ""}
-                        {issue.excerpt ? (
-                          <span className="excerpt-inline">
-                            {" "}
-                            — “{issue.excerpt}”
-                          </span>
-                        ) : null}
-                      </span>
-                    </summary>
-                    <div className="issue-body">
-                      <button
-                        type="button"
-                        className="small-btn issue-jump"
-                        onClick={() => goToLine(issue.line_start)}
-                      >
-                        Go to line {issue.line_start}
-                      </button>
-                      <p className="rationale">{issue.rationale}</p>
-                      <ul className="improvements">
-                        {issue.improvements.map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </details>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      ) : null}
-
       <footer className="privacy">
         <h2 className="privacy-title">Privacy</h2>
         <p>
-          Your draft is stored only in this browser until you click{" "}
-          <strong>Analyze</strong>. Then the title and lines are sent to this
-          app&apos;s server and onward to{" "}
-          <a
-            href="https://openai.com/policies"
-            target="_blank"
-            rel="noreferrer"
-          >
-            OpenAI
-          </a>{" "}
-          for that request. See{" "}
-          <a
-            href="https://openai.com/policies/api-data-usage-policies"
-            target="_blank"
-            rel="noreferrer"
-          >
-            OpenAI API data usage policies
-          </a>{" "}
-          and your deployment&apos;s terms. Do not use this tool to generate
-          or refine content that harasses, sexualizes minors, or otherwise
-          violates OpenAI&apos;s or your host&apos;s policies; the model may
-          refuse analysis and the app will show a short explanation.
+          Your draft, snapshots, goals, and spelling dictionary live only in this
+          browser (local storage on your device). This workshop page does not
+          send your poem text to Easy-poems servers. If you use{" "}
+          <strong>Export</strong> or copy text elsewhere (for example into
+          ChatGPT), that destination has its own privacy terms.
         </p>
       </footer>
     </div>
