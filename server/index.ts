@@ -1,6 +1,7 @@
 import "dotenv/config";
 import OpenAI from "openai";
 import { createApp } from "./http/create-app.js";
+import { readOpenAiApiKey } from "./infrastructure/openai-api-key.js";
 import { createRequestLogger } from "./infrastructure/logging/request-logger.js";
 
 const MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
@@ -13,7 +14,7 @@ const SERVER_REQUEST_TIMEOUT_MS = Number(
 const log = createRequestLogger({ service: "easy-poems-api" });
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: readOpenAiApiKey(),
   timeout:
     Number.isFinite(OPENAI_TIMEOUT_MS) && OPENAI_TIMEOUT_MS > 0
       ? OPENAI_TIMEOUT_MS

@@ -8,6 +8,7 @@ import {
 import { createOpenAiJsonCompletion } from "../poem-analysis/adapters/openai/openai-json-completion.js";
 import { mapOpenAiAnalyzeError } from "../poem-analysis/adapters/openai/map-openai-analyze-error.js";
 import { createRequestLogger, newRequestId } from "../infrastructure/logging/request-logger.js";
+import { readOpenAiApiKey } from "../infrastructure/openai-api-key.js";
 import { createAnalyzeEndpointRateLimiter } from "../infrastructure/rate-limit/analyze-endpoint-rate-limit.js";
 
 const MAX_BODY = "256kb";
@@ -26,7 +27,7 @@ function maxPoemLines(): number {
 export function createApp({
   openai,
   model,
-  getApiKey = () => process.env.OPENAI_API_KEY,
+  getApiKey = () => readOpenAiApiKey(),
 }: CreateAppOptions) {
   const app = express();
   app.disable("x-powered-by");
