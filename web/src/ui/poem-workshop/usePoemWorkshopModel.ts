@@ -58,10 +58,13 @@ import { scanLinesForSpelling } from "../../functionality/spellcheck/scan";
 import { evaluateGoals } from "../../functionality/tools/goal-metrics";
 import { linesFromBody } from "../../functionality/tools/lines-from-body";
 import { computeDocumentStats } from "../../functionality/tools/line-stats";
+import { loadStressLexicon } from "../../functionality/tools/cmu-stress-lexicon";
 import { meterHintsForBody } from "../../functionality/tools/meter-hints";
 import { findRepeatedWords } from "../../functionality/tools/repeated-words";
 import { buildPublicationChecklist } from "../../functionality/tools/publication-checklist";
 import {
+  lightAssonanceClusters,
+  lightConsonanceClusters,
   lightVowelTailClusters,
   roughRhymeClusters,
 } from "../../functionality/tools/rhyme-hints";
@@ -122,6 +125,13 @@ export function usePoemWorkshopModel() {
   const [importNotice, setImportNotice] = useState<string | null>(null);
   const [wordlist, setWordlist] = useState<Set<string> | null>(null);
   const [wordlistErr, setWordlistErr] = useState<string | null>(null);
+  const [stressLexicon, setStressLexicon] = useState<Map<
+    string,
+    string
+  > | null>(null);
+  const [stressLexiconErr, setStressLexiconErr] = useState<string | null>(
+    null,
+  );
   const [spellBump, setSpellBump] = useState(0);
   const [revisions, setRevisions] = useState<RevisionSnapshot[]>([]);
   const [snapshotLabel, setSnapshotLabel] = useState("");
@@ -197,6 +207,20 @@ export function usePoemWorkshopModel() {
   }, []);
 
   useEffect(() => {
+    void loadStressLexicon()
+      .then((m) => {
+        setStressLexicon(m);
+        setStressLexiconErr(null);
+      })
+      .catch((e) => {
+        setStressLexicon(null);
+        setStressLexiconErr(
+          e instanceof Error ? e.message : "Could not load stress dictionary.",
+        );
+      });
+  }, []);
+
+  useEffect(() => {
     if (!saveWorkshopGoals(goals)) {
       setPersistenceError(GOALS_STORAGE_MSG);
       return;
@@ -241,10 +265,21 @@ export function usePoemWorkshopModel() {
 
   const lines = useMemo(() => linesFromBody(body), [body]);
   const docStats = useMemo(() => computeDocumentStats(body), [body]);
-  const meterHints = useMemo(() => meterHintsForBody(body), [body]);
+  const meterHints = useMemo(
+    () => meterHintsForBody(body, stressLexicon),
+    [body, stressLexicon],
+  );
   const rhymeClusters = useMemo(() => roughRhymeClusters(lines), [lines]);
   const vowelTailClusters = useMemo(
     () => lightVowelTailClusters(lines),
+    [lines],
+  );
+  const assonanceClusters = useMemo(
+    () => lightAssonanceClusters(lines),
+    [lines],
+  );
+  const consonanceClusters = useMemo(
+    () => lightConsonanceClusters(lines),
     [lines],
   );
   const repeated = useMemo(() => findRepeatedWords(lines), [lines]);
@@ -729,8 +764,12 @@ export function usePoemWorkshopModel() {
     lines,
     docStats,
     meterHints,
+    stressLexiconReady: Boolean(stressLexicon),
+    stressLexiconErr,
     rhymeClusters,
     vowelTailClusters,
+    assonanceClusters,
+    consonanceClusters,
     repeated,
     spellHits,
     goals,

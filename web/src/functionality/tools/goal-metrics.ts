@@ -17,6 +17,7 @@ export function evaluateGoals(
 
   const lines = stats.totalLines;
   const words = stats.totalWords;
+  const stanzas = stats.stanzaCount;
 
   if (goals.minLines != null && lines < goals.minLines) {
     warnings.push(
@@ -36,6 +37,17 @@ export function evaluateGoals(
   if (goals.maxWords != null && words > goals.maxWords) {
     warnings.push(
       `Word count ${words} is above your maximum (${goals.maxWords}).`,
+    );
+  }
+
+  if (goals.minStanzas != null && stanzas < goals.minStanzas) {
+    warnings.push(
+      `Stanza count ${stanzas} is below your minimum (${goals.minStanzas}). Blank lines separate stanzas.`,
+    );
+  }
+  if (goals.maxStanzas != null && stanzas > goals.maxStanzas) {
+    warnings.push(
+      `Stanza count ${stanzas} is above your maximum (${goals.maxStanzas}).`,
     );
   }
 

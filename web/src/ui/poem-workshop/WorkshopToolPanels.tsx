@@ -5,12 +5,16 @@ import type { SpellHit } from "../../functionality/spellcheck/scan";
 import type { WorkshopGoals } from "../../functionality/draft/workshop-goals";
 import type { GoalEvaluation } from "../../functionality/tools/goal-metrics";
 import type { DocumentStats } from "../../functionality/tools/line-stats";
+import { POETRY_READING_WPM } from "../../functionality/tools/line-stats";
 import type { ChecklistItem } from "../../functionality/tools/publication-checklist";
 import type { RhymeCluster } from "../../functionality/tools/rhyme-hints";
 import type { RepeatedWord } from "../../functionality/tools/repeated-words";
 import type { RevisionSnapshot } from "../../functionality/draft/revision-snapshots";
 import type { LineDiffRow } from "../../functionality/draft/diff-lines";
-import type { LineMeterHint } from "../../functionality/tools/meter-hints";
+import type {
+  LineMeterHint,
+  LineStressSource,
+} from "../../functionality/tools/meter-hints";
 import { addToPersonalDictionary, ignoreWordForSession } from "../../functionality/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
 import {
@@ -21,6 +25,19 @@ import type { ToolTab } from "./workshop-helpers";
 
 const LINES_TABLE_MAX = 400;
 const METER_TABLE_MAX = 400;
+const STANZA_TABLE_MAX = 32;
+
+function meterStressSourceMark(s: LineStressSource): string {
+  if (s === "lexicon") return "✓";
+  if (s === "mixed") return "~";
+  return "—";
+}
+
+function meterStressSourceHint(s: LineStressSource): string {
+  if (s === "lexicon") return "Stress from CMU dictionary for this line";
+  if (s === "mixed") return "Mixed dictionary + heuristic stress";
+  return "Heuristic stress (word not in CMU list or invented)";
+}
 
 function EmptyState({
   title,
@@ -85,6 +102,8 @@ export interface WorkshopToolPanelsProps {
   publication: { items: ChecklistItem[]; tips: string[] };
   rhymeClusters: RhymeCluster[];
   vowelTailClusters: RhymeCluster[];
+  assonanceClusters: RhymeCluster[];
+  consonanceClusters: RhymeCluster[];
   repeated: RepeatedWord[];
   spellHits: SpellHit[];
   wordlist: Set<string> | null;
@@ -115,6 +134,8 @@ export interface WorkshopToolPanelsProps {
   compareDiffRows: LineDiffRow[];
   onOpenToolTab: (tab: ToolTab) => void;
   focusPoemTitle: () => void;
+  stressLexiconReady: boolean;
+  stressLexiconErr: string | null;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -127,6 +148,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     publication,
     rhymeClusters,
     vowelTailClusters,
+    assonanceClusters,
+    consonanceClusters,
     repeated,
     spellHits,
     wordlist,
@@ -155,6 +178,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     compareDiffRows,
     onOpenToolTab,
     focusPoemTitle,
+    stressLexiconReady,
+    stressLexiconErr,
   } = props;
 
   const [spellStep, setSpellStep] = useState(0);
@@ -162,6 +187,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const [meterHideBlank, setMeterHideBlank] = useState(true);
   const [meterOnlyLowFit, setMeterOnlyLowFit] = useState(false);
   const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
+  const [goLineField, setGoLineField] = useState("");
 
   useEffect(() => {
     setSpellStep(0);
@@ -199,12 +225,12 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             aria-relevant="text"
             title="These numbers track your poem as you type."
           >
-            <li>
-              <span className="chip-label">Lines</span>
+            <li title="Every line break in the editor, including blanks">
+              <span className="chip-label">All lines</span>
               <span className="chip-val">{docStats.totalLines}</span>
             </li>
-            <li>
-              <span className="chip-label">Non-empty</span>
+            <li title="Lines that contain at least one non-space character">
+              <span className="chip-label">With text</span>
               <span className="chip-val">{docStats.nonEmptyLines}</span>
             </li>
             <li>
@@ -222,6 +248,14 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <li>
               <span className="chip-label">Stanzas</span>
               <span className="chip-val">{docStats.stanzaCount}</span>
+            </li>
+            <li>
+              <span className="chip-label">Read-aloud (est.)</span>
+              <span className="chip-val">
+                {docStats.totalWords === 0
+                  ? "—"
+                  : `${docStats.estimatedReadingMinutes} min`}
+              </span>
             </li>
             <li>
               <span className="chip-label">Avg words / line</span>
@@ -264,6 +298,65 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               </li>
             ) : null}
           </ul>
+          <p className="muted small totals-reading-hint">
+            Read-aloud time assumes ~{POETRY_READING_WPM} words/min (performance
+            poetry varies).
+          </p>
+          {docStats.stanzaStats.length > 0 ? (
+            <>
+              <h4 className="tool-subheading">Stanza breakdown</h4>
+              <p className="muted small">
+                Stanzas are blocks of lines separated by a blank line.
+              </p>
+              <div className="table-wrap table-wrap-draft">
+                <table className="line-table line-table-draft stanza-table">
+                  <caption className="sr-only">
+                    Per stanza: line range, lines with text, words, estimated
+                    syllables
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">Lines</th>
+                      <th scope="col">Non-empty</th>
+                      <th scope="col">Words</th>
+                      <th scope="col">Syll. (est.)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {docStats.stanzaStats
+                      .slice(0, STANZA_TABLE_MAX)
+                      .map((st) => (
+                        <tr key={st.stanzaIndex}>
+                          <td className="line-table-metric">{st.stanzaIndex}</td>
+                          <td className="line-table-metric">
+                            <button
+                              type="button"
+                              className="linkish stanza-line-range-btn"
+                              onClick={() => goToLine(st.startLine)}
+                              title={`Jump to start of stanza ${st.stanzaIndex}`}
+                            >
+                              {st.startLine}–{st.endLine}
+                            </button>
+                          </td>
+                          <td className="line-table-metric">
+                            {st.nonEmptyLines}
+                          </td>
+                          <td className="line-table-metric">{st.words}</td>
+                          <td className="line-table-metric">{st.syllables}</td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+              {docStats.stanzaStats.length > STANZA_TABLE_MAX ? (
+                <p className="muted small">
+                  Showing first {STANZA_TABLE_MAX} of{" "}
+                  {docStats.stanzaStats.length} stanzas.
+                </p>
+              ) : null}
+            </>
+          ) : null}
           <p className="muted small totals-hint">
             Open <button type="button" className="linkish" onClick={() => onOpenToolTab("lines")}>Lines</button>{" "}
             for the full table, or{" "}
@@ -338,6 +431,27 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 inputMode="numeric"
                 value={goals.maxWords ?? ""}
                 onChange={updateGoal("maxWords")}
+              />
+            </label>
+            <label className="goal-field">
+              Min stanzas
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.minStanzas ?? ""}
+                onChange={updateGoal("minStanzas")}
+                title="Blank lines between stanzas; see Totals"
+              />
+            </label>
+            <label className="goal-field">
+              Max stanzas
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.maxStanzas ?? ""}
+                onChange={updateGoal("maxStanzas")}
               />
             </label>
             <label className="goal-field goal-field-span">
@@ -430,9 +544,33 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-lines"
         >
           <LiveSectionTitle>Line table</LiveSectionTitle>
+          <form
+            className="lines-go-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const n = parseInt(goLineField.trim(), 10);
+              if (!Number.isFinite(n) || n < 1) return;
+              goToLine(n);
+            }}
+          >
+            <label className="lines-go-label">
+              Go to line
+              <input
+                id="go-line-input"
+                value={goLineField}
+                onChange={(e) => setGoLineField(e.target.value)}
+                inputMode="numeric"
+                placeholder="#"
+                aria-label="Go to line number"
+              />
+            </label>
+            <button type="submit" className="small-btn">
+              Go
+            </button>
+          </form>
           <p className="tools-table-note">
-            Syllable counts match <strong>Totals</strong> (same estimate).
-            Click a row to open that line in the draft.
+            Syllable counts match <strong>Totals</strong> (same estimate). Line
+            numbers in the table are clickable—pick a row to jump in the draft.
           </p>
           <div className="lines-table-toolbar">
             <label className="lines-hide-empty-label">
@@ -481,7 +619,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                       }
                     }}
                   >
-                    <td className="line-table-metric">{row.lineNumber}</td>
+                    <td className="line-table-metric line-table-line-num">
+                      {row.lineNumber}
+                    </td>
                     <td className="line-table-metric">{row.syllables}</td>
                     <td className="line-table-metric">{row.words}</td>
                     <td className="line-table-metric">{row.chars}</td>
@@ -502,16 +642,32 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
 
       {toolTab === "meter" ? (
         <div
-          className="tool-block tool-block-live"
+          className="tool-block tool-block-live tool-block-meter"
           id="tool-panel-meter"
           role="tabpanel"
           aria-labelledby="tool-tab-meter"
         >
           <LiveSectionTitle>Stress &amp; meter (approx.)</LiveSectionTitle>
           <p className="muted small">
-            <strong>/</strong> stressed, <strong>x</strong> unstressed (heuristic).
+            <strong>/</strong> stressed, <strong>x</strong> unstressed. When the
+            CMU list has loaded, common words use{" "}
+            <strong>dictionary stress</strong>; others stay heuristic.
             “Iambic-ish” is a loose weak‑strong fit score—use as a cue, not a verdict.
           </p>
+          {stressLexiconErr ? (
+            <p className="error compact" role="alert">
+              {stressLexiconErr} Meter falls back to heuristics.
+            </p>
+          ) : stressLexiconReady ? (
+            <p className="muted small meter-lexicon-status" role="status">
+              Dictionary stress ready (filtered CMU pronunciations for the local word
+              list).
+            </p>
+          ) : (
+            <p className="muted small meter-lexicon-status" aria-busy="true">
+              Loading stress dictionary…
+            </p>
+          )}
 
           <div className="meter-controls" role="group" aria-label="Meter filters">
             <label className="meter-toggle">
@@ -557,7 +713,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               title="Per-line stress pattern; click a row to jump in the editor."
             >
               <caption className="sr-only">
-                Line number, syllable count, stress marks, iambic fit, jump to line.
+                Line number, syllable count, stress marks, dictionary vs heuristic,
+                iambic fit, jump to line.
               </caption>
               <thead>
                 <tr>
@@ -568,6 +725,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     <abbr title="Estimated syllables">Syll.</abbr>
                   </th>
                   <th scope="col">Stress (est.)</th>
+                  <th scope="col">
+                    <abbr title="✓ CMU for whole line; ~ mixed; — heuristic">
+                      Dict
+                    </abbr>
+                  </th>
                   <th scope="col">
                     <abbr title="Loose match to alternating weak-strong">Iambic-ish</abbr>
                   </th>
@@ -592,6 +754,12 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     <td className="line-table-metric">{row.syllables}</td>
                     <td className="line-table-stress mono">
                       {row.stressPattern || "—"}
+                    </td>
+                    <td
+                      className="line-table-metric meter-dict-col"
+                      title={meterStressSourceHint(row.stressSource)}
+                    >
+                      {meterStressSourceMark(row.stressSource)}
                     </td>
                     <td className="line-table-metric">
                       {row.iambicFitPercent != null ? `${row.iambicFitPercent}%` : "—"}
@@ -654,6 +822,50 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           ) : (
             <ul className="hint-list hint-list-draft">
               {vowelTailClusters.slice(0, 10).map((c) => (
+                <li key={c.ending}>
+                  <span className="mono">…{c.ending}</span> — lines{" "}
+                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <h4 className="tool-subheading">Shared vowel letters (last word)</h4>
+          <p className="muted small">
+            Same sequence of vowel letters in each line&apos;s last word—very
+            rough assonance hint (spelling, not IPA).
+          </p>
+          {assonanceClusters.length === 0 ? (
+            <EmptyState title="No assonance clusters yet">
+              <p className="muted small">
+                Needs two lines whose final words share the same vowel-letter
+                pattern.
+              </p>
+            </EmptyState>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {assonanceClusters.slice(0, 10).map((c) => (
+                <li key={c.ending}>
+                  <span className="mono">{c.ending}</span> — lines{" "}
+                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <h4 className="tool-subheading">Shared ending consonants (last word)</h4>
+          <p className="muted small">
+            Consonant letters after the last vowel in each line&apos;s final
+            word—rough consonance hint (orthographic).
+          </p>
+          {consonanceClusters.length === 0 ? (
+            <EmptyState title="No consonance clusters yet">
+              <p className="muted small">
+                Appears when final words share a similar written consonant
+                coda.
+              </p>
+            </EmptyState>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {consonanceClusters.slice(0, 10).map((c) => (
                 <li key={c.ending}>
                   <span className="mono">…{c.ending}</span> — lines{" "}
                   <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
@@ -904,6 +1116,44 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           >
             Open ChatGPT in new tab
           </a>
+        </div>
+      ) : null}
+
+      {toolTab === "shortcuts" ? (
+        <div
+          className="tool-block tool-block-shortcuts"
+          id="tool-panel-shortcuts"
+          role="tabpanel"
+          aria-labelledby="tool-tab-shortcuts"
+        >
+          <h3 className="tool-heading-static">Shortcuts &amp; notes</h3>
+          <p className="tools-shortcuts-lead">
+            Keyboard commands work globally unless your cursor is in the poem or
+            another text field.
+          </p>
+          <ul className="tools-shortcuts-list">
+            <li>
+              <kbd className="kbd-hint">Ctrl</kbd> + <kbd className="kbd-hint">Alt</kbd>{" "}
+              + <kbd className="kbd-hint">[</kbd> / <kbd className="kbd-hint">]</kbd> —{" "}
+              cycle tools in the current group (Overview, Sound, …).
+            </li>
+            <li>
+              <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
+              + <kbd className="kbd-hint">K</kbd> — command palette.
+            </li>
+            <li>
+              <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
+              + <kbd className="kbd-hint">F</kbd> — find in poem.
+            </li>
+            <li>
+              <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
+              + <kbd className="kbd-hint">H</kbd> — replace in poem.
+            </li>
+          </ul>
+          <p className="tools-shortcuts-note muted small">
+            Syllable, meter, and rhyme hints are <strong>rough</strong> English
+            heuristics—helpful signals, not a grade.
+          </p>
         </div>
       ) : null}
     </div>

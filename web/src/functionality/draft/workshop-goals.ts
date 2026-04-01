@@ -11,6 +11,9 @@ export interface WorkshopGoals {
   maxLines?: number;
   minWords?: number;
   maxWords?: number;
+  /** Stanzas = blocks separated by blank lines (matches Totals). */
+  minStanzas?: number;
+  maxStanzas?: number;
   /** Flag lines whose estimated syllables exceed this. */
   maxSyllablesPerLine?: number;
 }
@@ -34,6 +37,8 @@ export function loadWorkshopGoals(): WorkshopGoals {
       maxLines: readOptionalPositiveInt(o.maxLines),
       minWords: readOptionalPositiveInt(o.minWords),
       maxWords: readOptionalPositiveInt(o.maxWords),
+      minStanzas: readOptionalPositiveInt(o.minStanzas),
+      maxStanzas: readOptionalPositiveInt(o.maxStanzas),
       maxSyllablesPerLine: readOptionalPositiveInt(o.maxSyllablesPerLine),
     };
   } catch {
@@ -47,6 +52,8 @@ export function saveWorkshopGoals(goals: WorkshopGoals): boolean {
   if (goals.maxLines != null) payload.maxLines = goals.maxLines;
   if (goals.minWords != null) payload.minWords = goals.minWords;
   if (goals.maxWords != null) payload.maxWords = goals.maxWords;
+  if (goals.minStanzas != null) payload.minStanzas = goals.minStanzas;
+  if (goals.maxStanzas != null) payload.maxStanzas = goals.maxStanzas;
   if (goals.maxSyllablesPerLine != null) {
     payload.maxSyllablesPerLine = goals.maxSyllablesPerLine;
   }

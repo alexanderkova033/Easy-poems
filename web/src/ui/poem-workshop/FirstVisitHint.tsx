@@ -1,26 +1,22 @@
 import { useCallback, useState } from "react";
+import { FIRST_VISIT_HINT_STORAGE_KEY, readFirstVisitHintDismissed } from "./firstVisitHintStorage";
 
-const STORAGE_KEY = "easy-poems:first-hint-dismissed";
-
-function readDismissed(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function FirstVisitHint() {
-  const [visible, setVisible] = useState(() => !readDismissed());
+export function FirstVisitHint({
+  onDismissed,
+}: {
+  onDismissed?: () => void;
+}) {
+  const [visible, setVisible] = useState(() => !readFirstVisitHintDismissed());
 
   const dismiss = useCallback(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, "1");
+      localStorage.setItem(FIRST_VISIT_HINT_STORAGE_KEY, "1");
     } catch {
       /* ignore */
     }
     setVisible(false);
-  }, []);
+    onDismissed?.();
+  }, [onDismissed]);
 
   if (!visible) return null;
 

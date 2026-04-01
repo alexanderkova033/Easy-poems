@@ -111,7 +111,7 @@ export const poemEditorTheme = EditorView.theme({
   ".cm-scroller": { fontFamily: "inherit" },
   ".cm-content": {
     fontFamily: "var(--font-poem), Georgia, serif",
-    caretColor: "var(--text)",
+    caretColor: "color-mix(in srgb, var(--accent) 70%, var(--text))",
     minHeight: "13rem",
     padding: "0.6rem 0.7rem",
   },
@@ -122,8 +122,16 @@ export const poemEditorTheme = EditorView.theme({
     borderTopLeftRadius: "8px",
     borderBottomLeftRadius: "8px",
   },
-  ".cm-activeLineGutter": { backgroundColor: "transparent" },
-  ".cm-activeLine": { backgroundColor: "transparent" },
+  ".cm-activeLineGutter": {
+    backgroundColor: "color-mix(in srgb, var(--accent) 4%, var(--surface))",
+  },
+  ".cm-activeLine": {
+    backgroundColor: "color-mix(in srgb, var(--accent) 3.5%, transparent)",
+  },
+  ".cm-cursor, .cm-dropCursor": {
+    borderLeft:
+      "1.5px solid color-mix(in srgb, var(--accent) 72%, var(--muted))",
+  },
   ".cm-lineNumbers .cm-gutterElement": { padding: "0 0.35rem 0 0.5rem" },
   /* Match global ::selection — avoid system / default light fill */
   ".cm-selectionBackground": {
@@ -131,10 +139,10 @@ export const poemEditorTheme = EditorView.theme({
   },
   "&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground": {
     background:
-      "color-mix(in srgb, var(--selection-bg) 92%, var(--accent)) !important",
+      "color-mix(in srgb, var(--selection-bg) 96%, var(--accent)) !important",
   },
   ".cm-focused": {
-    outline: "2px solid color-mix(in srgb, var(--accent) 55%, var(--border))",
+    outline: "2px solid color-mix(in srgb, var(--accent) 42%, var(--border))",
     outlineOffset: "1px",
   },
 });

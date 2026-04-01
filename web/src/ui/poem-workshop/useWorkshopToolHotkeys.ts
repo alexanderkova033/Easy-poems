@@ -1,6 +1,9 @@
 import { useEffect } from "react";
-import { TOOL_TABS } from "./ToolTabBar";
-import type { ToolTab } from "./workshop-helpers";
+import {
+  tabsForBucket,
+  toolTabBucket,
+  type ToolTab,
+} from "./workshop-helpers";
 
 function isTypingInField(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
@@ -18,7 +21,7 @@ export function useWorkshopToolHotkeys(
   setToolTab: (t: ToolTab) => void,
 ) {
   useEffect(() => {
-    const ids = TOOL_TABS.map((x) => x.id);
+    const ids = tabsForBucket(toolTabBucket(toolTab));
     const onKey = (e: KeyboardEvent) => {
       if (!e.ctrlKey || !e.altKey) return;
       if (e.key !== "[" && e.key !== "]") return;

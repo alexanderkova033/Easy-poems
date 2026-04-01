@@ -69,6 +69,7 @@ export function buildPublicationChecklist(args: {
 
   const tips: string[] = [
     "Read the whole poem aloud once before you share it — your ear will catch clunky rhythm.",
+    "Rough read-aloud minutes (and stanza blocks) live in Totals.",
   ];
 
   return { items, tips };

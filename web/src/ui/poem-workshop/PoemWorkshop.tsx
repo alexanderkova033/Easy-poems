@@ -1,6 +1,15 @@
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  applyAppearance,
+  loadAppearance,
+  saveAppearance,
+  type AppearanceSettings,
+} from "../preferences/appearance";
+import { AppearanceFormFields } from "./AppearanceFormFields";
+import { BackgroundPicker } from "./BackgroundPicker";
 import { FirstVisitHint } from "./FirstVisitHint";
+import { readFirstVisitHintDismissed } from "./firstVisitHintStorage";
 import { PoemBodyEditor } from "./PoemBodyEditor";
 import { TOOL_TABS } from "./ToolTabBar";
 import { ToolsOverviewStrip } from "./ToolsOverviewStrip";
@@ -10,6 +19,13 @@ import { WorkshopToolPanels } from "./WorkshopToolPanels";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "./CommandPalette";
 import { FindReplaceBar } from "./FindReplaceBar";
+import {
+  TOOL_BUCKET_LABEL,
+  TOOL_BUCKET_ORDER,
+  defaultTabForBucket,
+  tabsForBucket,
+  toolTabBucket,
+} from "./workshop-helpers";
 import "./PoemWorkshop.css";
 
 function RailIcon({
@@ -28,26 +44,84 @@ function RailIcon({
 
 export function PoemWorkshop() {
   const m = usePoemWorkshopModel();
-  const onToolTabKeyDown = useToolTabListKeyboard(m.toolTab, m.setToolTab);
+  const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
+  const onToolTabKeyDown = useToolTabListKeyboard(
+    m.toolTab,
+    m.setToolTab,
+    bucketTabs,
+  );
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
   const [findMode, setFindMode] = useState<"find" | "replace">("find");
   const [isFindOpen, setIsFindOpen] = useState(false);
-  const [goLineRaw, setGoLineRaw] = useState("");
+  const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
+    loadAppearance(),
+  );
+  const [brandSubConcealed, setBrandSubConcealed] = useState(
+    readFirstVisitHintDismissed,
+  );
+  const overlayOpenCountPrev = useRef(0);
+  const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
+
+  const overlayOpenCount =
+    Number(isLibraryOpen) +
+    Number(isExportOpen) +
+    Number(isAppearanceOpen) +
+    Number(isBackgroundOpen) +
+    Number(isCmdkOpen) +
+    Number(isFindOpen);
 
   useEffect(() => {
-    const lockScroll = isLibraryOpen || isExportOpen || isCmdkOpen;
+    const prev = overlayOpenCountPrev.current;
+    if (prev === 0 && overlayOpenCount > 0) {
+      const a = document.activeElement;
+      overlayReturnFocusRef.current =
+        a instanceof HTMLElement ? a : null;
+    }
+    if (prev > 0 && overlayOpenCount === 0) {
+      const t = overlayReturnFocusRef.current;
+      overlayReturnFocusRef.current = null;
+      queueMicrotask(() => {
+        if (t?.isConnected) t.focus();
+      });
+    }
+    overlayOpenCountPrev.current = overlayOpenCount;
+  }, [overlayOpenCount]);
+
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-writing-focus-v2", isFocusMode);
+    return () =>
+      document.documentElement.removeAttribute("data-writing-focus-v2");
+  }, [isFocusMode]);
+
+  useLayoutEffect(() => {
+    applyAppearance(appearance);
+  }, [appearance]);
+
+  useEffect(() => {
+    void saveAppearance(appearance);
+  }, [appearance]);
+
+  useEffect(() => {
+    const lockScroll =
+      isLibraryOpen ||
+      isAppearanceOpen ||
+      isBackgroundOpen ||
+      isExportOpen ||
+      isCmdkOpen;
     if (!lockScroll) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isLibraryOpen, isExportOpen, isCmdkOpen]);
+  }, [isLibraryOpen, isAppearanceOpen, isBackgroundOpen, isExportOpen, isCmdkOpen]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -70,6 +144,8 @@ export function PoemWorkshop() {
       }
       if (e.key !== "Escape") return;
       setIsLibraryOpen(false);
+      setIsAppearanceOpen(false);
+      setIsBackgroundOpen(false);
       setIsExportOpen(false);
       setIsCmdkOpen(false);
       setIsFindOpen(false);
@@ -95,6 +171,18 @@ export function PoemWorkshop() {
         title: "Open Library",
         keywords: "draft poem library",
         run: () => setIsLibraryOpen(true),
+      },
+      {
+        id: "appearance",
+        title: "Fonts",
+        keywords: "font typography typeface poem ui interface",
+        run: () => setIsAppearanceOpen(true),
+      },
+      {
+        id: "backdrop",
+        title: "Page backdrop",
+        keywords: "background scene theme paper night forest dawn slate wallpaper",
+        run: () => setIsBackgroundOpen(true),
       },
       {
         id: "export",
@@ -182,68 +270,220 @@ export function PoemWorkshop() {
         className={`topbar ${isFocusMode ? "is-focus" : ""}`}
         aria-label="Workshop header"
       >
-        <div className="topbar-left">
-          <div className="brand">
-            <span className="brand-mark" aria-hidden>
-              Easy-poems
-            </span>
-            <span className="brand-sub">
-              Local-only drafts. Export/copy when you want outside feedback.
-            </span>
+        <div className="topbar-primary topbar-primary-tiered">
+          <div className="topbar-cluster topbar-cluster-brand">
+            <div className="brand brand-tiered">
+              <h1 className="brand-mark">Easy-poems</h1>
+              <div className="topbar-draft-inline">
+                <label className="draft-library-label" htmlFor="draft-poem-select">
+                  Draft
+                </label>
+                <select
+                  id="draft-poem-select"
+                  className="draft-library-select"
+                  value={m.activePoemId}
+                  onChange={(e) => m.selectPoem(e.target.value)}
+                  aria-label="Active draft"
+                >
+                  {m.poemOptions.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <p
+              className={`brand-sub ${brandSubConcealed ? "is-concealed" : ""}`}
+            >
+              Local poem desk: write on the left, line tools on the right. Nothing
+              leaves your browser until you export or copy.
+            </p>
           </div>
-        </div>
 
-        <div className="topbar-center" aria-label="Draft selection">
-          <label className="draft-library-label" htmlFor="draft-poem-select">
-            Active draft
-          </label>
-          <select
-            id="draft-poem-select"
-            className="draft-library-select"
-            value={m.activePoemId}
-            onChange={(e) => m.selectPoem(e.target.value)}
+          <div
+            className="topbar-cluster topbar-cluster-context"
+            role="status"
+            aria-live="polite"
+            aria-label="Draft length"
           >
-            {m.poemOptions.map((o) => (
-              <option key={o.id} value={o.id}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            {isFocusMode ? (
+              <div className="topbar-context-stats topbar-focus-stats">
+                <span className="topbar-focus-stat">
+                  {m.docStats.totalWords} words
+                </span>
+                <span className="topbar-focus-sep" aria-hidden>
+                  ·
+                </span>
+                <span
+                  className="topbar-focus-stat"
+                  title={
+                    m.docStats.totalLines !== m.docStats.nonEmptyLines
+                      ? `${m.docStats.totalLines} lines in editor including blank lines`
+                      : undefined
+                  }
+                >
+                  {m.docStats.nonEmptyLines} lines
+                </span>
+              </div>
+            ) : (
+              <div className="topbar-context-stats">
+                <span
+                  className="topbar-context-stat"
+                  title="Word count in poem body"
+                >
+                  {m.docStats.totalWords} words
+                </span>
+                <span className="topbar-context-sep" aria-hidden>
+                  ·
+                </span>
+                <span
+                  className="topbar-context-stat"
+                  title={
+                    m.docStats.totalLines !== m.docStats.nonEmptyLines
+                      ? `${m.docStats.nonEmptyLines} lines with text; ${m.docStats.totalLines} total in editor (includes blanks)`
+                      : "Lines containing at least one character"
+                  }
+                >
+                  {m.docStats.nonEmptyLines} lines
+                </span>
+                {m.docStats.totalLines !== m.docStats.nonEmptyLines ? (
+                  <span className="topbar-context-hint">
+                    {" "}
+                    ({m.docStats.totalLines} incl. blanks)
+                  </span>
+                ) : null}
+              </div>
+            )}
+          </div>
+
+          <div className="topbar-cluster topbar-cluster-status" aria-label="Appearance and save">
+            {!isFocusMode ? (
+              <span className="topbar-look-cluster topbar-look-cluster-ghost">
+                <button
+                  type="button"
+                  className={`topbar-ghost-btn ${isAppearanceOpen ? "is-selected" : ""}`}
+                  onClick={() => setIsAppearanceOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={isAppearanceOpen}
+                  aria-label="Fonts and typography"
+                  title="Fonts: poem & interface typefaces"
+                >
+                  <svg
+                    className="topbar-ghost-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                    focusable="false"
+                  >
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 20h4l2.5-10L13 20h4M7.5 14h5"
+                    />
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M15.5 9.5h5M18 7v5"
+                    />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  className={`topbar-ghost-btn topbar-ghost-btn-backdrop ${isBackgroundOpen ? "is-selected" : ""}`}
+                  onClick={() => setIsBackgroundOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={isBackgroundOpen}
+                  aria-label="Page backdrop"
+                  title="Backdrop: scene behind the page (decorative)"
+                >
+                  <svg
+                    className="topbar-ghost-icon"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                    focusable="false"
+                  >
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 3c4.5 4 7 8.5 7 12a7 7 0 1 1-14 0c0-3.5 2.5-8 7-12Z"
+                    />
+                    <path
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.75"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.5 14c1.2-2.2 3.4-3.5 5-4.8M10 17.5h5"
+                    />
+                  </svg>
+                </button>
+              </span>
+            ) : null}
+            <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
+              <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
+              <span className="topbar-saved-label">Saved</span>
+            </span>
+            {isFocusMode ? (
+              <button
+                type="button"
+                className="small-btn topbar-focus-exit-btn"
+                onClick={() => setIsFocusMode(false)}
+                aria-label="Exit focus mode and show tools"
+                title="Exit focus mode"
+              >
+                Show tools
+              </button>
+            ) : null}
+          </div>
         </div>
 
-        <div className="topbar-right" aria-label="Workshop actions">
-          <div className="topbar-title" aria-label="Current draft title">
-            {m.title.trim() ? m.title.trim() : "Untitled"}
-          </div>
-          <div className="topbar-stats" role="status" aria-live="polite">
-            <span className="topbar-stat">
-              <span className="topbar-stat-k">{m.docStats.totalWords}</span>
-              <span className="topbar-stat-l">Words</span>
-            </span>
-            <span className="topbar-stat">
-              <span className="topbar-stat-k">{m.docStats.totalLines}</span>
-              <span className="topbar-stat-l">Lines</span>
-            </span>
-          </div>
-          <span className="topbar-saved" aria-live="polite">
-            <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
-            Saved
-          </span>
-          {isFocusMode ? (
+        {!isFocusMode ? (
+          <nav className="topbar-quick topbar-quick-slim" aria-label="Editing actions">
             <button
               type="button"
-              className="small-btn topbar-focus-exit-btn"
-              onClick={() => setIsFocusMode(false)}
-              aria-label="Exit focus mode and show tools"
-              title="Exit focus mode"
+              className="topbar-quick-btn topbar-quick-cmd"
+              onClick={() => setIsCmdkOpen(true)}
+              aria-label="Open command palette"
+              title="Ctrl or ⌘ K (library, export, focus, and more)"
             >
-              Show tools
+              <span className="topbar-quick-label">Commands</span>
+              <span className="topbar-quick-keys">
+                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
+                <span className="topbar-quick-plus">+</span>
+                <kbd className="kbd-hint">K</kbd>
+              </span>
             </button>
-          ) : null}
-        </div>
+            <button
+              type="button"
+              className="topbar-quick-btn topbar-quick-cmd"
+              onClick={() => {
+                setFindMode("find");
+                setIsFindOpen(true);
+              }}
+              aria-label="Find in poem"
+              title="Ctrl or ⌘ F"
+            >
+              <span className="topbar-quick-label">Find</span>
+              <span className="topbar-quick-keys">
+                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
+                <span className="topbar-quick-plus">+</span>
+                <kbd className="kbd-hint">F</kbd>
+              </span>
+            </button>
+          </nav>
+        ) : null}
       </header>
 
-      <FirstVisitHint />
+      <FirstVisitHint onDismissed={() => setBrandSubConcealed(true)} />
 
       {m.persistenceError ? (
         <div
@@ -305,138 +545,173 @@ export function PoemWorkshop() {
               </button>
             </div>
 
-            <div className="drawer-block">
-              <div className="drawer-actions">
-                <button
-                  type="button"
-                  className="small-btn small-btn-primary"
-                  onClick={() => {
-                    m.newPoem();
-                    setIsLibraryOpen(false);
-                  }}
-                >
-                  New draft
-                </button>
-                <button
-                  type="button"
-                  className="small-btn"
-                  onClick={() => {
-                    m.duplicatePoem();
-                    setIsLibraryOpen(false);
-                  }}
-                >
-                  Duplicate
-                </button>
-                <button
-                  type="button"
-                  className="small-btn danger-btn"
-                  onClick={() => {
-                    m.deleteCurrentPoem();
-                    setIsLibraryOpen(false);
-                  }}
-                >
-                  Delete
-                </button>
+            <details className="drawer-accordion" open>
+              <summary className="drawer-accordion-summary">Drafts</summary>
+              <div className="drawer-accordion-body">
+                <div className="drawer-actions">
+                  <button
+                    type="button"
+                    className="small-btn small-btn-primary"
+                    onClick={() => {
+                      m.newPoem();
+                      setIsLibraryOpen(false);
+                    }}
+                  >
+                    New draft
+                  </button>
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => {
+                      m.duplicatePoem();
+                      setIsLibraryOpen(false);
+                    }}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    className="small-btn danger-btn"
+                    onClick={() => {
+                      m.deleteCurrentPoem();
+                      setIsLibraryOpen(false);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+                <p className="drawer-note">
+                  Drafts and snapshots stay in this browser unless you export them.
+                </p>
+                <ul className="draft-list" aria-label="Drafts in library">
+                  {m.poemOptions.map((o) => {
+                    const meta = m.draftMeta[o.id] ?? {};
+                    const tags = (meta.tags ?? []).join(", ");
+                    const isActive = o.id === m.activePoemId;
+                    return (
+                      <li
+                        key={o.id}
+                        className={`draft-item ${isActive ? "is-active" : ""}`}
+                      >
+                        <div className="draft-item-row">
+                          <button
+                            type="button"
+                            className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
+                            onClick={() => m.togglePinned(o.id)}
+                            aria-pressed={Boolean(meta.pinned)}
+                            title={meta.pinned ? "Unpin" : "Pin"}
+                          >
+                            {meta.pinned ? "★" : "☆"}
+                          </button>
+                          <button
+                            type="button"
+                            className="draft-open-btn"
+                            onClick={() => {
+                              m.selectPoem(o.id);
+                              setIsLibraryOpen(false);
+                            }}
+                            aria-current={isActive ? "true" : undefined}
+                            title="Open this draft"
+                          >
+                            {o.label}
+                          </button>
+                        </div>
+                        <div className="draft-item-edit">
+                          <label className="draft-edit-field">
+                            Label
+                            <input
+                              type="text"
+                              value={meta.label ?? ""}
+                              onChange={(e) =>
+                                m.setDraftLabel(o.id, e.target.value)
+                              }
+                              placeholder="Optional display name"
+                              autoComplete="off"
+                              spellCheck={false}
+                            />
+                          </label>
+                          <label className="draft-edit-field">
+                            Tags
+                            <input
+                              type="text"
+                              value={tags}
+                              onChange={(e) =>
+                                m.setDraftTags(
+                                  o.id,
+                                  e.target.value
+                                    .split(",")
+                                    .map((t) => t.trim())
+                                    .filter(Boolean),
+                                )
+                              }
+                              placeholder="comma, separated"
+                              autoComplete="off"
+                              spellCheck={false}
+                            />
+                          </label>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="drawer-note">
+                  Pinned drafts stay at the top; drafts also sort by last opened.
+                </p>
               </div>
-              <p className="drawer-note">
-                Drafts and snapshots stay in this browser unless you export them.
-              </p>
-            </div>
+            </details>
 
-            <div className="drawer-block">
-              <h3 className="drawer-subtitle">Drafts</h3>
-              <ul className="draft-list" aria-label="Drafts in library">
-                {m.poemOptions.map((o) => {
-                  const meta = m.draftMeta[o.id] ?? {};
-                  const tags = (meta.tags ?? []).join(", ");
-                  const isActive = o.id === m.activePoemId;
-                  return (
-                    <li key={o.id} className={`draft-item ${isActive ? "is-active" : ""}`}>
-                      <div className="draft-item-row">
-                        <button
-                          type="button"
-                          className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
-                          onClick={() => m.togglePinned(o.id)}
-                          aria-pressed={Boolean(meta.pinned)}
-                          title={meta.pinned ? "Unpin" : "Pin"}
-                        >
-                          {meta.pinned ? "★" : "☆"}
-                        </button>
-                        <button
-                          type="button"
-                          className="draft-open-btn"
-                          onClick={() => {
-                            m.selectPoem(o.id);
-                            setIsLibraryOpen(false);
-                          }}
-                          aria-current={isActive ? "true" : undefined}
-                          title="Open this draft"
-                        >
-                          {o.label}
-                        </button>
-                      </div>
-                      <div className="draft-item-edit">
-                        <label className="draft-edit-field">
-                          Label
-                          <input
-                            type="text"
-                            value={meta.label ?? ""}
-                            onChange={(e) => m.setDraftLabel(o.id, e.target.value)}
-                            placeholder="Optional display name"
-                            autoComplete="off"
-                            spellCheck={false}
-                          />
-                        </label>
-                        <label className="draft-edit-field">
-                          Tags
-                          <input
-                            type="text"
-                            value={tags}
-                            onChange={(e) =>
-                              m.setDraftTags(
-                                o.id,
-                                e.target.value
-                                  .split(",")
-                                  .map((t) => t.trim())
-                                  .filter(Boolean),
-                              )
-                            }
-                            placeholder="comma, separated"
-                            autoComplete="off"
-                            spellCheck={false}
-                          />
-                        </label>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-              <p className="drawer-note">
-                Pinned drafts stay at the top; drafts also sort by last opened.
-              </p>
-            </div>
-
-            <div className="drawer-block">
-              <h3 className="drawer-subtitle">Backup</h3>
-              <div className="drawer-actions">
-                <button
-                  type="button"
-                  className="small-btn"
-                  onClick={() => void m.exportWorkshopBackup()}
-                  title="Download all drafts and their snapshots as JSON"
-                >
-                  Export backup (JSON)
-                </button>
-                <button
-                  type="button"
-                  className="small-btn"
-                  onClick={() => void m.triggerImportBackup()}
-                  title="Add poems from an Easy-poems backup JSON file"
-                >
-                  Import backup (JSON)
-                </button>
+            <details className="drawer-accordion">
+              <summary className="drawer-accordion-summary">Fonts</summary>
+              <div className="drawer-accordion-body">
+                <p className="drawer-note">
+                  Poem and UI fonts apply in this browser only. The top bar has
+                  dedicated <strong>Fonts</strong> and <strong>Backdrop</strong>{" "}
+                  buttons.
+                </p>
+                <AppearanceFormFields
+                  appearance={appearance}
+                  onChange={setAppearance}
+                />
               </div>
-            </div>
+            </details>
+            <details className="drawer-accordion">
+              <summary className="drawer-accordion-summary">Page backdrop</summary>
+              <div className="drawer-accordion-body">
+                <p className="drawer-note">
+                  Each scene layers symbols and texture behind the editor—purely
+                  visual.
+                </p>
+                <BackgroundPicker
+                  appearance={appearance}
+                  background={appearance.background}
+                  onChange={setAppearance}
+                />
+              </div>
+            </details>
+
+            <details className="drawer-accordion">
+              <summary className="drawer-accordion-summary">Backup</summary>
+              <div className="drawer-accordion-body">
+                <div className="drawer-actions">
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => void m.exportWorkshopBackup()}
+                    title="Download all drafts and their snapshots as JSON"
+                  >
+                    Export backup (JSON)
+                  </button>
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => void m.triggerImportBackup()}
+                    title="Add poems from an Easy-poems backup JSON file"
+                  >
+                    Import backup (JSON)
+                  </button>
+                </div>
+              </div>
+            </details>
           </section>
         </div>
       ) : null}
@@ -501,6 +776,83 @@ export function PoemWorkshop() {
         </div>
       ) : null}
 
+      {isAppearanceOpen ? (
+        <div
+          className="overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsAppearanceOpen(false);
+          }}
+        >
+          <section
+            className="modal appearance-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="appearance-modal-title"
+          >
+            <div className="modal-head">
+              <h2 id="appearance-modal-title" className="modal-title">
+                Fonts
+              </h2>
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setIsAppearanceOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <p className="modal-note appearance-modal-lead">
+              Poem and interface fonts are saved in this browser only. Backdrop lives
+              under <strong>Backdrop</strong> in the header.
+            </p>
+            <AppearanceFormFields
+              appearance={appearance}
+              onChange={setAppearance}
+            />
+          </section>
+        </div>
+      ) : null}
+
+      {isBackgroundOpen ? (
+        <div
+          className="overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsBackgroundOpen(false);
+          }}
+        >
+          <section
+            className="modal background-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="background-modal-title"
+          >
+            <div className="modal-head">
+              <h2 id="background-modal-title" className="modal-title">
+                Page backdrop
+              </h2>
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setIsBackgroundOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <p className="modal-note background-modal-lead">
+              Symbol layers and tints sit behind your draft—pick a mood without
+              touching typography.
+            </p>
+            <BackgroundPicker
+              appearance={appearance}
+              background={appearance.background}
+              onChange={setAppearance}
+            />
+          </section>
+        </div>
+      ) : null}
+
       <input
         ref={m.importInputRef}
         type="file"
@@ -542,6 +894,68 @@ export function PoemWorkshop() {
               </svg>
             </RailIcon>
             <span className="rail-label">Library</span>
+          </button>
+
+          <button
+            type="button"
+            className="rail-btn rail-btn-fonts"
+            onClick={() => setIsAppearanceOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={isAppearanceOpen}
+            title="Poem font and UI font"
+          >
+            <RailIcon title="Fonts">
+              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 20h4l2.5-10L13 20h4M7.5 14h5"
+                />
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M15.5 9.5h5M18 7v5"
+                />
+              </svg>
+            </RailIcon>
+            <span className="rail-label">Fonts</span>
+          </button>
+
+          <button
+            type="button"
+            className="rail-btn rail-btn-scene"
+            onClick={() => setIsBackgroundOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={isBackgroundOpen}
+            title="Page backdrop — symbols and mood"
+          >
+            <RailIcon title="Backdrop">
+              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3c4.5 4 7 8.5 7 12a7 7 0 1 1-14 0c0-3.5 2.5-8 7-12Z"
+                />
+                <path
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.5 14c1.2-2.2 3.4-3.5 5-4.8"
+                />
+              </svg>
+            </RailIcon>
+            <span className="rail-label">Backdrop</span>
           </button>
 
           <button
@@ -724,103 +1138,67 @@ export function PoemWorkshop() {
           id="writing-tools"
         >
           <div className="tools-sticky-head">
-            <div className="tools-head-row">
+            <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
-              <div className="tools-head-actions" aria-label="Tools header actions">
-                <form
-                  className="go-line-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const n = parseInt(goLineRaw.trim(), 10);
-                    if (!Number.isFinite(n) || n < 1) return;
-                    m.goToLine(n);
-                  }}
-                >
-                  <label className="go-line-label">
-                    Go
-                    <input
-                      id="go-line-input"
-                      value={goLineRaw}
-                      onChange={(e) => setGoLineRaw(e.target.value)}
-                      inputMode="numeric"
-                      placeholder="Line"
-                      aria-label="Go to line number"
-                    />
-                  </label>
-                  <button type="submit" className="small-btn" title="Go to line">
-                    ↵
-                  </button>
-                </form>
-                <button
-                  type="button"
-                  className="small-btn tools-collapse-btn"
-                  onClick={() => setIsFocusMode(true)}
-                  title="Focus mode hides the tools panel"
-                >
-                  Focus
-                </button>
-              </div>
             </div>
+            <div
+              className="tool-bucket-row"
+              role="tablist"
+              aria-label="Tool groups"
+            >
+              {TOOL_BUCKET_ORDER.map((b) => {
+                const active = toolTabBucket(m.toolTab) === b;
+                return (
+                  <button
+                    key={b}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    tabIndex={active ? 0 : -1}
+                    className={`tool-bucket-tab ${active ? "active" : ""}`}
+                    onClick={() => m.setToolTab(defaultTabForBucket(b))}
+                  >
+                    {TOOL_BUCKET_LABEL[b]}
+                  </button>
+                );
+              })}
+            </div>
+            {toolTabBucket(m.toolTab) === "overview" ? (
+              <ToolsOverviewStrip
+                docStats={m.docStats}
+                spellHitCount={m.spellHits.length}
+                wordlistReady={Boolean(m.wordlist)}
+                goalEvaluation={m.goalEvaluation}
+                repeatCount={m.repeated.length}
+                activeTab={m.toolTab}
+                onOpenTab={m.setToolTab}
+              />
+            ) : null}
             <nav
               className="tool-tabs"
               role="tablist"
-              aria-label="Tool sections"
+              aria-label="Tools in this group"
               onKeyDown={onToolTabKeyDown}
             >
-              {TOOL_TABS.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  id={`tool-tab-${id}`}
-                  aria-selected={m.toolTab === id}
-                  aria-controls={`tool-panel-${id}`}
-                  tabIndex={m.toolTab === id ? 0 : -1}
-                  className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
-                  onClick={() => m.setToolTab(id)}
-                >
-                  <Icon />
-                  <span className="tool-tab-label">{label}</span>
-                </button>
-              ))}
+              {TOOL_TABS.filter((t) => bucketTabs.includes(t.id)).map(
+                ({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    id={`tool-tab-${id}`}
+                    aria-selected={m.toolTab === id}
+                    aria-controls={`tool-panel-${id}`}
+                    tabIndex={m.toolTab === id ? 0 : -1}
+                    className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
+                    onClick={() => m.setToolTab(id)}
+                  >
+                    <Icon />
+                    <span className="tool-tab-label">{label}</span>
+                  </button>
+                ),
+              )}
             </nav>
-            <ToolsOverviewStrip
-              docStats={m.docStats}
-              spellHitCount={m.spellHits.length}
-              wordlistReady={Boolean(m.wordlist)}
-              goalEvaluation={m.goalEvaluation}
-              repeatCount={m.repeated.length}
-              activeTab={m.toolTab}
-              onOpenTab={m.setToolTab}
-            />
-            <p className="tools-disclaimer tools-disclaimer-tabs">
-              <span className="tools-hotkey-hint">
-                <kbd className="kbd-hint">Ctrl</kbd>
-                {" + "}
-                <kbd className="kbd-hint">Alt</kbd>
-                {" + "}
-                <kbd className="kbd-hint">[</kbd> / <kbd className="kbd-hint">]</kbd>
-                {" "}cycle tabs when not typing in the poem.
-              </span>
-              <span className="tools-disclaimer-sep" aria-hidden>
-                {" "}
-                ·{" "}
-              </span>
-              Syllables/meter/rhyme are <strong>rough</strong> (English heuristics).
-            </p>
-            <p className="tools-disclaimer tools-disclaimer-shortcuts muted small">
-              <span className="tools-hotkey-hint">
-                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-                {" + "}
-                <kbd className="kbd-hint">K</kbd> command palette;{" "}
-                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-                {" + "}
-                <kbd className="kbd-hint">F</kbd> find;{" "}
-                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-                {" + "}
-                <kbd className="kbd-hint">H</kbd> replace.
-              </span>
-            </p>
           </div>
 
           <WorkshopToolPanels
@@ -832,6 +1210,8 @@ export function PoemWorkshop() {
             publication={m.publication}
             rhymeClusters={m.rhymeClusters}
             vowelTailClusters={m.vowelTailClusters}
+            assonanceClusters={m.assonanceClusters}
+            consonanceClusters={m.consonanceClusters}
             repeated={m.repeated}
             spellHits={m.spellHits}
             wordlist={m.wordlist}
@@ -860,12 +1240,14 @@ export function PoemWorkshop() {
             compareDiffRows={m.compareDiffRows}
             onOpenToolTab={m.setToolTab}
             focusPoemTitle={focusPoemTitle}
+            stressLexiconReady={m.stressLexiconReady}
+            stressLexiconErr={m.stressLexiconErr}
           />
         </aside>
       </div>
 
       <nav
-        className={`mobile-actionbar ${isFocusMode ? "is-hidden" : ""}`}
+        className={`mobile-actionbar mobile-actionbar-5 ${isFocusMode ? "is-hidden" : ""}`}
         aria-label="Workshop actions"
       >
         <button
@@ -888,6 +1270,24 @@ export function PoemWorkshop() {
         </button>
         <button
           type="button"
+          className="mobile-action-btn mobile-action-btn-fonts"
+          onClick={() => setIsAppearanceOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={isAppearanceOpen}
+        >
+          Fonts
+        </button>
+        <button
+          type="button"
+          className="mobile-action-btn mobile-action-btn-scene"
+          onClick={() => setIsBackgroundOpen(true)}
+          aria-haspopup="dialog"
+          aria-expanded={isBackgroundOpen}
+        >
+          Backdrop
+        </button>
+        <button
+          type="button"
           className="mobile-action-btn"
           onClick={() => setIsFocusMode((v) => !v)}
           aria-pressed={isFocusMode}
@@ -905,6 +1305,10 @@ export function PoemWorkshop() {
         </p>
         <p>
           Export or paste sends text only where you choose—check that site&apos;s terms.
+        </p>
+        <p>
+          You are responsible for what you write and share; use the workshop only
+          for content you may lawfully create and publish.
         </p>
       </footer>
     </div>

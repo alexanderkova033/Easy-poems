@@ -98,10 +98,11 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
           search({ top: true }),
           highlightSelectionMatches(),
-          poemEditorTheme,
           lineFlashField,
           ...poemSpellExtensions,
           ...basicSetup(),
+          /* After basicSetup so caret & active line beat default theme */
+          poemEditorTheme,
         ]}
         onChange={(v) => props.onChange(v)}
         onCreateEditor={(view) => {

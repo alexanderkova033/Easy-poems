@@ -63,6 +63,7 @@ The **shipping** web app is **static** and does **not** call OpenAI. When you ch
 | FR-02 | **Autosave** to **local** persistence; recovery if the tab closes. | Must |
 | FR-02b | **Multiple poems** in one browser (library); **per-poem** revision snapshots; **import/export workshop backup** (JSON). | Must |
 | FR-03 | **Line-based addressing** so AI and tools refer to “line N” consistently. | Must |
+| FR-04 | User may choose among **multiple page backgrounds** and **font presets** (poem text vs UI); choices are stored **locally** and apply on load. | Should |
 
 ### 7.2 Spelling and language assistance
 
@@ -79,7 +80,7 @@ The **shipping** web app is **static** and does **not** call OpenAI. When you ch
 | FR-20 | **Syllable counter** per line (and stanza/total where useful). | Must |
 | FR-21 | **Word count** and **character count** (including per line if helpful). | Must |
 | FR-22 | **Rhyme / assonance / consonance hints** (heuristic / dictionary-backed where possible). | Should |
-| FR-23 | **Stress / meter hints** for English (e.g. pattern visualization per line)—accuracy bounded by NLP limits; label uncertainty in UI. | Should |
+| FR-23 | **Stress / meter hints** for English (e.g. pattern visualization per line): use **dictionary-backed stress** (CMU-style pronunciations) for words covered by the shipped stress list, with **heuristic fallback** for unknown or invented words; label source in UI. Accuracy is still bounded by NLP/lexicon coverage. | Should |
 | FR-24 | Additional **high-value, low-ambiguity** tools as identified in implementation (e.g. line length stats, repeated word highlights). | Could |
 
 ### 7.4 Interactive AI analysis (not in default static build)

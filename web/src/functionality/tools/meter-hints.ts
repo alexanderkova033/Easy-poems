@@ -76,6 +76,8 @@ const FUNCTION_WORDS = new Set([
   "also",
 ]);
 
+export type LineStressSource = "lexicon" | "mixed" | "heuristic";
+
 export interface LineMeterHint {
   lineNumber: number;
   syllables: number;
@@ -83,14 +85,16 @@ export interface LineMeterHint {
   stressPattern: string;
   /** Share of positions matching a weak-strong (iambic) alternation starting weak. */
   iambicFitPercent: number | null;
+  /** How stress marks were derived for this line. */
+  stressSource: LineStressSource;
 }
 
 function normalizeWordForLex(raw: string): string {
   return raw.replace(/^'+|'+$/g, "").toLowerCase();
 }
 
-/** Rough stress string for one token; empty if no letters. */
-export function stressPatternForWord(raw: string): string {
+/** Heuristic-only stress (no CMU). Exported for tests and fallback. */
+export function stressPatternForWordHeuristic(raw: string): string {
   const w = normalizeWordForLex(raw);
   if (!w) return "";
   const n = countSyllablesInWord(raw);
@@ -99,6 +103,39 @@ export function stressPatternForWord(raw: string): string {
     return FUNCTION_WORDS.has(w) ? "x" : "/";
   }
   return "/" + "x".repeat(n - 1);
+}
+
+function stressPatternFromLexiconToken(
+  raw: string,
+  lexicon: ReadonlyMap<string, string> | null,
+): { pattern: string; hit: boolean } {
+  const w = normalizeWordForLex(raw);
+  if (!w) return { pattern: "", hit: false };
+  const direct = lexicon?.get(w);
+  if (direct) return { pattern: direct, hit: true };
+  if (w.includes("-")) {
+    const parts = w.split("-").filter(Boolean);
+    let acc = "";
+    let any = false;
+    for (const p of parts) {
+      const pat = lexicon?.get(p);
+      if (pat) {
+        acc += pat;
+        any = true;
+      } else {
+        acc += stressPatternForWordHeuristic(p);
+      }
+    }
+    return { pattern: acc, hit: any };
+  }
+  return { pattern: stressPatternForWordHeuristic(raw), hit: false };
+}
+
+export function stressPatternForWord(
+  raw: string,
+  lexicon: ReadonlyMap<string, string> | null,
+): string {
+  return stressPatternFromLexiconToken(raw, lexicon).pattern;
 }
 
 export function iambicFitPercentForPattern(pattern: string): number | null {
@@ -111,23 +148,45 @@ export function iambicFitPercentForPattern(pattern: string): number | null {
   return Math.round((100 * matched) / pattern.length);
 }
 
-export function meterHintsForBody(body: string): LineMeterHint[] {
+function classifyLineStressSource(
+  hits: number,
+  total: number,
+): LineStressSource {
+  if (total <= 0) return "heuristic";
+  if (hits === total) return "lexicon";
+  if (hits > 0) return "mixed";
+  return "heuristic";
+}
+
+export function meterHintsForBody(
+  body: string,
+  lexicon: ReadonlyMap<string, string> | null,
+): LineMeterHint[] {
   const rawLines = body.split("\n");
   const out: LineMeterHint[] = [];
   for (let i = 0; i < rawLines.length; i++) {
     const text = rawLines[i]!;
     const words = wordsInLine(text);
     let stressPattern = "";
+    let lexHits = 0;
+    let lexTotal = 0;
     for (const w of words) {
-      stressPattern += stressPatternForWord(w);
+      const { pattern, hit } = stressPatternFromLexiconToken(w, lexicon);
+      stressPattern += pattern;
+      if (normalizeWordForLex(w)) {
+        lexTotal++;
+        if (hit) lexHits++;
+      }
     }
     const syllables = countSyllablesInLine(text);
     const iambicFitPercent = iambicFitPercentForPattern(stressPattern);
+    const stressSource = classifyLineStressSource(lexHits, lexTotal);
     out.push({
       lineNumber: i + 1,
       syllables,
       stressPattern,
       iambicFitPercent,
+      stressSource,
     });
   }
   return out;

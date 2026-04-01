@@ -22,47 +22,47 @@
   --border: #2a3832;
   /* Softer than near-white for easier reading */
   --text: #d5ddd7;
-  --muted: #84968d;
+  --muted: #9aafaa;
   --accent: #7a9b7c;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 32%, var(--surface));
   --selection-fg: var(--text);
   --danger: #f08088;
-  --net-line: rgba(200, 230, 215, 0.048);
+  --net-line: rgba(200, 230, 215, 0.032);
   /* Cohesive teal & sage washes (no clashing violet/blue) */
-  --ambient-a: rgba(55, 145, 125, 0.055);
-  --ambient-b: rgba(40, 95, 78, 0.045);
-  --ambient-c: rgba(75, 135, 120, 0.04);
-  --ambient-d: rgba(100, 165, 145, 0.032);
-  --shine-top: rgba(170, 220, 200, 0.045);
-  --shine-mid: rgba(90, 150, 130, 0.028);
+  --ambient-a: rgba(55, 145, 125, 0.034);
+  --ambient-b: rgba(40, 95, 78, 0.028);
+  --ambient-c: rgba(75, 135, 120, 0.025);
+  --ambient-d: rgba(100, 165, 145, 0.021);
+  --shine-top: rgba(170, 220, 200, 0.028);
+  --shine-mid: rgba(90, 150, 130, 0.018);
   font-family: var(--font-ui);
   line-height: 1.55;
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #e8f0eb;
-    --surface: #f8fbfa;
-    --surface-2: #f1f7f3;
+    --bg: #ebf1ec;
+    --surface: #f6faf7;
+    --surface-2: #eef4ef;
     --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
-    --border: #c5d4cc;
-    --text: #1e2a22;
-    --muted: #4d5c53;
-    --accent: #3d6b47;
-    --selection-bg: color-mix(in srgb, var(--accent) 22%, #c9d5cd);
+    --border: #cfd9d1;
+    --text: #253028;
+    --muted: #4d5f54;
+    --accent: #3a6444;
+    --selection-bg: color-mix(in srgb, var(--accent) 18%, #d2ddd6);
     --selection-fg: var(--text);
     --danger: #b42318;
-    --net-line: rgba(45, 75, 58, 0.065);
-    --ambient-a: rgba(70, 155, 125, 0.07);
-    --ambient-b: rgba(55, 110, 90, 0.055);
-    --ambient-c: rgba(95, 165, 135, 0.05);
-    --ambient-d: rgba(120, 190, 155, 0.045);
-    --shine-top: rgba(255, 255, 255, 0.38);
-    --shine-mid: rgba(100, 170, 135, 0.04);
-    --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
-    --shadow-2: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
-    --shadow-3: 0 14px 46px color-mix(in srgb, #000 34%, transparent);
+    --net-line: rgba(45, 75, 58, 0.048);
+    --ambient-a: rgba(70, 155, 125, 0.055);
+    --ambient-b: rgba(55, 110, 90, 0.044);
+    --ambient-c: rgba(95, 165, 135, 0.038);
+    --ambient-d: rgba(120, 190, 155, 0.034);
+    --shine-top: rgba(255, 255, 255, 0.3);
+    --shine-mid: rgba(100, 170, 135, 0.032);
+    --shadow-1: 0 3px 14px color-mix(in srgb, #000 3%, transparent);
+    --shadow-2: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+    --shadow-3: 0 14px 46px color-mix(in srgb, #000 28%, transparent);
   }
 }
 
@@ -157,13 +157,13 @@ body::after {
     );
   animation: studio-light 48s ease-in-out infinite alternate;
   mix-blend-mode: screen;
-  opacity: 0.55;
+  opacity: 0.26;
 }
 
 @media (prefers-color-scheme: light) {
   body::after {
     mix-blend-mode: multiply;
-    opacity: 0.28;
+    opacity: 0.16;
     animation: studio-light-soft 48s ease-in-out infinite alternate;
   }
 }
@@ -200,19 +200,34 @@ body::after {
 
 @keyframes studio-light {
   0% {
-    opacity: 0.48;
+    opacity: 0.32;
   }
   100% {
-    opacity: 0.62;
+    opacity: 0.42;
   }
 }
 
 @keyframes studio-light-soft {
   0% {
-    opacity: 0.22;
+    opacity: 0.18;
   }
   100% {
-    opacity: 0.32;
+    opacity: 0.26;
+  }
+}
+
+html[data-writing-focus-v2] body::before {
+  opacity: 0.48;
+}
+
+html[data-writing-focus-v2] body::after {
+  opacity: 0.12 !important;
+  animation: none !important;
+}
+
+@media (prefers-color-scheme: light) {
+  html[data-writing-focus-v2] body::after {
+    opacity: 0.06 !important;
   }
 }
 
@@ -233,13 +248,13 @@ body::after {
   }
 
   body::after {
-    opacity: 0.75;
+    opacity: 0.42;
   }
 }
 
 @media (prefers-color-scheme: light) and (prefers-reduced-motion: reduce) {
   body::after {
-    opacity: 0.45;
+    opacity: 0.38;
   }
 }
 
@@ -252,8 +267,8 @@ body::after {
 
 @media (max-width: 899px) {
   #root {
-    /* Room for the fixed mobile action bar. */
-    padding-bottom: 6.25rem;
+    /* Room for the fixed mobile action bar (two rows). */
+    padding-bottom: 8.75rem;
   }
 }
 
@@ -267,4 +282,611 @@ body::after {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* ---- User poem font (html data-poem-font) ---- */
+html[data-poem-font="literata"] {
+  --font-poem: "Literata", Georgia, "Times New Roman", serif;
+}
+
+html[data-poem-font="spectral"] {
+  --font-poem: "Spectral", Georgia, serif;
+}
+
+html[data-poem-font="lora"] {
+  --font-poem: "Lora", Georgia, serif;
+}
+
+html[data-poem-font="crimson-pro"] {
+  --font-poem: "Crimson Pro", Georgia, serif;
+}
+
+html[data-poem-font="source-serif"] {
+  --font-poem: "Source Serif 4", Georgia, serif;
+}
+
+html[data-poem-font="eb-garamond"] {
+  --font-poem: "EB Garamond", Georgia, serif;
+}
+
+/* ---- User UI font ---- */
+html[data-ui-font="dm-sans"] {
+  --font-ui: "DM Sans", "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-ui-font="source-sans"] {
+  --font-ui: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+
+html[data-ui-font="system"] {
+  --font-ui: system-ui, "Segoe UI", sans-serif;
+}
+
+/* ---- Named backgrounds (override palette + mesh; optional color-scheme) ---- */
+html[data-workshop-bg="paper"] {
+  color-scheme: light;
+  --bg: #f1ebe3;
+  --surface: #faf7f1;
+  --surface-2: #f4ece3;
+  --surface-elevated: #fffdf8;
+  --border: #d8cfc4;
+  --text: #2a312b;
+  --muted: #5f6a62;
+  --accent: #3c6245;
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 18%, #d8e0d7);
+  --selection-fg: var(--text);
+  --danger: #9f241c;
+  --net-line: rgba(70, 60, 45, 0.048);
+  --ambient-a: rgba(175, 130, 85, 0.065);
+  --ambient-b: rgba(110, 140, 105, 0.048);
+  --ambient-c: rgba(210, 175, 125, 0.055);
+  --ambient-d: rgba(130, 115, 85, 0.042);
+  --shine-top: rgba(255, 255, 255, 0.4);
+  --shine-mid: rgba(195, 170, 125, 0.048);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 16%, transparent);
+}
+
+html[data-workshop-bg="night"] {
+  color-scheme: dark;
+  --bg: #050807;
+  --surface: #0c1210;
+  --surface-2: #111a17;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #2c3f34;
+  --text: #d6e8dd;
+  --muted: #80958a;
+  --accent: #7cae8a;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 30%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #f09098;
+  --net-line: rgba(175, 225, 200, 0.055);
+  --ambient-a: rgba(50, 128, 102, 0.082);
+  --ambient-b: rgba(38, 92, 75, 0.068);
+  --ambient-c: rgba(68, 132, 110, 0.058);
+  --ambient-d: rgba(92, 160, 135, 0.048);
+  --shine-top: rgba(155, 215, 185, 0.048);
+  --shine-mid: rgba(82, 148, 120, 0.038);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
+}
+
+html[data-workshop-bg="forest"] {
+  color-scheme: dark;
+  --bg: #06120c;
+  --surface: #0d1a14;
+  --surface-2: #102018;
+  --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
+  --border: #256648;
+  --text: #d4f0e4;
+  --muted: #7eb89a;
+  --accent: #5ec995;
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9aa1;
+  --net-line: rgba(130, 225, 175, 0.058);
+  --ambient-a: rgba(42, 168, 108, 0.092);
+  --ambient-b: rgba(28, 98, 75, 0.075);
+  --ambient-c: rgba(64, 148, 118, 0.065);
+  --ambient-d: rgba(85, 170, 135, 0.052);
+  --shine-top: rgba(105, 235, 170, 0.055);
+  --shine-mid: rgba(52, 150, 108, 0.042);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 40%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 48%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 48%, transparent);
+}
+
+/* Zenith wash tuned for moonlit / canopy scenes */
+html[data-workshop-bg="night"] body::after,
+html[data-workshop-bg="forest"] body::after {
+  opacity: 0.56;
+}
+
+html[data-workshop-bg="dawn"] {
+  color-scheme: light;
+  --bg: #f4ecef;
+  --surface: #f9f5f7;
+  --surface-2: #f5edf1;
+  --surface-elevated: #fff9fb;
+  --border: #dfd2d8;
+  --text: #292023;
+  --muted: #665a61;
+  --accent: #7d4a63;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 14%, #ebe0e6);
+  --selection-fg: var(--text);
+  --danger: #a32128;
+  --net-line: rgba(90, 50, 70, 0.04);
+  --ambient-a: rgba(200, 120, 155, 0.055);
+  --ambient-b: rgba(150, 110, 140, 0.044);
+  --ambient-c: rgba(220, 170, 185, 0.05);
+  --ambient-d: rgba(170, 120, 145, 0.038);
+  --shine-top: rgba(255, 245, 252, 0.42);
+  --shine-mid: rgba(210, 150, 175, 0.042);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
+}
+
+html[data-workshop-bg="slate"] {
+  color-scheme: dark;
+  --bg: #0a0d12;
+  --surface: #121720;
+  --surface-2: #161c28;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #2a3444;
+  --text: #d9e0ea;
+  --muted: #8b98ab;
+  --accent: #7eb8e8;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 25%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a9a;
+  --net-line: rgba(130, 170, 210, 0.045);
+  --ambient-a: rgba(60, 120, 190, 0.08);
+  --ambient-b: rgba(45, 70, 120, 0.06);
+  --ambient-c: rgba(90, 140, 200, 0.055);
+  --ambient-d: rgba(70, 110, 160, 0.045);
+  --shine-top: rgba(180, 210, 245, 0.06);
+  --shine-mid: rgba(90, 130, 180, 0.035);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 42%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 48%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 50%, transparent);
+}
+
+/*
+ * Themed backdrop motifs (mesh + symbols). Animation is static so layers stay aligned.
+ */
+html[data-workshop-bg="paper"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 26px,
+      color-mix(in srgb, var(--net-line) 45%, transparent) 26px,
+      color-mix(in srgb, var(--net-line) 45%, transparent) 27px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 3.75rem,
+      color-mix(in srgb, var(--accent) 5.5%, transparent) 3.75rem,
+      color-mix(in srgb, var(--accent) 5.5%, transparent) 3.77rem
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px),
+    radial-gradient(
+      ellipse 30% 22% at 86% 14%,
+      color-mix(in srgb, #604830 09%, transparent),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 24% 18% at 12% 88%,
+      color-mix(in srgb, #504028 06%, transparent),
+      transparent 70%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 140 140'%3E%3Cpath fill='%2380605005' d='M70 8 78 52 132 58 78 64 70 120 62 64 8 58 62 52z'/%3E%3Cpath fill='%2360483804' d='M104 96c8-12 22-18 34-22-14 4-26 14-30 28l-4-6z'/%3E%3Cpath fill='none' stroke='%2370504012' stroke-width='0.45' d='M24 118c18-8 32-6 48 2M38 124c22 6 44 4 66-4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cg stroke='%236048380d' stroke-width='0.42' fill='none'%3E%3Cpath d='M0 38c28 6 56-4 84 8s56 4 84-6'/%3E%3Cpath d='M0 72c32-8 64 2 96-10M140 92c-40 10-72 0-108 6'/%3E%3Cpath d='M18 0c-4 22 8 42 6 64M96 0c6 28-4 52 2 76'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    100% 27px,
+    100% 100%,
+    48px 48px,
+    48px 48px,
+    95% 42%,
+    78% 36%,
+    360px 360px,
+    190px 190px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    0 0,
+    0 0,
+    center -1px,
+    center -1px,
+    85% 8%,
+    8% 94%,
+    78% 71%,
+    42% 38%;
+}
+
+html[data-workshop-bg="night"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    radial-gradient(
+      circle at 52% -6%,
+      color-mix(in srgb, var(--accent) 13%, transparent),
+      transparent 44%
+    ),
+    radial-gradient(
+      ellipse 125% 42% at 50% 99%,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent 65%
+    ),
+    linear-gradient(
+      102deg,
+      transparent 36%,
+      color-mix(in srgb, var(--accent) 5%, transparent) 49%,
+      color-mix(in srgb, #a8c0e8 4%, transparent) 53%,
+      transparent 64%
+    ),
+    radial-gradient(
+      circle at 8% 55%,
+      color-mix(in srgb, var(--accent) 4%, transparent),
+      transparent 48%
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Ccircle cx='18' cy='26' r='0.65' fill='%23dfffea' fill-opacity='0.24'/%3E%3Ccircle cx='48' cy='12' r='0.48' fill='%23ffffff' fill-opacity='0.2'/%3E%3Ccircle cx='78' cy='22' r='0.72' fill='%23c8ffe8' fill-opacity='0.22'/%3E%3Ccircle cx='102' cy='36' r='0.52' fill='%23fff' fill-opacity='0.16'/%3E%3Ccircle cx='32' cy='64' r='0.58' fill='%23e8fff6' fill-opacity='0.2'/%3E%3Ccircle cx='62' cy='88' r='0.42' fill='%23fff' fill-opacity='0.17'/%3E%3Ccircle cx='92' cy='72' r='0.68' fill='%23d2fff0' fill-opacity='0.18'/%3E%3Ccircle cx='56' cy='44' r='0.38' fill='%23fff' fill-opacity='0.26'/%3E%3Ccircle cx='112' cy='70' r='0.5' fill='%23c5ffea' fill-opacity='0.14'/%3E%3Cpath stroke='%23a8d4c018' stroke-width='0.45' fill='none' d='M22 34l18-8 12-14M76 48l14 18 22 6'/%3E%3Cpath stroke='%23b8e0d010' stroke-width='0.35' fill='none' d='M8 82 L42 68M94 22 L118 8'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='168' height='168'%3E%3Ccircle cx='28' cy='48' r='0.4' fill='%23e8fff4' fill-opacity='0.12'/%3E%3Ccircle cx='62' cy='58' r='0.32' fill='%23fff' fill-opacity='0.1'/%3E%3Ccircle cx='96' cy='38' r='0.5' fill='%23c8f5e6' fill-opacity='0.11'/%3E%3Ccircle cx='124' cy='72' r='0.38' fill='%23fff' fill-opacity='0.09'/%3E%3Ccircle cx='44' cy='102' r='0.45' fill='%23dff8ee' fill-opacity='0.1'/%3E%3Ccircle cx='132' cy='118' r='0.35' fill='%23fff' fill-opacity='0.08'/%3E%3Ccircle cx='82' cy='126' r='0.42' fill='%23c5ffe8' fill-opacity='0.09'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 200 200'%3E%3Cpath fill='none' stroke='%237cae8a34' stroke-width='1.12' d='M100 28c24 18 38 48 38 78a38 38 0 1 1-76 0c0-30 14-60 38-78z'/%3E%3Ccircle cx='100' cy='96' r='3.4' fill='%23b8ffd018'/%3E%3Cpath fill='none' stroke='%237cae8a12' stroke-width='0.5' d='M112 52c8 6 12 14 14 24'/%3E%3Ccircle cx='100' cy='96' r='8' fill='none' stroke='%237cae8a08' stroke-width='0.35'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cpath stroke='%23ffffff' stroke-opacity='0.22' stroke-width='0.4' fill='none' stroke-linecap='round' d='M16 28l38 24'/%3E%3Cpath stroke='%23dfffea' stroke-opacity='0.18' stroke-width='0.32' fill='none' d='M128 36l48 32'/%3E%3Cpath stroke='%23fff' stroke-opacity='0.12' stroke-width='0.28' fill='none' d='M52 140l36-20'/%3E%3Ccircle cx='58' cy='56' r='0.5' fill='%23fff' fill-opacity='0.35'/%3E%3Ccircle cx='178' cy='72' r='0.4' fill='%23c8ffe8' fill-opacity='0.3'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='240' viewBox='0 0 72 240'%3E%3Cpath stroke='%2390d4b016' stroke-width='0.55' fill='none' d='M14 0v240M28 0v240M42 0v240M56 0v240'/%3E%3Cpath stroke='%237cae8a0c' stroke-width='0.45' fill='none' d='M8 180c12-18 22-18 34 0M36 120c10-14 20-14 28 0'/%3E%3Cpath stroke='%2360a08010' stroke-width='0.4' fill='none' d='M0 210 Q36 195 72 205'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    135% 95%,
+    130% 45%,
+    150% 40%,
+    90% 90%,
+    54px 54px,
+    54px 54px,
+    128px 128px,
+    168px 168px,
+    268px 268px,
+    210px 210px,
+    72px 240px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    50% 0%,
+    50% 100%,
+    48% -6%,
+    4% 48%,
+    center -1px,
+    center -1px,
+    6% 9%,
+    72% 28%,
+    91% 10%,
+    18% 22%,
+    48% 92%;
+}
+
+html[data-workshop-bg="forest"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 115% 50% at 50% 100%,
+      color-mix(in srgb, var(--accent) 11%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      circle at 22% 18%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 55%
+    ),
+    repeating-linear-gradient(
+      125deg,
+      transparent,
+      transparent 34px,
+      color-mix(in srgb, var(--accent) 4.5%, transparent) 34px,
+      color-mix(in srgb, var(--accent) 4.5%, transparent) 35px
+    ),
+    repeating-linear-gradient(
+      93deg,
+      transparent,
+      transparent 22px,
+      color-mix(in srgb, var(--accent) 3.2%, transparent) 22px,
+      color-mix(in srgb, var(--accent) 3.2%, transparent) 23px
+    ),
+    repeating-linear-gradient(
+      88deg,
+      transparent,
+      transparent 15px,
+      color-mix(in srgb, var(--accent) 2.1%, transparent) 15px,
+      color-mix(in srgb, var(--accent) 2.1%, transparent) 16px
+    ),
+    radial-gradient(
+      ellipse 90% 35% at 50% -2%,
+      color-mix(in srgb, var(--accent) 5%, transparent),
+      transparent 58%
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Cpath fill='%2358d49814' d='M66 3 Q92 30 78 58 Q66 42 40 52 Q52 22 66 3'/%3E%3Cpath fill='%2348b8820f' transform='translate(24,46)' d='M24 2 Q42 20 35 44 Q22 26 6 32 Q12 11 24 2'/%3E%3Cpath fill='%2370e8b00d' transform='translate(64,62) rotate(38)' d='M20 0 Q34 16 27 36 Q15 21 4 26 Q9 9 20 0'/%3E%3Cpath fill='%2348a8780b' transform='translate(8,78) rotate(-12)' d='M18 4 Q30 14 26 32 Q14 20 4 24 Q8 10 18 4'/%3E%3Cpath fill='%2338786009' transform='translate(72,8) rotate(8)' d='M12 8 Q24 20 20 36 Q8 24 4 32 Q6 14 12 8'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cpath stroke='%2348c09014' stroke-width='0.95' fill='none' d='M48 2v92M2 48h92M26 26l44 44m0-44L26 70'/%3E%3Ccircle cx='48' cy='48' r='20' fill='none' stroke='%2348c09008' stroke-width='0.5'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Ccircle cx='22' cy='28' r='1' fill='%2348c09012'/%3E%3Ccircle cx='48' cy='18' r='0.7' fill='%2370e8b00e'/%3E%3Ccircle cx='78' cy='36' r='0.85' fill='%2348c09010'/%3E%3Ccircle cx='112' cy='24' r='0.65' fill='%2358d4980c'/%3E%3Ccircle cx='32' cy='72' r='0.9' fill='%2348b8820d'/%3E%3Ccircle cx='96' cy='68' r='0.75' fill='%2348c0900a'/%3E%3Ccircle cx='66' cy='98' r='0.8' fill='%2370e8b00b'/%3E%3Ccircle cx='124' cy='92' r='0.6' fill='%2348c09009'/%3E%3Ccircle cx='14' cy='108' r='0.55' fill='%2358d4980a'/%3E%3Cpath fill='%2348a87809' d='M70 118l4-18 6 4-8 14zM38 122l8-12 4 8z'/%3E%3Cellipse cx='88' cy='36' rx='4' ry='2.2' fill='%2358d49808' transform='rotate(-28 88 36)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160' viewBox='0 0 320 160'%3E%3Cpath fill='none' stroke='%2348786816' stroke-width='1.3' stroke-linecap='round' d='M-20 142 Q80 88 160 78 T360 52'/%3E%3Cpath fill='none' stroke='%2338907012' stroke-width='1' d='M40 155 Q120 120 200 118 T320 108'/%3E%3Cpath fill='none' stroke='%2348a8780e' stroke-width='0.8' d='M180 138 Q220 105 280 100'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    130% 48%,
+    85% 85%,
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    130% 38%,
+    50px 50px,
+    50px 50px,
+    270px 270px,
+    96px 96px,
+    156px 156px,
+    320px 165px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    50% 100%,
+    12% 0%,
+    0 0,
+    4% 8%,
+    2% 5%,
+    50% 0%,
+    center -1px,
+    center -1px,
+    8% 11%,
+    74% 7%,
+    88% 78%,
+    50% 99%;
+}
+
+html[data-workshop-bg="dawn"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    radial-gradient(
+      ellipse 48% 22% at 82% 9%,
+      color-mix(in srgb, var(--accent) 11%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
+      ellipse 40% 20% at 10% 24%,
+      color-mix(in srgb, #fff 14%, transparent),
+      transparent 55%
+    ),
+    repeating-conic-gradient(
+      from 0.28turn at 50% -15%,
+      transparent 0 0.42deg,
+      color-mix(in srgb, var(--accent) 3.2%, transparent) 0.42deg 0.55deg
+    ),
+    repeating-conic-gradient(
+      from 0.33turn at 48% -18%,
+      transparent 0 0.32deg,
+      color-mix(in srgb, var(--accent) 2.1%, transparent) 0.32deg 0.4deg
+    ),
+    radial-gradient(
+      circle at 18% 12%,
+      color-mix(in srgb, #fff 28%, transparent),
+      transparent 42%
+    ),
+    linear-gradient(
+      178deg,
+      transparent 58%,
+      color-mix(in srgb, var(--accent) 4%, transparent) 82%,
+      transparent 96%
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 160 160'%3E%3Cpath fill='%23a0607808' d='M80 6 L88 52 140 80 88 108 80 154 72 108 20 80 72 52z'/%3E%3Cpath fill='%2390506806' d='M120 118c10-4 18-2 28 2-12 2-22 10-28 22l-4-8z'/%3E%3Cpath fill='none' stroke='%23a0607812' stroke-width='0.4' d='M52 48c12 8 24 6 38 2M94 112c-16 4-28 2-40-6'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3Cellipse cx='40' cy='32' rx='6' ry='3.2' fill='%23b0608010' transform='rotate(-35 40 32)'/%3E%3Cellipse cx='92' cy='48' rx='5' ry='2.8' fill='%23a050780d' transform='rotate(22 92 48)'/%3E%3Cellipse cx='128' cy='88' rx='7' ry='3.5' fill='%23c0709010' transform='rotate(-15 128 88)'/%3E%3Cellipse cx='56' cy='108' rx='4.5' ry='2.5' fill='%239048680c' transform='rotate(48 56 108)'/%3E%3Ccircle cx='72' cy='64' r='0.9' fill='%23fff' fill-opacity='0.18'/%3E%3Ccircle cx='110' cy='124' r='0.7' fill='%23fff' fill-opacity='0.14'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    85% 34%,
+    70% 42%,
+    100% 100%,
+    100% 100%,
+    90% 55%,
+    100% 100%,
+    46px 46px,
+    46px 46px,
+    340px 340px,
+    185px 185px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    86% 2%,
+    4% 8%,
+    center top,
+    52% -8%,
+    12% 0%,
+    50% 100%,
+    center -1px,
+    center -1px,
+    84% 6%,
+    28% 72%;
+}
+
+html[data-workshop-bg="slate"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(
+      ellipse 120% 100% at 14% 28%,
+      var(--ambient-a),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 100% 90% at 88% 22%,
+      var(--ambient-b),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 130% 110% at 50% 92%,
+      var(--ambient-c),
+      transparent 76%
+    ),
+    radial-gradient(
+      ellipse 95% 85% at 72% 62%,
+      var(--ambient-d),
+      transparent 68%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      transparent,
+      transparent 4px,
+      color-mix(in srgb, var(--accent) 2.8%, transparent) 4px,
+      color-mix(in srgb, var(--accent) 2.8%, transparent) 5px
+    ),
+    linear-gradient(
+      125deg,
+      transparent 42%,
+      color-mix(in srgb, #88b0e0 3.5%, transparent) 50%,
+      transparent 58%
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='75'%3E%3Cpath fill='none' stroke='%238eb8e816' stroke-width='0.85' d='M22 1l19 10v23L22 46 3 33V12L22 1z'/%3E%3Ccircle cx='22' cy='24' r='1.1' fill='%239cc8f812'/%3E%3Cpath fill='none' stroke='%236a8cb00c' stroke-width='0.4' d='M22 8v36'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cpath stroke='%236a8cb00c' stroke-width='0.9' fill='none' d='M12 70h116M70 12v116M28 28l84 84M112 28L28 112'/%3E%3Cpath stroke='%238eb8e814' stroke-width='0.35' fill='none' stroke-dasharray='3 5' d='M24 24l92 92M116 24L24 116'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='50' cy='58' r='1.2' fill='%239cc8f814'/%3E%3Ccircle cx='100' cy='42' r='0.9' fill='%2378a8d812'/%3E%3Ccircle cx='150' cy='72' r='1' fill='%239cc8f810'/%3E%3Ccircle cx='72' cy='112' r='0.85' fill='%2388b8e810'/%3E%3Ccircle cx='128' cy='128' r='1.1' fill='%2370a0c80e'/%3E%3Cpath stroke='%2388b0e012' stroke-width='0.55' fill='none' d='M50 58L100 42M100 42l50 30M72 112l56 16'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    100% 100%,
+    140% 55%,
+    42px 42px,
+    42px 42px,
+    92px 92px,
+    145px 145px,
+    220px 220px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    0 0,
+    60% -5%,
+    center -1px,
+    center -1px,
+    5% 9%,
+    80% 68%,
+    40% 42%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-workshop-bg] body::before {
+    animation: none !important;
+  }
 }

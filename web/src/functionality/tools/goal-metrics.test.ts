@@ -10,6 +10,8 @@ function stats(partial: Partial<DocumentStats> & Pick<DocumentStats, "lines">): 
     totalWords: 0,
     totalChars: 0,
     stanzaCount: 0,
+    estimatedReadingMinutes: 0,
+    stanzaStats: [],
     avgWordsPerNonEmptyLine: 0,
     longestLineByWords: null,
     longestLineByChars: null,
@@ -53,5 +55,39 @@ describe("evaluateGoals", () => {
     );
     expect(out.syllableOverLines).toContain(1);
     expect(out.warnings.length).toBeGreaterThan(0);
+  });
+
+  it("warns when stanza count is outside range", () => {
+    const low = evaluateGoals(
+      stats({
+        lines: [],
+        stanzaCount: 1,
+        stanzaStats: [
+          {
+            stanzaIndex: 1,
+            startLine: 1,
+            endLine: 1,
+            lineCountInStanza: 1,
+            nonEmptyLines: 1,
+            words: 1,
+            syllables: 1,
+          },
+        ],
+      }),
+      { minStanzas: 3 },
+    );
+    expect(low.warnings.some((w) => w.includes("Stanza count"))).toBe(true);
+
+    const high = evaluateGoals(
+      stats({
+        lines: [],
+        stanzaCount: 4,
+        stanzaStats: [],
+      }),
+      { maxStanzas: 2 },
+    );
+    expect(high.warnings.some((w) => w.includes("above your maximum"))).toBe(
+      true,
+    );
   });
 });

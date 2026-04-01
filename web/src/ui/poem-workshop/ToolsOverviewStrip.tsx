@@ -26,9 +26,14 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
   const goalIssue = goalEvaluation.warnings.length > 0;
   const spellIssue = wordlistReady && spellHitCount > 0;
 
+  const linesTitle =
+    docStats.totalLines !== docStats.nonEmptyLines
+      ? `${docStats.nonEmptyLines} lines with text · ${docStats.totalLines} total in editor (includes blanks)`
+      : `${docStats.nonEmptyLines} lines with text`;
+
   return (
     <div
-      className="tools-overview-strip"
+      className="tools-overview-strip tools-overview-strip-minimal"
       role="toolbar"
       aria-label="Quick open: jump to a tool by stat"
     >
@@ -36,6 +41,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "totals" ? "is-current" : ""}`}
         onClick={() => onOpenTab("totals")}
+        title="Open Totals"
       >
         <span className="tools-overview-pill-k">{docStats.totalWords}</span>
         <span className="tools-overview-pill-l">words</span>
@@ -44,6 +50,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "lines" ? "is-current" : ""}`}
         onClick={() => onOpenTab("lines")}
+        title={linesTitle}
       >
         <span className="tools-overview-pill-k">{docStats.nonEmptyLines}</span>
         <span className="tools-overview-pill-l">lines</span>

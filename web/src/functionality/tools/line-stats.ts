@@ -1,12 +1,27 @@
 import { countSyllablesInLine } from "./syllables";
 import { wordsInLine } from "./tokenize";
 
+/** Typical aloud pace for poetry (words per minute), for a rough reading-time hint. */
+export const POETRY_READING_WPM = 130;
+
 export interface LineStatRow {
   lineNumber: number;
   text: string;
   syllables: number;
   words: number;
   chars: number;
+}
+
+/** Per-stanza aggregates (stanzas separated by one or more blank lines). */
+export interface StanzaStat {
+  stanzaIndex: number;
+  startLine: number;
+  endLine: number;
+  /** Lines in this stanza from startLine–endLine (includes the stanza’s own lines only). */
+  lineCountInStanza: number;
+  nonEmptyLines: number;
+  words: number;
+  syllables: number;
 }
 
 export interface DocumentStats {
@@ -18,6 +33,10 @@ export interface DocumentStats {
   totalChars: number;
   /** Non-empty line groups separated by one or more blank lines. */
   stanzaCount: number;
+  /** Estimated minutes to read aloud at {@link POETRY_READING_WPM} (1 decimal); 0 if no words. */
+  estimatedReadingMinutes: number;
+  /** One entry per stanza; empty if there are no non-empty lines. */
+  stanzaStats: StanzaStat[];
   /** Mean words per non-empty line (1 decimal); 0 if no non-empty lines. */
   avgWordsPerNonEmptyLine: number;
   /** Line with the most words (ties: earliest line). */
@@ -37,6 +56,8 @@ export function computeDocumentStats(body: string): DocumentStats {
       totalWords: 0,
       totalChars: 0,
       stanzaCount: 0,
+      estimatedReadingMinutes: 0,
+      stanzaStats: [],
       avgWordsPerNonEmptyLine: 0,
       longestLineByWords: null,
       longestLineByChars: null,
@@ -88,6 +109,44 @@ export function computeDocumentStats(body: string): DocumentStats {
   const avgWordsPerNonEmptyLine =
     nonEmpty > 0 ? Math.round((10 * totalWords) / nonEmpty) / 10 : 0;
 
+  const stanzaStats: StanzaStat[] = [];
+  let si = 0;
+  while (si < rawLines.length) {
+    while (si < rawLines.length && rawLines[si]!.trim() === "") si++;
+    if (si >= rawLines.length) break;
+    const startLine = si + 1;
+    let end = si;
+    let stNonEmpty = 0;
+    let stWords = 0;
+    let stSyl = 0;
+    let stLines = 0;
+    while (end < rawLines.length && rawLines[end]!.trim() !== "") {
+      const row = lines[end]!;
+      stLines++;
+      if (row.text.trim().length > 0) {
+        stNonEmpty++;
+        stWords += row.words;
+        stSyl += row.syllables;
+      }
+      end++;
+    }
+    stanzaStats.push({
+      stanzaIndex: stanzaStats.length + 1,
+      startLine,
+      endLine: end,
+      lineCountInStanza: stLines,
+      nonEmptyLines: stNonEmpty,
+      words: stWords,
+      syllables: stSyl,
+    });
+    si = end;
+  }
+
+  const estimatedReadingMinutes =
+    totalWords <= 0
+      ? 0
+      : Math.max(0.1, Math.round((10 * totalWords) / POETRY_READING_WPM) / 10);
+
   return {
     lines,
     totalLines: rawLines.length,
@@ -96,6 +155,8 @@ export function computeDocumentStats(body: string): DocumentStats {
     totalWords,
     totalChars: body.length,
     stanzaCount,
+    estimatedReadingMinutes,
+    stanzaStats,
     avgWordsPerNonEmptyLine,
     longestLineByWords: longestWords,
     longestLineByChars: longestChars,

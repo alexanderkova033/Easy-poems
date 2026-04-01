@@ -1,16 +1,17 @@
 import type { KeyboardEvent } from "react";
 import { useCallback } from "react";
-import { TOOL_TABS } from "./ToolTabBar";
 import type { ToolTab } from "./workshop-helpers";
 
 export function useToolTabListKeyboard(
   toolTab: ToolTab,
   setToolTab: (t: ToolTab) => void,
+  orderedTabIds: ToolTab[],
 ) {
   return useCallback(
     (e: KeyboardEvent<HTMLElement>) => {
       if ((e.target as HTMLElement).getAttribute("role") !== "tab") return;
-      const ids = TOOL_TABS.map((x) => x.id);
+      const ids = orderedTabIds;
+      if (ids.length === 0) return;
       const idx = ids.indexOf(toolTab);
       if (idx < 0) return;
       let nextIdx = idx;
@@ -42,6 +43,6 @@ export function useToolTabListKeyboard(
         document.getElementById(`tool-tab-${next}`)?.focus();
       });
     },
-    [toolTab, setToolTab],
+    [orderedTabIds, toolTab, setToolTab],
   );
 }

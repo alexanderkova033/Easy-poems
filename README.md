@@ -21,6 +21,8 @@ Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to
 
 **Tests:** `cd web && npm test`
 
+**Stress lexicon (maintainers):** `public/cmu-stress.txt` maps the local word list to CMU stress marks. Regenerate after changing `public/wordlist-en.txt` with `cd web && npm run generate:cmu-stress` (devDependency `cmu-pronouncing-dictionary`; see package licenses).
+
 **Production build:** `cd web && npm run build` — static output in `web/dist` (serve from any static host).
 
 ## Optional API process
