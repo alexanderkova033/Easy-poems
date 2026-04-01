@@ -38,7 +38,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           spellSyncFacet.of(props.spellBump),
           poemEditorTheme,
           ...poemSpellExtensions,
-          ...(Array.isArray(basicSetup) ? basicSetup : [basicSetup]),
+          ...basicSetup(),
         ]}
         onChange={(v) => props.onChange(v)}
         onCreateEditor={(view) => {

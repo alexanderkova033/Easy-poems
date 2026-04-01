@@ -18,7 +18,7 @@ function shouldSkipPermissive(token: string, normalized: string): boolean {
   return false;
 }
 
-function shouldSkipStrict(token: string, normalized: string): boolean {
+function shouldSkipStrict(_token: string, normalized: string): boolean {
   if (normalized.length <= 1) return true;
   if (/^\d+$/.test(normalized)) return true;
   return false;
