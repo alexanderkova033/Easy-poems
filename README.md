@@ -2,6 +2,10 @@
 
 A browser workshop for drafting poems with **local writing tools** (syllable estimates, approximate stress / meter hints, line stats, rhyme hints, spelling against a local word list), **multiple drafts** in the browser, **per-poem revision snapshots**, **goals**, **export** (.txt / Markdown / Word), **backup import/export** (JSON), and a short **publication checklist**. Optional **ChatGPT** is linked for feedback you run yourself in another tab—there is **no built-in server-side AI** in this repo.
 
+## Live site
+
+Add your production URL here when you want it documented in the repository.
+
 ## Project docs
 
 - [Product requirements](docs/REQUIREMENTS.md) — vision, functional/non-functional requirements, open questions.
@@ -23,7 +27,7 @@ Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to
 
 **Stress lexicon (maintainers):** `public/cmu-stress.txt` maps the local word list to CMU stress marks. Regenerate after changing `public/wordlist-en.txt` with `cd web && npm run generate:cmu-stress` (devDependency `cmu-pronouncing-dictionary`; see package licenses).
 
-**Production build:** `cd web && npm run build` — static output in `web/dist` (serve from any static host).
+**Build (maintainers / CI):** `cd web && npm run build` — output in `web/dist`.
 
 ## Optional API process
 
@@ -37,8 +41,3 @@ npm run dev
 
 - Health: `GET http://localhost:8787/health`
 - Tests: `cd server && npm test`
-
-## Production notes
-
-- Deploy **`web/dist`** as static files. No backend is required for the workshop UI.
-- If you run the small Node server, set **`CORS_ORIGIN`** to your site origin when calling `/health` cross-origin.

@@ -103,6 +103,18 @@ The **shipping** web app is **static** and does **not** call OpenAI. When you ch
 | FR-41 | When AI is on: align with **OpenAI** on **data retention**; prefer minimal retention if available. | Should |
 | FR-42 | **Content policy** for harmful requests (refusal, safe messaging)—define before public launch. | Should |
 
+### 7.6 Future: poem commentary and community (not in local-first MVP)
+
+Poem-level **comments** or **critiques** between users (similar in spirit to large poetry communities such as AllPoetry) require **identity**, **server-side storage**, **moderation**, and **abuse handling**. They are **out of scope** until a dedicated community phase; see also §9, §11, and [PRIORITIES.md](./PRIORITIES.md).
+
+| ID | Requirement | Priority |
+|----|-------------|----------|
+| FR-50 | **Comment threads** (or structured critique posts) per **shared/published** poem; author controls visibility (e.g. public, link-only, private group). | Future |
+| FR-51 | **Notifications** for new comments or replies (**opt-in**; frequency and channel TBD). | Future |
+| FR-52 | **Block** and **report** for comments/users; operator **moderation** workflow (queue, removal, appeals TBD). | Future |
+| FR-53 | **Workshop export and JSON backup** exclude third-party comments **by default**; optional include only with explicit user consent. | Future |
+| FR-54 | Optional **structured critique** prompts (e.g. what works, what to sharpen, encouragement)—aligned with healthy workshop norms. | Could |
+
 ## 8. Non-functional requirements
 
 | ID | Requirement | Target |
@@ -123,11 +135,12 @@ The **shipping** web app is **static** and does **not** call OpenAI. When you ch
 
 ## 10. Open decisions (remaining)
 
-- **Production hosting** for `server/` (and CORS allowlist for the website origin).
-- **Budget / rate limits** per IP or per deploy (optional guardrails).
+- **Ops** for `server/` and APIs: CORS allowlist for the website origin, monitoring, **budget / rate limits** per IP or per deploy (optional guardrails).
 - **`gpt-4o-mini` vs `gpt-4o`** per environment—validate with real poems.
 
 ## 11. Future exploration (not committed)
+
+**Poem commentary:** see **§7.6** (FR-50–FR-54) for threaded comments/critiques, notifications, moderation, and export boundaries.
 
 Possible later direction: **community poems** with **anonymous ratings** so readers can engage with others’ work, while authors control **whether they see ratings** (e.g. submit for community feedback only, blind scoring until a chosen moment, or never show the author their own aggregate—exact UX TBD).
 
@@ -144,4 +157,4 @@ Until this is scoped, it remains **out of scope** for the English local-first MV
 
 ---
 
-*Version: 0.4 — Future community/rating exploration (§11); OpenAI + proxy (see [AI_INTEGRATION.md](./AI_INTEGRATION.md))*
+*Version: 0.5 — Future commentary (§7.6) + community/rating exploration (§11); OpenAI + proxy (see [AI_INTEGRATION.md](./AI_INTEGRATION.md))*

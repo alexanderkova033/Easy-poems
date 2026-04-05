@@ -33,10 +33,11 @@ Stakeholder choices that still apply: **website**, **English only**, **local poe
 
 - Debounced or streaming **AI** results; regenerate one suggestion.
 - Reading-time, stanza grouping, or other low-ambiguity stats.
+- **Future / community:** poem pages with **threaded comments or critiques** (e.g. AllPoetry-style exchange), optional structured critique prompts, **moderation** and reporting—**only after** accounts, backend storage, and abuse-handling design.
 
 ### Won’t (for now)
 
-- Accounts and **cloud sync** (backups remain manual JSON + export).
+- Accounts and **cloud sync** in the **local-first MVP** (backups remain manual JSON + export). A later **community phase** may add accounts for comments, publishing, or sync by explicit product decision.
 - Real-time multi-user editing.
 - Non-English UI and poem tooling at launch.
 
@@ -47,6 +48,7 @@ Stakeholder choices that still apply: **website**, **English only**, **local poe
 | **Done (tools)** | Editor + multi-draft library + autosave + syllables + lines + meter (heuristic) + rhyme/repeats + spell + goals + checklist + snapshots + export + backup |
 | **Next** | Tool polish, optional AI via server when desired |
 | **Later** | Streaming AI, advanced meter data |
+| **Future (community)** | Accounts, optional publish/share, **comments or critiques on poems**, moderation—see [REQUIREMENTS.md](./REQUIREMENTS.md) §7.6 |
 
 ## Success metrics (tools-first)
 
@@ -56,4 +58,4 @@ Stakeholder choices that still apply: **website**, **English only**, **local poe
 
 ---
 
-*Version: 0.4 — tools-first MVP; AI optional / deferred*
+*Version: 0.5 — tools-first MVP; AI optional / deferred; future poem commentary (Could / Future phase)*
