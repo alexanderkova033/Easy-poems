@@ -648,12 +648,18 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-meter"
         >
           <LiveSectionTitle>Stress &amp; meter (approx.)</LiveSectionTitle>
-          <p className="muted small">
-            <strong>/</strong> stressed, <strong>x</strong> unstressed. When the
-            CMU list has loaded, common words use{" "}
-            <strong>dictionary stress</strong>; others stay heuristic.
-            “Iambic-ish” is a loose weak‑strong fit score—use as a cue, not a verdict.
-          </p>
+          <details className="tool-hint-details">
+            <summary className="tool-hint-summary">How to read this</summary>
+            <p className="muted small tool-hint-body">
+              <strong>/</strong> = stressed syllable, <strong>x</strong> = unstressed.
+              These are estimates &mdash; trust your ear over the numbers.{" "}
+              <abbr title="CMU Pronouncing Dictionary: a large English pronunciation database. Words it knows get accurate stress. Words it does not know (names, invented words) fall back to heuristic guessing.">CMU dictionary</abbr>{" "}
+              words are marked &#10003;; others are guesses (&#126; or &mdash;).
+              &ldquo;Iambic-ish %&rdquo; measures fit to a{" "}
+              <abbr title="Iambic meter: alternating unstressed and stressed syllables (x /). da-DUM da-DUM. A sonnet uses 5 pairs per line (iambic pentameter).">weak-strong alternating pattern</abbr>{" "}
+              &mdash; a cue, not a verdict.
+            </p>
+          </details>
           {stressLexiconErr ? (
             <p className="error compact" role="alert">
               {stressLexiconErr} Meter falls back to heuristics.
@@ -785,10 +791,12 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-rhyme"
         >
           <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
-          <p className="muted small">
-            End-of-word letter groups only; not pronunciation or stress. Tap a line
-            number to jump in the editor.
-          </p>
+          <details className="tool-hint-details">
+            <summary className="tool-hint-summary">How this works</summary>
+            <p className="muted small tool-hint-body">
+              These are <abbr title="Based on spelling patterns at the end of words, not phonetic pronunciation. 'love' and 'dove' would match; 'love' and 'above' might not, even though they rhyme in speech.">letter-pattern</abbr> detectors &mdash; a useful first pass, but your ear is the real judge. Tap a line number to jump to it.
+            </p>
+          </details>
           <h4 className="tool-subheading">Shared final letter pattern</h4>
           {rhymeClusters.length === 0 ? (
             <EmptyState title="No shared endings yet">
@@ -806,17 +814,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ))}
             </ul>
           )}
-          <h4 className="tool-subheading">
-            Same spelling from last vowel onward
-          </h4>
-          <p className="muted small">
-            From last <strong>vowel</strong> to line end—slant / eye-rhyme
-            hint.
-          </p>
+          <h4 className="tool-subheading">Same spelling from last vowel onward</h4>
           {vowelTailClusters.length === 0 ? (
             <EmptyState title="No matching vowel tails yet">
               <p className="muted small">
-                This catches “looks-similar” endings even when pronunciation differs.
+                This catches "looks-similar" endings even when pronunciation differs.
               </p>
             </EmptyState>
           ) : (
@@ -829,11 +831,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ))}
             </ul>
           )}
-          <h4 className="tool-subheading">Shared vowel letters (last word)</h4>
-          <p className="muted small">
-            Same sequence of vowel letters in each line&apos;s last word—very
-            rough assonance hint (spelling, not IPA).
-          </p>
+          <h4 className="tool-subheading">
+            <abbr title="Assonance: repetition of vowel sounds, e.g. 'fleet' and 'dream'. Detected by vowel letter patterns in each line's last word — spelling only, not sound.">Shared vowel letters</abbr> (last word)
+          </h4>
           {assonanceClusters.length === 0 ? (
             <EmptyState title="No assonance clusters yet">
               <p className="muted small">
@@ -851,11 +851,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ))}
             </ul>
           )}
-          <h4 className="tool-subheading">Shared ending consonants (last word)</h4>
-          <p className="muted small">
-            Consonant letters after the last vowel in each line&apos;s final
-            word—rough consonance hint (orthographic).
-          </p>
+          <h4 className="tool-subheading">
+            <abbr title="Consonance: repetition of consonant sounds at word endings, e.g. 'luck' and 'block'. Detected by the consonant letters after the last vowel in each line's final word — spelling only.">Shared ending consonants</abbr> (last word)
+          </h4>
           {consonanceClusters.length === 0 ? (
             <EmptyState title="No consonance clusters yet">
               <p className="muted small">
@@ -956,7 +954,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           ) : (
             <>
               <p className="muted small">
-                Local list + your additions—many “unknowns” are on purpose.
+                Local list + your additions—many "unknowns" are on purpose.
               </p>
               {spellHits.length === 0 ? (
                 <EmptyState title="No spelling flags">
@@ -1089,33 +1087,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             compareRightBody={compareRightBody}
             compareDiffRows={compareDiffRows}
           />
-        </div>
-      ) : null}
-
-      {toolTab === "feedback" ? (
-        <div
-          className="tool-block tool-block-feedback"
-          id="tool-panel-feedback"
-          role="tabpanel"
-          aria-labelledby="tool-tab-feedback"
-        >
-          <h3 className="tool-heading-static">Outside feedback (ChatGPT)</h3>
-          <p className="muted small feedback-lead">
-            Your writing stays in this tab until you copy/export it. Paste into ChatGPT
-            in another tab when you want a second reader.
-          </p>
-          <ul className="feedback-tips muted small">
-            <li>Use Export for a clean file.</li>
-            <li>Don’t paste anything sensitive.</li>
-          </ul>
-          <a
-            className="secondary-link feedback-open-link"
-            href="https://chat.openai.com/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open ChatGPT in new tab
-          </a>
         </div>
       ) : null}
 

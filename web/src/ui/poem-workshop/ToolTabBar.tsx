@@ -127,21 +127,6 @@ function IconTabSnapshots() {
   );
 }
 
-function IconTabFeedback() {
-  return (
-    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M8 10.5h8M8 14h5.5M5 18.5l2-3.5H18a1.5 1.5 0 001.5-1.5V7A1.5 1.5 0 0018 5.5H6A1.5 1.5 0 004.5 7v10.5L5 18.5z"
-      />
-    </svg>
-  );
-}
-
 function IconTabShortcuts() {
   return (
     <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
@@ -172,7 +157,6 @@ export const TOOL_TABS: {
   { id: "goals", label: "Goals", Icon: IconTabGoals },
   { id: "checklist", label: "Ready", Icon: IconTabChecklist },
   { id: "snapshots", label: "Snapshots", Icon: IconTabSnapshots },
-  { id: "feedback", label: "ChatGPT", Icon: IconTabFeedback },
   { id: "shortcuts", label: "Shortcuts", Icon: IconTabShortcuts },
 ];
 

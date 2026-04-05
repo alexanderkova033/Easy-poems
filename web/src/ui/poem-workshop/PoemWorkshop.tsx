@@ -17,6 +17,8 @@ import { useToolTabListKeyboard } from "./useToolTabListKeyboard";
 import { useWorkshopToolHotkeys } from "./useWorkshopToolHotkeys";
 import { WorkshopToolPanels } from "./WorkshopToolPanels";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
+import { AiAnalysis } from "./AiAnalysis";
+import { FormatToolbar } from "./FormatToolbar";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "./CommandPalette";
 import { FindReplaceBar } from "./FindReplaceBar";
 import {
@@ -867,7 +869,7 @@ export function PoemWorkshop() {
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           <button
             type="button"
-            className="rail-btn"
+            className="rail-btn rail-btn-library"
             onClick={() => setIsLibraryOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isLibraryOpen}
@@ -1065,6 +1067,7 @@ export function PoemWorkshop() {
                     Poem{" "}
                     <span className="label-hint">(one line per line break)</span>
                   </label>
+                  <FormatToolbar editorViewRef={m.editorViewRef} />
                 </div>
                 <div className="poem-editor-shell">
                   <PoemBodyEditor
@@ -1295,6 +1298,12 @@ export function PoemWorkshop() {
           {isFocusMode ? "Unfocus" : "Focus"}
         </button>
       </nav>
+
+      <AiAnalysis
+        title={m.title}
+        lines={m.lines}
+        onJumpToLine={m.goToLine}
+      />
 
       <footer className="privacy">
         <h2 className="privacy-title">Privacy</h2>

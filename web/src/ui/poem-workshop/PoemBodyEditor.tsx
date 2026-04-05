@@ -12,6 +12,10 @@ import {
   poemSpellExtensions,
   spellSyncFacet,
 } from "../../functionality/editor/spell-highlight";
+import {
+  formatMarksExtension,
+  formatMarksTheme,
+} from "../../functionality/editor/format-marks";
 import type { SpellMode } from "../../functionality/draft/local-draft-storage";
 
 /** Facet must change on the same render as spellMode (not only after a spellBump effect). */
@@ -100,6 +104,8 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
           highlightSelectionMatches(),
           lineFlashField,
           ...poemSpellExtensions,
+          formatMarksExtension,
+          formatMarksTheme,
           ...basicSetup(),
           /* After basicSetup so caret & active line beat default theme */
           poemEditorTheme,

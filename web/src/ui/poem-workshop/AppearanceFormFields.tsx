@@ -1,8 +1,14 @@
 import {
+  POEM_DECORATION_OPTIONS,
   POEM_FONT_OPTIONS,
+  POEM_SIZE_OPTIONS,
+  POEM_WEIGHT_OPTIONS,
   UI_FONT_OPTIONS,
   type AppearanceSettings,
+  type PoemDecorationId,
   type PoemFontId,
+  type PoemSizeId,
+  type PoemWeightId,
   type UiFontId,
 } from "../preferences/appearance";
 
@@ -28,6 +34,55 @@ export function AppearanceFormFields(props: {
           ))}
         </select>
       </label>
+
+      <label className="appearance-field">
+        Text size
+        <select
+          value={appearance.poemSize}
+          onChange={(e) =>
+            onChange({ ...appearance, poemSize: e.target.value as PoemSizeId })
+          }
+        >
+          {POEM_SIZE_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="appearance-field">
+        Font weight
+        <select
+          value={appearance.poemWeight}
+          onChange={(e) =>
+            onChange({ ...appearance, poemWeight: e.target.value as PoemWeightId })
+          }
+        >
+          {POEM_WEIGHT_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <label className="appearance-field">
+        Underline
+        <select
+          value={appearance.poemDecoration}
+          onChange={(e) =>
+            onChange({ ...appearance, poemDecoration: e.target.value as PoemDecorationId })
+          }
+        >
+          {POEM_DECORATION_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+
       <label className="appearance-field">
         UI font
         <select

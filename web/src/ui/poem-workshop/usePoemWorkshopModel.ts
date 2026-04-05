@@ -17,6 +17,7 @@ import {
   downloadTextFile,
   exportFilename,
 } from "../../functionality/draft/export-poem";
+import { stripFormatMarkers } from "../../functionality/editor/format-marks";
 import {
   buildWorkshopExportJson,
   duplicateActivePoem,
@@ -606,25 +607,28 @@ export function usePoemWorkshopModel() {
     const text = buildPlainTextTitleBody(
       title,
       formNote.trim() || undefined,
-      body,
+      stripFormatMarkers(body),
     );
     downloadTextFile(exportFilename(title, "txt"), text);
   }, [title, formNote, body]);
 
   const onDownloadMd = useCallback(() => {
+    // Keep **bold** (valid markdown) but strip __underline__ (no markdown equivalent)
+    const cleanBody = body.replace(/__(.+?)__/g, "$1");
     const text = buildMarkdownPoem(
       title,
       formNote.trim() || undefined,
-      body,
+      cleanBody,
     );
     downloadTextFile(exportFilename(title, "md"), text);
   }, [title, formNote, body]);
 
   const onCopyMarkdown = useCallback(async () => {
+    const cleanBody = body.replace(/__(.+?)__/g, "$1");
     const text = buildMarkdownPoem(
       title,
       formNote.trim() || undefined,
-      body,
+      cleanBody,
     );
     await copyTextToClipboard(text);
     setCopyExportFlash(true);
@@ -633,7 +637,7 @@ export function usePoemWorkshopModel() {
   }, [title, formNote, body]);
 
   const onQuickCopyPlain = useCallback(async () => {
-    await copyTextToClipboard(body);
+    await copyTextToClipboard(stripFormatMarkers(body));
     setQuickCopyFlash(true);
     if (quickCopyTimer.current) clearTimeout(quickCopyTimer.current);
     quickCopyTimer.current = setTimeout(() => setQuickCopyFlash(false), 1200);
@@ -646,7 +650,7 @@ export function usePoemWorkshopModel() {
         exportFilename(title, "docx"),
         title,
         formNote.trim() || undefined,
-        body,
+        stripFormatMarkers(body),
       );
     } catch (e) {
       setDocxExportErr(

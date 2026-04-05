@@ -100,7 +100,7 @@ export const poemSpellExtensions = [spellField, spellPlugin];
 
 export const poemEditorTheme = EditorView.theme({
   "&": {
-    fontSize: "16px",
+    fontSize: "var(--poem-font-size, 1rem)",
     minHeight: "13rem",
     backgroundColor: "var(--bg)",
     color: "var(--text)",
@@ -111,6 +111,8 @@ export const poemEditorTheme = EditorView.theme({
   ".cm-scroller": { fontFamily: "inherit" },
   ".cm-content": {
     fontFamily: "var(--font-poem), Georgia, serif",
+    fontWeight: "var(--poem-font-weight, 400)",
+    textDecoration: "var(--poem-text-decoration, none)",
     caretColor: "color-mix(in srgb, var(--accent) 70%, var(--text))",
     minHeight: "13rem",
     padding: "0.6rem 0.7rem",
