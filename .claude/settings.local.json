@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(wc -l /c/Users/lorta/Documents/repos/Easy-poems/web/src/**/*.ts /c/Users/lorta/Documents/repos/Easy-poems/web/src/**/*.tsx)",
+      "Bash(wc -l /c/Users/lorta/Documents/repos/Easy-poems/web/src/poem-workshop/*.tsx /c/Users/lorta/Documents/repos/Easy-poems/web/src/poem-workshop/*.ts)",
+      "Bash(grep -l \"libraryListRows\\\\|isLibraryOpen\" /c/Users/lorta/Documents/repos/Easy-poems/web/src/poem-workshop/*.tsx)",
+      "Bash(wc -l /c/Users/lorta/Documents/repos/Easy-poems/web/src/app/* /c/Users/lorta/Documents/repos/Easy-poems/web/src/spellcheck/*)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(npx playwright:*)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npm test:*)"
     ]
   }
 }

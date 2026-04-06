@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   applyAppearance,
   loadAppearance,
@@ -259,6 +260,14 @@ export function PoemWorkshop() {
     libraryShowArchived,
     librarySort,
   ]);
+
+  const libraryListParentRef = useRef<HTMLDivElement | null>(null);
+  const libraryVirtualizer = useVirtualizer({
+    count: libraryListRows.length,
+    getScrollElement: () => libraryListParentRef.current,
+    estimateSize: () => 150,
+    overscan: 3,
+  });
 
   const cmdkActions = useMemo<CommandPaletteAction[]>(() => {
     return [
@@ -624,6 +633,35 @@ export function PoemWorkshop() {
         </div>
       ) : null}
 
+      {m.showExportReminder ? (
+        <div
+          className="import-notice-banner"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="import-notice-text">
+            It&rsquo;s been a while since your last backup. Export your workshop
+            to keep a local copy of all your drafts.
+          </p>
+          <button
+            type="button"
+            className="small-btn"
+            onClick={() => {
+              void m.exportWorkshopBackup();
+            }}
+          >
+            Export now
+          </button>
+          <button
+            type="button"
+            className="small-btn import-notice-dismiss"
+            onClick={m.dismissExportReminder}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
       {isLibraryOpen ? (
         <div
           className="overlay"
@@ -730,113 +768,142 @@ export function PoemWorkshop() {
                     No drafts match this filter.
                   </p>
                 ) : (
-                <ul className="draft-list" aria-label="Drafts in library">
-                  {libraryListRows.map(({ id, label, meta }) => {
-                    const tags = (meta.tags ?? []).join(", ");
-                    const isActive = id === m.activePoemId;
-                    const isArchived = Boolean(meta.archived);
-                    return (
-                      <li
-                        key={id}
-                        className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""}`}
-                      >
-                        <div className="draft-item-row">
-                          <button
-                            type="button"
-                            className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
-                            onClick={() => m.togglePinned(id)}
-                            aria-pressed={Boolean(meta.pinned)}
-                            title={meta.pinned ? "Unpin" : "Pin"}
+                <div
+                  ref={libraryListParentRef}
+                  style={{ overflowY: "auto", maxHeight: "28rem" }}
+                >
+                  <div
+                    role="list"
+                    aria-label="Drafts in library"
+                    style={{
+                      height: `${libraryVirtualizer.getTotalSize()}px`,
+                      position: "relative",
+                    }}
+                  >
+                    {libraryVirtualizer.getVirtualItems().map((vItem) => {
+                      const row = libraryListRows[vItem.index]!;
+                      const { id, label, meta } = row;
+                      const tags = (meta.tags ?? []).join(", ");
+                      const isActive = id === m.activePoemId;
+                      const isArchived = Boolean(meta.archived);
+                      return (
+                        <div
+                          key={id}
+                          role="listitem"
+                          data-index={vItem.index}
+                          ref={libraryVirtualizer.measureElement}
+                          style={{
+                            position: "absolute",
+                            top: 0,
+                            left: 0,
+                            width: "100%",
+                            transform: `translateY(${vItem.start}px)`,
+                            paddingBottom: "0.55rem",
+                            boxSizing: "border-box",
+                          }}
+                        >
+                          <div
+                            className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""}`}
                           >
-                            {meta.pinned ? "★" : "☆"}
-                          </button>
-                          <button
-                            type="button"
-                            className="draft-open-btn"
-                            onClick={() => {
-                              m.selectPoem(id);
-                              setIsLibraryOpen(false);
-                            }}
-                            aria-current={isActive ? "true" : undefined}
-                            title="Open this draft"
-                          >
-                            {label}
-                            {isArchived ? " (archived)" : ""}
-                          </button>
-                          <button
-                            type="button"
-                            className="small-btn draft-row-dup"
-                            onClick={() => {
-                              m.duplicatePoemById(id);
-                              setIsLibraryOpen(false);
-                            }}
-                            title="Duplicate this draft"
-                          >
-                            Dup
-                          </button>
-                          {isArchived ? (
-                            <button
-                              type="button"
-                              className="small-btn"
-                              onClick={() => m.setDraftArchived(id, false)}
-                              title="Return to main list"
-                            >
-                              Unarchive
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="small-btn"
-                              disabled={isActive}
-                              title={
-                                isActive
-                                  ? "Switch to another draft first"
-                                  : "Hide from list (data kept)"
-                              }
-                              onClick={() => m.setDraftArchived(id, true)}
-                            >
-                              Archive
-                            </button>
-                          )}
+                            <div className="draft-item-row">
+                              <button
+                                type="button"
+                                className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
+                                onClick={() => m.togglePinned(id)}
+                                aria-pressed={Boolean(meta.pinned)}
+                                title={meta.pinned ? "Unpin" : "Pin"}
+                              >
+                                {meta.pinned ? "★" : "☆"}
+                              </button>
+                              <button
+                                type="button"
+                                className="draft-open-btn"
+                                onClick={() => {
+                                  m.selectPoem(id);
+                                  setIsLibraryOpen(false);
+                                }}
+                                aria-current={isActive ? "true" : undefined}
+                                title="Open this draft"
+                              >
+                                {label}
+                                {isArchived ? " (archived)" : ""}
+                              </button>
+                              <button
+                                type="button"
+                                className="small-btn draft-row-dup"
+                                onClick={() => {
+                                  m.duplicatePoemById(id);
+                                  setIsLibraryOpen(false);
+                                }}
+                                title="Duplicate this draft"
+                              >
+                                Dup
+                              </button>
+                              {isArchived ? (
+                                <button
+                                  type="button"
+                                  className="small-btn"
+                                  onClick={() => m.setDraftArchived(id, false)}
+                                  title="Return to main list"
+                                >
+                                  Unarchive
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="small-btn"
+                                  disabled={isActive}
+                                  title={
+                                    isActive
+                                      ? "Switch to another draft first"
+                                      : "Hide from list (data kept)"
+                                  }
+                                  onClick={() => m.setDraftArchived(id, true)}
+                                >
+                                  Archive
+                                </button>
+                              )}
+                            </div>
+                            <div className="draft-item-edit">
+                              <label className="draft-edit-field">
+                                Label
+                                <input
+                                  type="text"
+                                  value={meta.label ?? ""}
+                                  onChange={(e) =>
+                                    m.setDraftLabel(id, e.target.value)
+                                  }
+                                  placeholder="Optional display name"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                />
+                              </label>
+                              <label className="draft-edit-field">
+                                Tags
+                                <input
+                                  type="text"
+                                  value={tags}
+                                  onChange={(e) =>
+                                    m.setDraftTags(
+                                      id,
+                                      e.target.value
+                                        .split(",")
+                                        .map((t) => t.trim())
+                                        .filter(Boolean),
+                                    )
+                                  }
+                                  placeholder="comma, separated"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                />
+                              </label>
+                            </div>
+                          </div>
                         </div>
-                        <div className="draft-item-edit">
-                          <label className="draft-edit-field">
-                            Label
-                            <input
-                              type="text"
-                              value={meta.label ?? ""}
-                              onChange={(e) =>
-                                m.setDraftLabel(id, e.target.value)
-                              }
-                              placeholder="Optional display name"
-                              autoComplete="off"
-                              spellCheck={false}
-                            />
-                          </label>
-                          <label className="draft-edit-field">
-                            Tags
-                            <input
-                              type="text"
-                              value={tags}
-                              onChange={(e) =>
-                                m.setDraftTags(
-                                  id,
-                                  e.target.value
-                                    .split(",")
-                                    .map((t) => t.trim())
-                                    .filter(Boolean),
-                                )
-                              }
-                              placeholder="comma, separated"
-                              autoComplete="off"
-                              spellCheck={false}
-                            />
-                          </label>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                      );
+                    })}
+                  </div>
+                </div>
                 )}
                 <p className="drawer-note">
                   Pinned drafts stay at the top; drafts also sort by last opened.

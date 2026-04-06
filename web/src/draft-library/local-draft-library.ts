@@ -265,7 +265,11 @@ export function mergeImportedPoems(
     return { error: "Not an Easy-poems workshop backup." };
   }
   if (o.version !== 1 || !Array.isArray(o.poems)) {
-    return { error: "Unsupported backup version." };
+    return {
+      error:
+        "This backup was created with an incompatible version of Easy-poems and cannot be imported. " +
+        "Try exporting a fresh backup from the version you used to create this file.",
+    };
   }
   let added = 0;
   let next = lib;

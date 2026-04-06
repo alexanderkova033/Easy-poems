@@ -6,8 +6,10 @@ import {
   useMemo,
   useRef,
   useState,
+  useTransition,
   type ChangeEvent,
 } from "react";
+import { isLocalStorageNearlyFull } from "@/shared/platform/browser-storage";
 import { diffPoemLines } from "@/draft-library/diff-lines";
 import {
   buildMarkdownPoem,
@@ -97,6 +99,35 @@ import {
 } from "./workshop-helpers";
 
 const LAST_TOOL_TAB_KEY = "easy-poems:lastToolTab";
+const LAST_EXPORT_KEY = "easy-poems:lastExportAt";
+const EXPORT_REMINDER_DAYS = 7;
+
+function readLastExportAt(): string | null {
+  try {
+    return localStorage.getItem(LAST_EXPORT_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function recordExportAt() {
+  try {
+    localStorage.setItem(LAST_EXPORT_KEY, new Date().toISOString());
+  } catch {
+    /* ignore */
+  }
+}
+
+function checkExportReminderDue(lib: DraftLibrary): boolean {
+  const hasContent = lib.poems.some(
+    (p) => p.body.trim().length > 0 || p.title.trim().length > 0,
+  );
+  if (!hasContent) return false;
+  const raw = readLastExportAt();
+  if (!raw) return true;
+  const daysSince = (Date.now() - new Date(raw).getTime()) / 86_400_000;
+  return daysSince >= EXPORT_REMINDER_DAYS;
+}
 
 function shouldForceSummaryTools(): boolean {
   try {
@@ -147,6 +178,9 @@ export function usePoemWorkshopModel() {
   const [savedFlash, setSavedFlash] = useState(false);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [showExportReminder, setShowExportReminder] = useState(false);
+  const [spellHitsState, setSpellHitsState] = useState<SpellHit[]>([]);
+  const [, startSpellTransition] = useTransition();
   const [wordlist, setWordlist] = useState<Set<string> | null>(null);
   const [wordlistErr, setWordlistErr] = useState<string | null>(null);
   const [stressLexicon, setStressLexicon] = useState<Map<
@@ -368,16 +402,22 @@ export function usePoemWorkshopModel() {
     () => summarizeMeterCoverage(meterHints, heavyDocStats),
     [meterHints, heavyDocStats],
   );
-  const spellHits = useMemo(() => {
-    if (!wordlist) return [];
-    return spellHitsFromText(
-      heavyBody,
-      wordlist,
-      loadPersonalDictionary(),
-      loadSessionIgnores(),
-      spellMode,
-    );
-  }, [heavyBody, wordlist, spellMode, spellBump]);
+  useEffect(() => {
+    if (!wordlist) {
+      startSpellTransition(() => setSpellHitsState([]));
+      return;
+    }
+    const dict = wordlist;
+    const personal = loadPersonalDictionary();
+    const ignores = loadSessionIgnores();
+    const mode = spellMode;
+    const text = heavyBody;
+    startSpellTransition(() => {
+      setSpellHitsState(spellHitsFromText(text, dict, personal, ignores, mode));
+    });
+  }, [heavyBody, wordlist, spellMode, spellBump]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const spellHits = spellHitsState;
 
   useEffect(() => {
     setSpellNavIndex(0);
@@ -670,6 +710,8 @@ export function usePoemWorkshopModel() {
     });
     const stamp = new Date().toISOString().slice(0, 10);
     downloadTextFile(`easy-poems-backup-${stamp}.json`, json);
+    recordExportAt();
+    setShowExportReminder(false);
   }, [library.poems]);
 
   const triggerImportBackup = useCallback(() => {
@@ -716,6 +758,22 @@ export function usePoemWorkshopModel() {
 
   const dismissImportNotice = useCallback(() => {
     setImportNotice(null);
+  }, []);
+
+  // Check export reminder + storage quota once on mount
+  useEffect(() => {
+    setShowExportReminder(checkExportReminderDue(library));
+    if (isLocalStorageNearlyFull()) {
+      setPersistenceError(
+        "Browser storage is nearly full. Export a backup now to avoid losing work.",
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const dismissExportReminder = useCallback(() => {
+    recordExportAt();
+    setShowExportReminder(false);
   }, []);
 
   const saveSnapshot = useCallback(() => {
@@ -944,6 +1002,8 @@ export function usePoemWorkshopModel() {
     dismissPersistenceError,
     importNotice,
     dismissImportNotice,
+    showExportReminder,
+    dismissExportReminder,
     wordlist,
     wordlistErr,
     spellBump,
