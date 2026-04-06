@@ -2,6 +2,10 @@ import {
   tryLocalStorageRemoveItem,
   tryLocalStorageSetItem,
 } from "@/shared/platform/browser-storage";
+import {
+  STORAGE_KEY_DRAFT,
+  STORAGE_KEY_LIBRARY,
+} from "@/shared/storage-keys";
 import { loadDraft, type DraftState, type SpellMode } from "./local-draft-storage";
 import {
   migrateLegacyRevisionsV1ToPoem,
@@ -10,8 +14,8 @@ import {
   type RevisionSnapshot,
 } from "./revision-snapshots";
 
-const LIBRARY_KEY = "easy-poems:library:v1";
-const LEGACY_DRAFT_KEY = "easy-poems:draft:v2";
+const LIBRARY_KEY = STORAGE_KEY_LIBRARY;
+const LEGACY_DRAFT_KEY = STORAGE_KEY_DRAFT;
 
 export type { SpellMode };
 

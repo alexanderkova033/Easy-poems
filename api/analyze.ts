@@ -10,8 +10,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
-
-const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
+import { callOpenAI, sendParsedResponse } from "./_openai";
 
 const SYSTEM_PROMPT = `You are a skilled, encouraging poetry editor. Analyze the poem and return valid JSON with this exact shape:
 {
@@ -77,62 +76,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: `Too many lines (max ${MAX_LINES}).` });
   }
 
-  let upstream: Response;
-  try {
-    upstream = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: buildPrompt(title, lines) },
-        ],
-        max_tokens: 2000,
-        temperature: 0.4,
-      }),
-    });
-  } catch (err) {
-    return res.status(502).json({ error: `Could not reach OpenAI: ${(err as Error).message}` });
-  }
+  const result = await callOpenAI(
+    apiKey,
+    {
+      model,
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: buildPrompt(title, lines) },
+      ],
+      max_tokens: 2000,
+      temperature: 0.4,
+    },
+    res,
+  );
+  if (!result) return;
 
-  if (!upstream.ok) {
-    let msg = `OpenAI returned HTTP ${upstream.status}`;
-    try {
-      const errBody = (await upstream.json()) as { error?: { message?: string } };
-      if (errBody?.error?.message) msg = errBody.error.message;
-    } catch {
-      /* ignore */
-    }
-    const status = upstream.status === 429 ? 429 : 502;
-    return res.status(status).json({ error: msg });
-  }
-
-  const data = (await upstream.json()) as {
-    choices?: { message?: { content?: string } }[];
-    model?: string;
-  };
-  const content = data.choices?.[0]?.message?.content ?? "";
-  if (!content) {
-    return res.status(502).json({ error: "Empty response from OpenAI." });
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    return res.status(502).json({ error: "OpenAI returned invalid JSON." });
-  }
-
-  // Inject server-side meta so the client doesn't have to trust the model to fill it
-  (parsed as Record<string, unknown>).meta = {
-    model: data.model ?? model,
-    analyzedAt: new Date().toISOString(),
-  };
-
-  return res.status(200).json(parsed);
+  sendParsedResponse(res, result.content, result.model);
 }

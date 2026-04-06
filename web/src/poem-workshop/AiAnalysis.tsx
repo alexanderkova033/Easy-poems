@@ -9,8 +9,9 @@ import {
   type PoemComparison,
 } from "@/writing-tools/ai-analyze";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
+import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
 
-const LS_KEY_MODEL = "ep_openai_model";
+const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-4o-mini";
 
 function loadStoredModel(): string {
@@ -229,6 +230,7 @@ export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
   const [savedResult, setSavedResult] = useState<PoemAnalysis | null>(null);
   const [savedLines, setSavedLines] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isUnconfigured, setIsUnconfigured] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
@@ -277,8 +279,14 @@ export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
       setStatus("done");
     } catch (err) {
       if ((err as Error).name === "AbortError") return;
-      setErrorMsg((err as Error).message ?? "Unknown error");
-      setStatus("error");
+      const msg = (err as Error).message ?? "Unknown error";
+      if (msg.toLowerCase().includes("not configured") || msg.toLowerCase().includes("api key")) {
+        setIsUnconfigured(true);
+        setStatus("idle");
+      } else {
+        setErrorMsg(msg);
+        setStatus("error");
+      }
     }
   }, [canCompare, hasPoem, lines, mode, model, savedLines, savedResult, title]);
 
@@ -350,7 +358,15 @@ export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
         </p>
       )}
 
-      {status === "idle" && !result && (
+      {isUnconfigured && (
+        <div className="ai-unconfigured" role="status">
+          <p className="ai-unconfigured-text">
+            AI analysis is not available — the server is not configured with an OpenAI API key.
+          </p>
+        </div>
+      )}
+
+      {!isUnconfigured && status === "idle" && !result && (
         <p className="ai-idle-hint muted small">
           Click &ldquo;Analyze poem&rdquo; to get scores and line-level feedback from AI.
           After the first run, &ldquo;Compare&rdquo; shows what improved between drafts.

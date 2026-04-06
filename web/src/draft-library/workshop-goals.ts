@@ -2,8 +2,9 @@ import {
   tryLocalStorageRemoveItem,
   tryLocalStorageSetItem,
 } from "@/shared/platform/browser-storage";
+import { STORAGE_KEY_GOALS } from "@/shared/storage-keys";
 
-const STORAGE_KEY = "easy-poems:goals:v1";
+const STORAGE_KEY = STORAGE_KEY_GOALS;
 
 /** Optional numeric targets; unset / empty fields = no constraint. */
 export interface WorkshopGoals {

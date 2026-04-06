@@ -1,6 +1,7 @@
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
+import { STORAGE_KEY_LIBRARY_META } from "@/shared/storage-keys";
 
-const META_KEY = "easy-poems:libraryMeta:v1";
+const META_KEY = STORAGE_KEY_LIBRARY_META;
 
 export interface DraftMeta {
   pinned?: boolean;

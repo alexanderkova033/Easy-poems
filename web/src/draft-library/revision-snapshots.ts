@@ -2,9 +2,13 @@ import {
   tryLocalStorageRemoveItem,
   tryLocalStorageSetItem,
 } from "@/shared/platform/browser-storage";
+import {
+  STORAGE_KEY_REVISIONS_V1,
+  STORAGE_KEY_REVISIONS_V2,
+} from "@/shared/storage-keys";
 
-const STORAGE_V1 = "easy-poems:revisions:v1";
-const STORAGE_V2 = "easy-poems:revisions:v2";
+const STORAGE_V1 = STORAGE_KEY_REVISIONS_V1;
+const STORAGE_V2 = STORAGE_KEY_REVISIONS_V2;
 const MAX_SNAPSHOTS = 50;
 
 export interface RevisionSnapshot {

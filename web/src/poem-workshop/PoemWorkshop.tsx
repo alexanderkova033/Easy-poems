@@ -606,6 +606,18 @@ export function PoemWorkshop() {
           aria-atomic="true"
         >
           <p className="persistence-banner-text">{m.persistenceError}</p>
+          {m.storageNearlyFull ? (
+            <button
+              type="button"
+              className="small-btn small-btn-primary persistence-banner-export"
+              onClick={() => {
+                void m.exportWorkshopBackup();
+                m.dismissPersistenceError();
+              }}
+            >
+              Export now
+            </button>
+          ) : null}
           <button
             type="button"
             className="small-btn persistence-banner-dismiss"
@@ -763,6 +775,10 @@ export function PoemWorkshop() {
                     Show archived
                   </label>
                 </div>
+                <p className="muted small drawer-filter-hint">
+                  Search matches title, display label, and tags.
+                  Pinned drafts always appear first.
+                </p>
                 {libraryListRows.length === 0 ? (
                   <p className="drawer-note library-empty-msg" role="status">
                     No drafts match this filter.

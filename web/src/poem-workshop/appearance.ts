@@ -1,6 +1,7 @@
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
+import { STORAGE_KEY_APPEARANCE } from "@/shared/storage-keys";
 
-const STORAGE_KEY = "easy-poems:appearance:v1";
+const STORAGE_KEY = STORAGE_KEY_APPEARANCE;
 
 export const POEM_FONT_OPTIONS = [
   { id: "literata", label: "Literata" },

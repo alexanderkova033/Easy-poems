@@ -98,8 +98,13 @@ import {
   type ToolTab,
 } from "./workshop-helpers";
 
-const LAST_TOOL_TAB_KEY = "easy-poems:lastToolTab";
-const LAST_EXPORT_KEY = "easy-poems:lastExportAt";
+import {
+  STORAGE_KEY_LAST_EXPORT_AT,
+  STORAGE_KEY_LAST_TOOL_TAB,
+} from "@/shared/storage-keys";
+
+const LAST_TOOL_TAB_KEY = STORAGE_KEY_LAST_TOOL_TAB;
+const LAST_EXPORT_KEY = STORAGE_KEY_LAST_EXPORT_AT;
 const EXPORT_REMINDER_DAYS = 7;
 
 function readLastExportAt(): string | null {
@@ -177,6 +182,7 @@ export function usePoemWorkshopModel() {
   const [spellMode, setSpellMode] = useState<SpellMode>("permissive");
   const [savedFlash, setSavedFlash] = useState(false);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
+  const [storageNearlyFull, setStorageNearlyFull] = useState(false);
   const [importNotice, setImportNotice] = useState<string | null>(null);
   const [showExportReminder, setShowExportReminder] = useState(false);
   const [spellHitsState, setSpellHitsState] = useState<SpellHit[]>([]);
@@ -301,7 +307,10 @@ export function usePoemWorkshopModel() {
         setWordlistErr(null);
       })
       .catch((e) => {
-        setWordlistErr(e instanceof Error ? e.message : "Could not load word list.");
+        const msg = e instanceof Error ? e.message : "Could not load word list.";
+        setWordlistErr(msg);
+        // Surface to the top banner so users see it regardless of active tab
+        setPersistenceError((prev) => prev ?? `Spell check unavailable: ${msg}`);
       });
   }, []);
 
@@ -764,6 +773,7 @@ export function usePoemWorkshopModel() {
   useEffect(() => {
     setShowExportReminder(checkExportReminderDue(library));
     if (isLocalStorageNearlyFull()) {
+      setStorageNearlyFull(true);
       setPersistenceError(
         "Browser storage is nearly full. Export a backup now to avoid losing work.",
       );
@@ -999,6 +1009,7 @@ export function usePoemWorkshopModel() {
     setSpellMode,
     savedFlash,
     persistenceError,
+    storageNearlyFull,
     dismissPersistenceError,
     importNotice,
     dismissImportNotice,

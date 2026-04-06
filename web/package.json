@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "generate:cmu-stress": "node scripts/generate-cmu-stress.mjs",
-    "build": "tsc --noEmit -p tsconfig.json && vite build",
+    "check:cmu-stress": "node scripts/check-cmu-stress-fresh.mjs",
+    "build": "npm run check:cmu-stress && tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -2,9 +2,13 @@ import {
   trySessionStorageSetItem,
   tryLocalStorageSetItem,
 } from "@/shared/platform/browser-storage";
+import {
+  STORAGE_KEY_SPELL_DICT,
+  STORAGE_KEY_SPELL_IGNORE_SESSION,
+} from "@/shared/storage-keys";
 
-const KEY_DICT = "easy-poems:spell:personal:v1";
-const KEY_IGNORE = "easy-poems:spell:ignore-session:v1";
+const KEY_DICT = STORAGE_KEY_SPELL_DICT;
+const KEY_IGNORE = STORAGE_KEY_SPELL_IGNORE_SESSION;
 
 function readJsonSet(key: string): Set<string> {
   try {

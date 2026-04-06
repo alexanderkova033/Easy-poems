@@ -1,8 +1,12 @@
 import {
   tryLocalStorageSetItem,
 } from "@/shared/platform/browser-storage";
+import {
+  STORAGE_KEY_DRAFT,
+  STORAGE_KEY_DRAFT_LEGACY_V1,
+} from "@/shared/storage-keys";
 
-const STORAGE_KEY = "easy-poems:draft:v2";
+const STORAGE_KEY = STORAGE_KEY_DRAFT;
 
 export type SpellMode = "strict" | "permissive";
 
@@ -59,7 +63,7 @@ export function saveDraft(state: DraftState): boolean {
 export function migrateLegacyDraftIfNeeded(): void {
   try {
     if (localStorage.getItem(STORAGE_KEY)) return;
-    const legacy = localStorage.getItem("easy-poems:draft:v1");
+    const legacy = localStorage.getItem(STORAGE_KEY_DRAFT_LEGACY_V1);
     if (!legacy) return;
     const v = JSON.parse(legacy) as unknown;
     if (!v || typeof v !== "object") return;
