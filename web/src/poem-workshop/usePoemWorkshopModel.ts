@@ -58,7 +58,10 @@ import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/persona
 import { loadEnglishWordlist } from "@/spellcheck/wordlist";
 import type { SpellHit } from "@/spellcheck/scan";
 import { spellHitsFromText } from "@/spellcheck/scan";
-import { SPELL_ANALYSIS_DEBOUNCE_MS } from "@/spellcheck/spell-timing";
+import {
+  BODY_TO_REACT_DEBOUNCE_MS,
+  SPELL_ANALYSIS_DEBOUNCE_MS,
+} from "@/spellcheck/spell-timing";
 import { evaluateGoals } from "@/writing-tools/goal-metrics";
 import { linesFromBody } from "@/writing-tools/lines-from-body";
 import {
@@ -133,6 +136,11 @@ export function usePoemWorkshopModel() {
   const [title, setTitle] = useState("");
   const [formNote, setFormNote] = useState("");
   const [body, setBody] = useState("");
+  /** Bumped when the poem body is replaced outside the editor (load draft, restore snapshot). */
+  const [bodySyncNonce, setBodySyncNonce] = useState(0);
+  /** Latest body from CodeMirror; React `body` may trail by {@link BODY_TO_REACT_DEBOUNCE_MS}. */
+  const bodyLiveRef = useRef("");
+  const bodyToReactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   /** Debounced copy of `body` for expensive sidebar tools (meter, rhyme, repeats). */
   const [heavyBody, setHeavyBody] = useState("");
   const [spellMode, setSpellMode] = useState<SpellMode>("permissive");
@@ -184,12 +192,18 @@ export function usePoemWorkshopModel() {
 
   const workshopStateRef = useRef({
     title,
-    body,
+    body: bodyLiveRef.current,
     formNote,
     spellMode,
     library,
   });
-  workshopStateRef.current = { title, body, formNote, spellMode, library };
+  workshopStateRef.current = {
+    title,
+    body: bodyLiveRef.current,
+    formNote,
+    spellMode,
+    library,
+  };
 
   const initialHydrateRef = useRef(false);
   useLayoutEffect(() => {
@@ -197,13 +211,38 @@ export function usePoemWorkshopModel() {
     initialHydrateRef.current = true;
     const p = poemById(library, library.activeId);
     if (!p) return;
+    if (bodyToReactTimer.current) {
+      clearTimeout(bodyToReactTimer.current);
+      bodyToReactTimer.current = null;
+    }
     setTitle(p.title);
     setBody(p.body);
+    bodyLiveRef.current = p.body;
     setHeavyBody(p.body);
     setFormNote(p.form ?? "");
     setSpellMode(p.spellMode ?? "permissive");
     setRevisions(loadRevisions(library.activeId));
+    setBodySyncNonce((n) => n + 1);
   }, [library]);
+
+  const onEditorBody = useCallback((next: string) => {
+    bodyLiveRef.current = next;
+    if (bodyToReactTimer.current) clearTimeout(bodyToReactTimer.current);
+    bodyToReactTimer.current = setTimeout(() => {
+      bodyToReactTimer.current = null;
+      setBody(next);
+    }, BODY_TO_REACT_DEBOUNCE_MS);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (bodyToReactTimer.current) {
+        clearTimeout(bodyToReactTimer.current);
+        bodyToReactTimer.current = null;
+      }
+    },
+    [],
+  );
 
   const dismissPersistenceError = useCallback(() => {
     setPersistenceError(null);
@@ -271,7 +310,7 @@ export function usePoemWorkshopModel() {
       setLibrary((prev) => {
         const next = upsertActivePoem(prev, {
           title,
-          body,
+          body: bodyLiveRef.current,
           form: formNote,
           spellMode,
         });
@@ -451,10 +490,10 @@ export function usePoemWorkshopModel() {
 
   const applySpellSuggestion = useCallback(
     (hit: SpellHit, replacement: string) => {
-      if (body !== heavyBody) return false;
       const view = editorViewRef.current;
       if (!view) return false;
-      if (view.state.doc.toString() !== body) return false;
+      const docStr = view.state.doc.toString();
+      if (docStr !== heavyBody) return false;
       const { docFrom: from, docTo: to, word } = hit;
       const docLen = view.state.doc.length;
       if (from < 0 || to > docLen || from > to) return false;
@@ -467,7 +506,7 @@ export function usePoemWorkshopModel() {
       view.focus();
       return true;
     },
-    [body, heavyBody],
+    [heavyBody],
   );
 
   const refreshSpell = useCallback(() => {
@@ -477,12 +516,18 @@ export function usePoemWorkshopModel() {
   const applyLoadedPoem = useCallback((lib: DraftLibrary) => {
     const p = poemById(lib, lib.activeId);
     if (!p) return;
+    if (bodyToReactTimer.current) {
+      clearTimeout(bodyToReactTimer.current);
+      bodyToReactTimer.current = null;
+    }
     setTitle(p.title);
     setBody(p.body);
+    bodyLiveRef.current = p.body;
     setHeavyBody(p.body);
     setFormNote(p.form ?? "");
     setSpellMode(p.spellMode ?? "permissive");
     setRevisions(loadRevisions(lib.activeId));
+    setBodySyncNonce((n) => n + 1);
   }, []);
 
   const selectPoem = useCallback(
@@ -490,7 +535,7 @@ export function usePoemWorkshopModel() {
       if (poemId === activePoemId) return;
       const flushed = upsertActivePoem(library, {
         title,
-        body,
+        body: bodyLiveRef.current,
         form: formNote,
         spellMode,
       });
@@ -515,13 +560,13 @@ export function usePoemWorkshopModel() {
       });
       applyLoadedPoem(next);
     },
-    [activePoemId, library, title, body, formNote, spellMode, applyLoadedPoem],
+    [activePoemId, library, title, formNote, spellMode, applyLoadedPoem],
   );
 
   const newPoem = useCallback(() => {
     const flushed = upsertActivePoem(library, {
       title,
-      body,
+      body: bodyLiveRef.current,
       form: formNote,
       spellMode,
     });
@@ -536,12 +581,12 @@ export function usePoemWorkshopModel() {
     }
     setLibrary(next);
     applyLoadedPoem(next);
-  }, [library, title, body, formNote, spellMode, applyLoadedPoem]);
+  }, [library, title, formNote, spellMode, applyLoadedPoem]);
 
   const duplicatePoem = useCallback(() => {
     const flushed = upsertActivePoem(library, {
       title,
-      body,
+      body: bodyLiveRef.current,
       form: formNote,
       spellMode,
     });
@@ -556,13 +601,13 @@ export function usePoemWorkshopModel() {
     }
     setLibrary(next);
     applyLoadedPoem(next);
-  }, [library, title, body, formNote, spellMode, applyLoadedPoem]);
+  }, [library, title, formNote, spellMode, applyLoadedPoem]);
 
   const duplicatePoemById = useCallback(
     (poemId: string) => {
       const flushed = upsertActivePoem(library, {
         title,
-        body,
+        body: bodyLiveRef.current,
         form: formNote,
         spellMode,
       });
@@ -578,7 +623,7 @@ export function usePoemWorkshopModel() {
       setLibrary(next);
       applyLoadedPoem(next);
     },
-    [library, title, body, formNote, spellMode, applyLoadedPoem],
+    [library, title, formNote, spellMode, applyLoadedPoem],
   );
 
   const deleteCurrentPoem = useCallback(() => {
@@ -597,7 +642,7 @@ export function usePoemWorkshopModel() {
     removeRevisionsForPoem(id);
     const flushed = upsertActivePoem(library, {
       title,
-      body,
+      body: bodyLiveRef.current,
       form: formNote,
       spellMode,
     });
@@ -613,7 +658,6 @@ export function usePoemWorkshopModel() {
     library.poems.length,
     activePoemId,
     title,
-    body,
     formNote,
     spellMode,
     applyLoadedPoem,
@@ -677,7 +721,7 @@ export function usePoemWorkshopModel() {
   const saveSnapshot = useCallback(() => {
     const result = addRevision(activePoemId, revisions, {
       title,
-      body,
+      body: bodyLiveRef.current,
       form: formNote.trim() || undefined,
       label: snapshotLabel.trim() || undefined,
     });
@@ -701,13 +745,19 @@ export function usePoemWorkshopModel() {
       if (right && next.some((s) => s.id === right)) return right;
       return next[0]?.id ?? COMPARE_CURRENT_ID;
     });
-  }, [activePoemId, revisions, title, body, formNote, snapshotLabel]);
+  }, [activePoemId, revisions, title, formNote, snapshotLabel]);
 
   const restoreRevision = useCallback((snap: RevisionSnapshot) => {
+    if (bodyToReactTimer.current) {
+      clearTimeout(bodyToReactTimer.current);
+      bodyToReactTimer.current = null;
+    }
     setTitle(snap.title);
     setBody(snap.body);
+    bodyLiveRef.current = snap.body;
     setHeavyBody(snap.body);
     setFormNote(snap.form ?? "");
+    setBodySyncNonce((n) => n + 1);
   }, []);
 
   const deleteRevision = useCallback(
@@ -751,24 +801,24 @@ export function usePoemWorkshopModel() {
     const text = buildPlainTextTitleBody(
       title,
       formNote.trim() || undefined,
-      stripFormatMarkers(body),
+      stripFormatMarkers(bodyLiveRef.current),
     );
     downloadTextFile(exportFilename(title, "txt"), text);
-  }, [title, formNote, body]);
+  }, [title, formNote]);
 
   const onDownloadMd = useCallback(() => {
     // Keep **bold** (valid markdown) but strip __underline__ (no markdown equivalent)
-    const cleanBody = body.replace(/__(.+?)__/g, "$1");
+    const cleanBody = bodyLiveRef.current.replace(/__(.+?)__/g, "$1");
     const text = buildMarkdownPoem(
       title,
       formNote.trim() || undefined,
       cleanBody,
     );
     downloadTextFile(exportFilename(title, "md"), text);
-  }, [title, formNote, body]);
+  }, [title, formNote]);
 
   const onCopyMarkdown = useCallback(async () => {
-    const cleanBody = body.replace(/__(.+?)__/g, "$1");
+    const cleanBody = bodyLiveRef.current.replace(/__(.+?)__/g, "$1");
     const text = buildMarkdownPoem(
       title,
       formNote.trim() || undefined,
@@ -778,14 +828,14 @@ export function usePoemWorkshopModel() {
     setCopyExportFlash(true);
     if (copyExportTimer.current) clearTimeout(copyExportTimer.current);
     copyExportTimer.current = setTimeout(() => setCopyExportFlash(false), 1200);
-  }, [title, formNote, body]);
+  }, [title, formNote]);
 
   const onQuickCopyPlain = useCallback(async () => {
-    await copyTextToClipboard(stripFormatMarkers(body));
+    await copyTextToClipboard(stripFormatMarkers(bodyLiveRef.current));
     setQuickCopyFlash(true);
     if (quickCopyTimer.current) clearTimeout(quickCopyTimer.current);
     quickCopyTimer.current = setTimeout(() => setQuickCopyFlash(false), 1200);
-  }, [body]);
+  }, []);
 
   const onDownloadDocx = useCallback(async () => {
     setDocxExportErr(null);
@@ -794,14 +844,14 @@ export function usePoemWorkshopModel() {
         exportFilename(title, "docx"),
         title,
         formNote.trim() || undefined,
-        stripFormatMarkers(body),
+        stripFormatMarkers(bodyLiveRef.current),
       );
     } catch (e) {
       setDocxExportErr(
         e instanceof Error ? e.message : "Could not build the Word file.",
       );
     }
-  }, [title, formNote, body]);
+  }, [title, formNote]);
 
   const updateGoal =
     (key: keyof WorkshopGoals) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -884,6 +934,8 @@ export function usePoemWorkshopModel() {
     formNote,
     setFormNote,
     body,
+    bodySyncNonce,
+    onEditorBody,
     setBody,
     spellMode,
     setSpellMode,

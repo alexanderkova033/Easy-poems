@@ -1256,7 +1256,8 @@ export function PoemWorkshop() {
                     id="poem-body"
                     aria-describedby="poem-body-hint"
                     value={m.body}
-                    onChange={m.setBody}
+                    bodySyncNonce={m.bodySyncNonce}
+                    onLiveBody={m.onEditorBody}
                     editorViewRef={m.editorViewRef}
                     wordlist={m.wordlist}
                     spellMode={m.spellMode}

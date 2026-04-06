@@ -3,7 +3,7 @@ import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { highlightSelectionMatches, search } from "@codemirror/search";
 import type { MutableRefObject } from "react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { basicSetup } from "@uiw/codemirror-extensions-basic-setup";
 import {
@@ -43,7 +43,9 @@ const lineFlashField = StateField.define<DecorationSet>({
 
 export interface PoemBodyEditorProps {
   value: string;
-  onChange: (value: string) => void;
+  /** Increment when `value` was set by the workshop (not from the debounced editor pipeline). */
+  bodySyncNonce: number;
+  onLiveBody: (value: string) => void;
   editorViewRef: MutableRefObject<EditorView | null>;
   wordlist: Set<string> | null;
   spellMode: SpellMode;
@@ -59,6 +61,16 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     dict: props.wordlist,
     mode: props.spellMode,
   }));
+
+  const lastBodySyncNonce = useRef(props.bodySyncNonce);
+  const [localValue, setLocalValue] = useState(() => props.value);
+
+  useLayoutEffect(() => {
+    if (props.bodySyncNonce !== lastBodySyncNonce.current) {
+      lastBodySyncNonce.current = props.bodySyncNonce;
+      setLocalValue(props.value);
+    }
+  }, [props.bodySyncNonce, props.value]);
 
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -110,11 +122,14 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     <div className="poem-cm-wrap" id={props.id}>
       <CodeMirror
         aria-describedby={props["aria-describedby"]}
-        value={props.value}
+        value={localValue}
         height="auto"
         theme="none"
         extensions={extensions}
-        onChange={(v) => props.onChange(v)}
+        onChange={(v) => {
+          setLocalValue(v);
+          props.onLiveBody(v);
+        }}
         onCreateEditor={(view) => {
           props.editorViewRef.current = view;
         }}
