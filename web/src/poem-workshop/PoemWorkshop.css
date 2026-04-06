@@ -170,8 +170,8 @@
   appearance: none;
   display: grid;
   place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: var(--btn-height-sm);
+  height: var(--btn-height-sm);
   padding: 0;
   border-radius: 10px;
   border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
@@ -795,6 +795,24 @@
     0 0 0.65rem color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
+/* ---- Snapshot saved flash ---- */
+.snapshot-saved-flash {
+  margin: 0 0 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+  font-size: 0.83rem;
+  font-weight: 550;
+  animation: snapshot-flash-in 0.18s ease;
+}
+
+@keyframes snapshot-flash-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ---- Overlay / drawer / modal ---- */
 .overlay {
   position: fixed;
@@ -974,7 +992,7 @@
 }
 
 .drawer-head .small-btn {
-  min-height: 2.35rem;
+  min-height: var(--btn-height-sm);
   padding-inline: 0.65rem;
 }
 
@@ -1244,7 +1262,7 @@
 }
 
 .modal-head .small-btn {
-  min-height: 2.35rem;
+  min-height: var(--btn-height-sm);
   padding-inline: 0.65rem;
 }
 
@@ -1680,6 +1698,7 @@
   .mobile-tools-panel-toggle {
     display: inline-flex;
     align-items: center;
+    gap: 0.3rem;
     justify-content: center;
     min-height: 2.5rem;
     padding: 0.35rem 0.65rem;
@@ -1691,6 +1710,17 @@
     font-size: 0.82rem;
     font-weight: 650;
     cursor: pointer;
+  }
+
+  .mobile-tools-panel-toggle::after {
+    content: "▾";
+    font-size: 0.7rem;
+    transition: transform 0.18s ease;
+    display: inline-block;
+  }
+
+  .mobile-tools-panel-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
   }
 
   .mobile-tools-panel-toggle:hover {
@@ -2924,7 +2954,7 @@
   padding: 0.42rem 0.75rem;
   font: inherit;
   font-size: 0.88rem;
-  min-height: 2.55rem;
+  min-height: var(--btn-height-md);
   cursor: pointer;
   background: var(--bg);
   color: var(--text);
@@ -3150,6 +3180,7 @@
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 8px;
+  min-height: var(--btn-height-md);
   padding: 0.55rem 0.65rem;
   font: inherit;
   color: var(--text);
@@ -4393,7 +4424,7 @@ button.primary:disabled {
   appearance: none;
   border: 1px solid var(--border);
   border-radius: 12px;
-  min-height: 2.8rem;
+  min-height: var(--btn-height-lg);
   padding: 0.55rem 0.75rem;
   font: inherit;
   font-size: 0.9rem;
@@ -4579,6 +4610,12 @@ button.primary:disabled {
 
 .ai-loading-dot:nth-child(2) { animation-delay: 0.18s; }
 .ai-loading-dot:nth-child(3) { animation-delay: 0.36s; }
+
+.ai-loading-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-left: 0.2rem;
+}
 
 /* ---- Not configured notice ---- */
 .ai-unconfigured {

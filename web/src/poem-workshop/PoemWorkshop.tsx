@@ -1515,6 +1515,7 @@ export function PoemWorkshop() {
             snapshotLabel={m.snapshotLabel}
             onSnapshotLabelChange={m.setSnapshotLabel}
             onSaveSnapshot={m.saveSnapshot}
+            snapshotFlash={m.snapshotFlash}
             onRestoreRevision={m.restoreRevision}
             onDeleteRevision={m.deleteRevision}
             compareLeftId={m.compareLeftId}

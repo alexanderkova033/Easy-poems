@@ -142,6 +142,7 @@ export interface WorkshopToolPanelsProps {
   snapshotLabel: string;
   onSnapshotLabelChange: (v: string) => void;
   onSaveSnapshot: () => void;
+  snapshotFlash: boolean;
   onRestoreRevision: (snap: RevisionSnapshot) => void;
   onDeleteRevision: (id: string) => void;
   compareLeftId: string;
@@ -193,6 +194,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     snapshotLabel,
     onSnapshotLabelChange,
     onSaveSnapshot,
+    snapshotFlash,
     onRestoreRevision,
     onDeleteRevision,
     compareLeftId,
@@ -314,10 +316,10 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             buttons open the right tool or line.
           </p>
           {issuesAllClear ? (
-            <EmptyState title="Nothing queued" cmdkHint>
+            <EmptyState title="All clear — keep writing." cmdkHint>
               <p className="muted small">
-                When the checklist, goals, or spelling need attention, they show
-                up here.
+                Checklist, goals, and spelling are all satisfied. Issues appear
+                here as you draft.
               </p>
             </EmptyState>
           ) : (
@@ -1180,11 +1182,13 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ))}
             </ul>
           )}
-          <h4 className="tool-subheading">Same spelling from last vowel onward</h4>
+          <h4 className="tool-subheading">
+            <abbr title="Eye rhyme: words that look like they rhyme because of shared spelling (e.g. 'love' and 'move'), even if they sound different.">Eye rhymes</abbr> (same spelling from last vowel)
+          </h4>
           {vowelTailClusters.length === 0 ? (
-            <EmptyState title="No matching vowel tails yet">
+            <EmptyState title="No eye rhymes yet">
               <p className="muted small">
-                This catches "looks-similar" endings even when pronunciation differs.
+                Groups lines whose endings look alike on the page — useful for visual or slant rhyme.
               </p>
             </EmptyState>
           ) : rhymeFilteredVowel.length === 0 ? (
@@ -1607,6 +1611,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-snapshots"
         >
+          {snapshotFlash ? (
+            <p className="snapshot-saved-flash" role="status" aria-live="polite">
+              Snapshot saved
+            </p>
+          ) : null}
           <RevisionCompareSection
             embedInTools
             revisions={revisions}

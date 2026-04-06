@@ -28,7 +28,8 @@ export function FirstVisitHint({
         <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
         <kbd className="kbd-hint">K</kbd> anytime for the command palette (library,
         export, focus mode, and tools)—or open <strong>Library</strong> from the bar
-        on small screens.
+        on small screens. Press <kbd className="kbd-hint">Esc</kbd> to close any open
+        panel.
       </p>
       <button
         type="button"

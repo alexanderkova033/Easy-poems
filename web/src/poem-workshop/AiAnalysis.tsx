@@ -378,7 +378,7 @@ export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
           <span className="ai-loading-dot" aria-hidden />
           <span className="ai-loading-dot" aria-hidden />
           <span className="ai-loading-dot" aria-hidden />
-          <span className="sr-only">Analyzing poem…</span>
+          <span className="ai-loading-label">Analyzing…</span>
         </div>
       )}
 

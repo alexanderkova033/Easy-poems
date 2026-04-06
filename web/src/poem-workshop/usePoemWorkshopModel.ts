@@ -208,6 +208,8 @@ export function usePoemWorkshopModel() {
   const [goals, setGoals] = useState<WorkshopGoals>(() => loadWorkshopGoals());
   const [copyExportFlash, setCopyExportFlash] = useState(false);
   const [quickCopyFlash, setQuickCopyFlash] = useState(false);
+  const [snapshotFlash, setSnapshotFlash] = useState(false);
+  const snapshotFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [docxExportErr, setDocxExportErr] = useState<string | null>(null);
   const [jumpLine, setJumpLine] = useState<number | null>(null);
   const [jumpBump, setJumpBump] = useState(0);
@@ -803,6 +805,9 @@ export function usePoemWorkshopModel() {
     const next = result.revisions;
     setRevisions(next);
     setSnapshotLabel("");
+    setSnapshotFlash(true);
+    if (snapshotFlashTimer.current) clearTimeout(snapshotFlashTimer.current);
+    snapshotFlashTimer.current = setTimeout(() => setSnapshotFlash(false), 1800);
     setCompareLeftId((left) =>
       left === COMPARE_CURRENT_ID || (left && next.some((s) => s.id === left))
         ? left
@@ -1037,6 +1042,7 @@ export function usePoemWorkshopModel() {
     compareDiffRows,
     copyExportFlash,
     quickCopyFlash,
+    snapshotFlash,
     docxExportErr,
     onDownloadTxt,
     onDownloadMd,

@@ -6,12 +6,13 @@ interface Props {
 
 interface State {
   error: Error | null;
+  copied: boolean;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { error: null };
+  state: State = { error: null, copied: false };
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
   }
 
@@ -20,11 +21,21 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleReset = () => {
-    this.setState({ error: null });
+    this.setState({ error: null, copied: false });
+  };
+
+  private handleCopy = () => {
+    const { error } = this.state;
+    if (!error) return;
+    const text = `Error: ${error.message}\n\n${error.stack ?? ""}`;
+    void navigator.clipboard.writeText(text).then(() => {
+      this.setState({ copied: true });
+      setTimeout(() => this.setState({ copied: false }), 2000);
+    });
   };
 
   render() {
-    const { error } = this.state;
+    const { error, copied } = this.state;
     if (error) {
       return (
         <div
@@ -46,33 +57,40 @@ export class ErrorBoundary extends Component<Props, State> {
             An unexpected error occurred. Your drafts are stored in your browser
             and should still be here after a refresh.
           </p>
-          <details style={{ maxWidth: "42ch", textAlign: "left", opacity: 0.6 }}>
-            <summary style={{ cursor: "pointer" }}>Error details</summary>
-            <pre
+          <p style={{ margin: 0, opacity: 0.55, maxWidth: "36ch", fontSize: "0.875rem" }}>
+            {error.message}
+          </p>
+          <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", justifyContent: "center" }}>
+            <button
+              type="button"
+              onClick={this.handleReset}
               style={{
-                marginTop: "0.5rem",
-                fontSize: "0.75rem",
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-all",
+                padding: "0.5rem 1.25rem",
+                borderRadius: "6px",
+                border: "1px solid currentColor",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: "0.875rem",
               }}
             >
-              {error.message}
-            </pre>
-          </details>
-          <button
-            type="button"
-            onClick={this.handleReset}
-            style={{
-              padding: "0.5rem 1.25rem",
-              borderRadius: "6px",
-              border: "1px solid currentColor",
-              background: "transparent",
-              cursor: "pointer",
-              fontSize: "0.875rem",
-            }}
-          >
-            Try again
-          </button>
+              Try again
+            </button>
+            <button
+              type="button"
+              onClick={this.handleCopy}
+              style={{
+                padding: "0.5rem 1.25rem",
+                borderRadius: "6px",
+                border: "1px solid currentColor",
+                background: "transparent",
+                cursor: "pointer",
+                fontSize: "0.875rem",
+                opacity: 0.7,
+              }}
+            >
+              {copied ? "Copied!" : "Copy error details"}
+            </button>
+          </div>
         </div>
       );
     }
