@@ -1611,17 +1611,13 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-snapshots"
         >
-          {snapshotFlash ? (
-            <p className="snapshot-saved-flash" role="status" aria-live="polite">
-              Snapshot saved
-            </p>
-          ) : null}
           <RevisionCompareSection
             embedInTools
             revisions={revisions}
             snapshotLabel={snapshotLabel}
             onSnapshotLabelChange={onSnapshotLabelChange}
             onSaveSnapshot={onSaveSnapshot}
+            snapshotFlash={snapshotFlash}
             onRestoreRevision={onRestoreRevision}
             onDeleteRevision={onDeleteRevision}
             compareLeftId={compareLeftId}

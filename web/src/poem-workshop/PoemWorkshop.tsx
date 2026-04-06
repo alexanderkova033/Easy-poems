@@ -79,6 +79,8 @@ export function PoemWorkshop() {
   );
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
+  const toolsPanelRef = useRef<HTMLElement | null>(null);
+  const lastPanelScrollRef = useRef<number>(0);
 
   const overlayOpenCount =
     Number(isLibraryOpen) +
@@ -104,6 +106,33 @@ export function PoemWorkshop() {
     }
     overlayOpenCountPrev.current = overlayOpenCount;
   }, [overlayOpenCount]);
+
+  // Scroll the main page when the tools panel is at its boundary and the user
+  // has been idle inside the panel for 2 seconds — prevents accidental overscroll
+  // while still allowing intentional page scrolling after a deliberate pause.
+  useEffect(() => {
+    const FALLBACK_DELAY_MS = 2000;
+    const panel = toolsPanelRef.current;
+    if (!panel) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      const { scrollTop, scrollHeight, clientHeight } = panel;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+      const atTop = scrollTop <= 0;
+      const panelCanScroll = e.deltaY > 0 ? !atBottom : !atTop;
+
+      if (panelCanScroll) {
+        lastPanelScrollRef.current = Date.now();
+      } else if (Date.now() - lastPanelScrollRef.current >= FALLBACK_DELAY_MS) {
+        e.preventDefault();
+        window.scrollBy({ top: e.deltaY });
+      }
+    };
+
+    panel.addEventListener("wheel", onWheel, { passive: false });
+    return () => panel.removeEventListener("wheel", onWheel);
+  }, []);
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-writing-focus-v2", isFocusMode);

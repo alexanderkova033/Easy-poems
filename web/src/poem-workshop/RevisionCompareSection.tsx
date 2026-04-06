@@ -20,6 +20,7 @@ export interface RevisionCompareSectionProps {
   snapshotLabel: string;
   onSnapshotLabelChange: (v: string) => void;
   onSaveSnapshot: () => void;
+  snapshotFlash?: boolean;
   onRestoreRevision: (snap: RevisionSnapshot) => void;
   onDeleteRevision: (id: string) => void;
   compareLeftId: string;
@@ -41,6 +42,7 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
     snapshotLabel,
     onSnapshotLabelChange,
     onSaveSnapshot,
+    snapshotFlash = false,
     onRestoreRevision,
     onDeleteRevision,
     compareLeftId,
@@ -93,6 +95,11 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
           Save snapshot
         </button>
       </div>
+      {snapshotFlash ? (
+        <p className="snapshot-saved-flash" role="status" aria-live="polite">
+          Snapshot saved
+        </p>
+      ) : null}
       {revisions.length === 0 ? (
         <p className="muted small">No snapshots yet.</p>
       ) : (
