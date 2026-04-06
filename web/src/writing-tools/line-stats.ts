@@ -26,6 +26,51 @@ export interface StanzaStat {
   avgSyllablesPerNonEmptyLine: number;
 }
 
+/** Live counts for the header / overview (no syllable work — cheap on every keystroke). */
+export interface QuickDocumentStats {
+  totalLines: number;
+  nonEmptyLines: number;
+  totalWords: number;
+  totalChars: number;
+  stanzaCount: number;
+}
+
+export function computeQuickDocumentStats(body: string): QuickDocumentStats {
+  if (!body) {
+    return {
+      totalLines: 0,
+      nonEmptyLines: 0,
+      totalWords: 0,
+      totalChars: 0,
+      stanzaCount: 0,
+    };
+  }
+  const rawLines = body.split("\n");
+  let nonEmpty = 0;
+  let totalWords = 0;
+  for (const text of rawLines) {
+    const isNonEmpty = text.trim().length > 0;
+    if (isNonEmpty) {
+      nonEmpty++;
+      totalWords += wordsInLine(text).length;
+    }
+  }
+  let stanzaCount = 0;
+  let prevBlank = true;
+  for (const text of rawLines) {
+    const blank = text.trim().length === 0;
+    if (!blank && prevBlank) stanzaCount++;
+    prevBlank = blank;
+  }
+  return {
+    totalLines: rawLines.length,
+    nonEmptyLines: nonEmpty,
+    totalWords,
+    totalChars: body.length,
+    stanzaCount,
+  };
+}
+
 export interface DocumentStats {
   lines: LineStatRow[];
   totalLines: number;

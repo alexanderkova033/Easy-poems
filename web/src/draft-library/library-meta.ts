@@ -9,6 +9,8 @@ export interface DraftMeta {
   /** Comma-separated tags, stored normalized without commas. */
   tags?: string[];
   lastOpenedAt?: string;
+  /** Hidden from lists until “show archived” is on (draft stays in storage). */
+  archived?: boolean;
 }
 
 export type DraftMetaMap = Record<string, DraftMeta | undefined>;

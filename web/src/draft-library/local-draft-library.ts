@@ -164,8 +164,11 @@ export function addPoem(lib: DraftLibrary, poem: PoemRecord): DraftLibrary {
   return { ...lib, poems: [...lib.poems, poem], activeId: poem.id };
 }
 
-export function duplicateActivePoem(lib: DraftLibrary): DraftLibrary | null {
-  const cur = poemById(lib, lib.activeId);
+export function duplicatePoemById(
+  lib: DraftLibrary,
+  poemId: string,
+): DraftLibrary | null {
+  const cur = poemById(lib, poemId);
   if (!cur) return null;
   const copy: PoemRecord = {
     id: newPoemId(),
@@ -176,6 +179,10 @@ export function duplicateActivePoem(lib: DraftLibrary): DraftLibrary | null {
     ...(cur.spellMode ? { spellMode: cur.spellMode } : {}),
   };
   return addPoem(lib, copy);
+}
+
+export function duplicateActivePoem(lib: DraftLibrary): DraftLibrary | null {
+  return duplicatePoemById(lib, lib.activeId);
 }
 
 export function newBlankPoemAfter(lib: DraftLibrary): DraftLibrary {

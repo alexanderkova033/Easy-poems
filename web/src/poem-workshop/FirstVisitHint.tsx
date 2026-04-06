@@ -24,7 +24,11 @@ export function FirstVisitHint({
     <div className="first-visit-hint" role="status">
       <p className="first-visit-hint-text">
         Your draft saves in this browser on this device. Use Export or copy when you
-        want the text somewhere else.
+        want the text somewhere else. Press{" "}
+        <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
+        <kbd className="kbd-hint">K</kbd> anytime for the command palette (library,
+        export, focus mode, and tools)—or open <strong>Library</strong> from the bar
+        on small screens.
       </p>
       <button
         type="button"

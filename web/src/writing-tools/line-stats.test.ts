@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { computeDocumentStats, POETRY_READING_WPM } from "./line-stats";
+import {
+  computeDocumentStats,
+  computeQuickDocumentStats,
+  POETRY_READING_WPM,
+} from "./line-stats";
+
+describe("computeQuickDocumentStats", () => {
+  it("matches word and line counts without syllable work", () => {
+    const body = "one two\nthree\n\nfour five";
+    const q = computeQuickDocumentStats(body);
+    const full = computeDocumentStats(body);
+    expect(q.totalLines).toBe(full.totalLines);
+    expect(q.nonEmptyLines).toBe(full.nonEmptyLines);
+    expect(q.totalWords).toBe(full.totalWords);
+    expect(q.totalChars).toBe(full.totalChars);
+    expect(q.stanzaCount).toBe(full.stanzaCount);
+  });
+});
 
 describe("computeDocumentStats", () => {
   it("counts stanzas separated by blank lines", () => {

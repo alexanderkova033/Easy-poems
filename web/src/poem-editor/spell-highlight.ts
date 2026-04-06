@@ -8,6 +8,7 @@ import {
 } from "@codemirror/view";
 import type { SpellMode } from "@/draft-library/local-draft-storage";
 import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/personal-dictionary";
+import { SPELL_ANALYSIS_DEBOUNCE_MS } from "@/spellcheck/spell-timing";
 import { spellErrorRangesFromText } from "@/spellcheck/scan";
 
 export const spellSyncFacet = Facet.define<number, number>({
@@ -56,7 +57,7 @@ const spellPlugin = ViewPlugin.fromClass(
 
     private schedule() {
       clearTimeout(this.timeout);
-      this.timeout = setTimeout(() => this.run(), 180);
+      this.timeout = setTimeout(() => this.run(), SPELL_ANALYSIS_DEBOUNCE_MS);
     }
 
     private run() {

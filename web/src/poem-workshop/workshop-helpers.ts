@@ -3,6 +3,7 @@ import type { RevisionSnapshot } from "@/draft-library/revision-snapshots";
 export const COMPARE_CURRENT_ID = "__current__";
 
 export type ToolTab =
+  | "issues"
   | "totals"
   | "goals"
   | "checklist"
@@ -42,6 +43,7 @@ export function tabsForBucket(bucket: ToolBucket): ToolTab[] {
   switch (bucket) {
     case "overview":
       return [
+        "issues",
         "totals",
         "spell",
         "lines",

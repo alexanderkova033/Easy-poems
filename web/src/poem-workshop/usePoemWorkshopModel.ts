@@ -21,6 +21,7 @@ import { stripFormatMarkers } from "@/poem-editor/format-marks";
 import {
   buildWorkshopExportJson,
   duplicateActivePoem,
+  duplicatePoemById as duplicatePoemByIdInLib,
   loadOrCreateLibrary,
   mergeImportedPoems,
   newBlankPoemAfter,
@@ -55,10 +56,15 @@ import {
 } from "@/draft-library/workshop-goals";
 import { loadPersonalDictionary, loadSessionIgnores } from "@/spellcheck/personal-dictionary";
 import { loadEnglishWordlist } from "@/spellcheck/wordlist";
-import { scanLinesForSpelling } from "@/spellcheck/scan";
+import type { SpellHit } from "@/spellcheck/scan";
+import { spellHitsFromText } from "@/spellcheck/scan";
+import { SPELL_ANALYSIS_DEBOUNCE_MS } from "@/spellcheck/spell-timing";
 import { evaluateGoals } from "@/writing-tools/goal-metrics";
 import { linesFromBody } from "@/writing-tools/lines-from-body";
-import { computeDocumentStats } from "@/writing-tools/line-stats";
+import {
+  computeDocumentStats,
+  computeQuickDocumentStats,
+} from "@/writing-tools/line-stats";
 import { loadStressLexicon } from "@/writing-tools/cmu-stress-lexicon";
 import {
   meterHintsForBody,
@@ -72,7 +78,11 @@ import {
   lightVowelTailClusters,
   roughRhymeClusters,
 } from "@/writing-tools/rhyme-hints";
-import { focusLineInEditor } from "@/poem-editor/focus-line-in-editor";
+import {
+  focusCharacterRangeInEditor,
+  focusLineInEditor,
+} from "@/poem-editor/focus-line-in-editor";
+import { isTypingInField } from "./keyboard-field-target";
 import { TOOL_TABS } from "./ToolTabBar";
 import {
   COMPARE_CURRENT_ID,
@@ -139,6 +149,7 @@ export function usePoemWorkshopModel() {
     null,
   );
   const [spellBump, setSpellBump] = useState(0);
+  const [spellNavIndex, setSpellNavIndex] = useState(0);
   const [revisions, setRevisions] = useState<RevisionSnapshot[]>([]);
   const [snapshotLabel, setSnapshotLabel] = useState("");
   const [compareLeftId, setCompareLeftId] = useState(COMPARE_CURRENT_ID);
@@ -199,7 +210,10 @@ export function usePoemWorkshopModel() {
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => setHeavyBody(body), 300);
+    const t = setTimeout(
+      () => setHeavyBody(body),
+      SPELL_ANALYSIS_DEBOUNCE_MS,
+    );
     return () => clearTimeout(t);
   }, [body]);
 
@@ -277,7 +291,14 @@ export function usePoemWorkshopModel() {
 
   const lines = useMemo(() => linesFromBody(body), [body]);
   const heavyLines = useMemo(() => linesFromBody(heavyBody), [heavyBody]);
-  const docStats = useMemo(() => computeDocumentStats(body), [body]);
+  const quickDocStats = useMemo(
+    () => computeQuickDocumentStats(body),
+    [body],
+  );
+  const docStats = useMemo(
+    () => computeDocumentStats(heavyBody),
+    [heavyBody],
+  );
   const meterHints = useMemo(
     () => meterHintsForBody(heavyBody, stressLexicon),
     [heavyBody, stressLexicon],
@@ -310,14 +331,18 @@ export function usePoemWorkshopModel() {
   );
   const spellHits = useMemo(() => {
     if (!wordlist) return [];
-    return scanLinesForSpelling(
-      lines,
+    return spellHitsFromText(
+      heavyBody,
       wordlist,
       loadPersonalDictionary(),
       loadSessionIgnores(),
       spellMode,
     );
-  }, [lines, wordlist, spellMode, spellBump]);
+  }, [heavyBody, wordlist, spellMode, spellBump]);
+
+  useEffect(() => {
+    setSpellNavIndex(0);
+  }, [spellHits]);
 
   const goalEvaluation = useMemo(
     () => evaluateGoals(docStats, goals),
@@ -374,6 +399,76 @@ export function usePoemWorkshopModel() {
     setJumpBump((n) => n + 1);
     focusLineInEditor(view, line1Based);
   }, []);
+
+  const goToSpellHit = useCallback((hit: SpellHit) => {
+    const view = editorViewRef.current;
+    if (!view) return;
+    setJumpLine(hit.lineNumber);
+    setJumpBump((n) => n + 1);
+    if (body === heavyBody) {
+      focusCharacterRangeInEditor(view, hit.docFrom, hit.docTo);
+      return;
+    }
+    focusLineInEditor(view, hit.lineNumber);
+  }, [body, heavyBody]);
+
+  const goToSpellHitAt = useCallback(
+    (hit: SpellHit) => {
+      const idx = spellHits.indexOf(hit);
+      if (idx >= 0) setSpellNavIndex(idx);
+      goToSpellHit(hit);
+    },
+    [spellHits, goToSpellHit],
+  );
+
+  const cycleSpellHit = useCallback(
+    (delta: number) => {
+      const n = spellHits.length;
+      if (n === 0) return;
+      setSpellNavIndex((prev) => {
+        const next = (prev + delta + n) % n;
+        const h = spellHits[next];
+        if (h) queueMicrotask(() => goToSpellHit(h));
+        return next;
+      });
+    },
+    [spellHits, goToSpellHit],
+  );
+
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (!e.ctrlKey || !e.altKey) return;
+      if (e.key !== "," && e.key !== ".") return;
+      if (isTypingInField(e.target)) return;
+      if (spellHits.length === 0) return;
+      e.preventDefault();
+      const delta = e.key === "." ? 1 : -1;
+      cycleSpellHit(delta);
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
+  }, [spellHits.length, cycleSpellHit]);
+
+  const applySpellSuggestion = useCallback(
+    (hit: SpellHit, replacement: string) => {
+      if (body !== heavyBody) return false;
+      const view = editorViewRef.current;
+      if (!view) return false;
+      if (view.state.doc.toString() !== body) return false;
+      const { docFrom: from, docTo: to, word } = hit;
+      const docLen = view.state.doc.length;
+      if (from < 0 || to > docLen || from > to) return false;
+      if (view.state.doc.sliceString(from, to) !== word) return false;
+      view.dispatch({
+        changes: { from, to, insert: replacement },
+        selection: { anchor: from + replacement.length },
+        scrollIntoView: true,
+      });
+      view.focus();
+      return true;
+    },
+    [body, heavyBody],
+  );
 
   const refreshSpell = useCallback(() => {
     setSpellBump((n) => n + 1);
@@ -462,6 +557,29 @@ export function usePoemWorkshopModel() {
     setLibrary(next);
     applyLoadedPoem(next);
   }, [library, title, body, formNote, spellMode, applyLoadedPoem]);
+
+  const duplicatePoemById = useCallback(
+    (poemId: string) => {
+      const flushed = upsertActivePoem(library, {
+        title,
+        body,
+        form: formNote,
+        spellMode,
+      });
+      if (!saveLibrary(flushed)) {
+        setPersistenceError(DRAFT_STORAGE_MSG);
+        return;
+      }
+      const next = duplicatePoemByIdInLib(flushed, poemId);
+      if (!next || !saveLibrary(next)) {
+        setPersistenceError(DRAFT_STORAGE_MSG);
+        return;
+      }
+      setLibrary(next);
+      applyLoadedPoem(next);
+    },
+    [library, title, body, formNote, spellMode, applyLoadedPoem],
+  );
 
   const deleteCurrentPoem = useCallback(() => {
     if (library.poems.length <= 1) {
@@ -695,32 +813,34 @@ export function usePoemWorkshopModel() {
     setPersistenceError(message);
   }, []);
 
-  const poemOptions = useMemo(
-    () =>
-      library.poems
-        .slice()
-        .sort((a, b) => {
-          const ma = meta[a.id] ?? {};
-          const mb = meta[b.id] ?? {};
-          const pa = ma.pinned ? 1 : 0;
-          const pb = mb.pinned ? 1 : 0;
-          if (pa !== pb) return pb - pa;
-          const oa = ma.lastOpenedAt ? new Date(ma.lastOpenedAt).getTime() : 0;
-          const ob = mb.lastOpenedAt ? new Date(mb.lastOpenedAt).getTime() : 0;
-          if (oa !== ob) return ob - oa;
-          return (
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-          );
-        })
-        .map((p) => ({
-          id: p.id,
-          label:
-            (meta[p.id]?.label?.trim() ||
-              p.title.trim() ||
-              "Untitled"),
-        })),
-    [library.poems, meta],
-  );
+  const poemOptions = useMemo(() => {
+    const labelFor = (p: (typeof library.poems)[0]) =>
+      meta[p.id]?.label?.trim() || p.title.trim() || "Untitled";
+    return library.poems
+      .slice()
+      .filter(
+        (p) =>
+          !meta[p.id]?.archived || p.id === library.activeId,
+      )
+      .sort((a, b) => {
+        const ma = meta[a.id] ?? {};
+        const mb = meta[b.id] ?? {};
+        const pa = ma.pinned ? 1 : 0;
+        const pb = mb.pinned ? 1 : 0;
+        if (pa !== pb) return pb - pa;
+        const oa = ma.lastOpenedAt ? new Date(ma.lastOpenedAt).getTime() : 0;
+        const ob = mb.lastOpenedAt ? new Date(mb.lastOpenedAt).getTime() : 0;
+        if (oa !== ob) return ob - oa;
+        return (
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
+      })
+      .map((p) => ({
+        id: p.id,
+        label: labelFor(p),
+        archived: Boolean(meta[p.id]?.archived),
+      }));
+  }, [library.poems, library.activeId, meta]);
 
   const setDraftLabel = useCallback((poemId: string, label: string) => {
     setMeta((prev) => {
@@ -746,6 +866,17 @@ export function usePoemWorkshopModel() {
       return patched;
     });
   }, []);
+
+  const setDraftArchived = useCallback(
+    (poemId: string, archived: boolean) => {
+      setMeta((prev) => {
+        const patched = upsertDraftMeta(prev, poemId, { archived });
+        void saveDraftMetaMap(patched);
+        return patched;
+      });
+    },
+    [],
+  );
 
   return {
     title,
@@ -792,6 +923,7 @@ export function usePoemWorkshopModel() {
     toolTab,
     setToolTab,
     lines,
+    quickDocStats,
     docStats,
     meterHints,
     stressLexiconReady: Boolean(stressLexicon),
@@ -808,20 +940,28 @@ export function usePoemWorkshopModel() {
     goalEvaluation,
     publication,
     goToLine,
+    goToSpellHit,
+    goToSpellHitAt,
+    cycleSpellHit,
+    spellNavIndex,
+    applySpellSuggestion,
     refreshSpell,
     updateGoal,
     onSpellPersistenceError,
     jumpLine,
     jumpBump,
     activePoemId,
+    library,
     poemOptions,
     draftMeta: meta,
     setDraftLabel,
     togglePinned,
     setDraftTags,
+    setDraftArchived,
     selectPoem,
     newPoem,
     duplicatePoem,
+    duplicatePoemById,
     deleteCurrentPoem,
     exportWorkshopBackup,
     triggerImportBackup,

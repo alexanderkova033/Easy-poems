@@ -1,10 +1,13 @@
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { attachMockLocalStorage } from "@/shared/test/mock-local-storage";
 import {
+  duplicatePoemById,
   loadOrCreateLibrary,
   mergeImportedPoems,
+  newBlankPoemAfter,
   poemById,
   removePoem,
+  setActivePoem,
   upsertActivePoem,
 } from "./local-draft-library";
 
@@ -79,5 +82,22 @@ describe("local-draft-library", () => {
     lib = removePoem(lib, onlyId);
     expect(lib.poems).toHaveLength(1);
     expect(lib.poems[0]!.body).toBe("");
+  });
+
+  it("duplicatePoemById copies a chosen draft and activates the copy", () => {
+    let lib = loadOrCreateLibrary();
+    lib = upsertActivePoem(lib, { title: "Source", body: "alpha\n" });
+    const sourceId = lib.activeId;
+    lib = newBlankPoemAfter(lib);
+    expect(lib.activeId).not.toBe(sourceId);
+    const back = setActivePoem(lib, sourceId);
+    expect(back).not.toBeNull();
+    lib = back!;
+    expect(lib.activeId).toBe(sourceId);
+    const dupLib = duplicatePoemById(lib, sourceId);
+    expect(dupLib).not.toBeNull();
+    const copy = poemById(dupLib!, dupLib!.activeId);
+    expect(copy?.body).toBe("alpha\n");
+    expect(copy?.title).toContain("copy");
   });
 });

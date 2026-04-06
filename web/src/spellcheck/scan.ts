@@ -7,6 +7,52 @@ export interface SpellHit {
   word: string;
   normalized: string;
   suggestions: string[];
+  /** Document offsets in the same string passed to {@link spellHitsFromText} (0-based, end-exclusive). */
+  docFrom: number;
+  docTo: number;
+}
+
+function lineNumberAtOffset(text: string, offset: number): number {
+  let line = 1;
+  const end = Math.min(offset, text.length);
+  for (let i = 0; i < end; i++) {
+    if (text.charCodeAt(i) === 10) line++;
+  }
+  return line;
+}
+
+/**
+ * Same misspellings as {@link spellErrorRangesFromText}, with line metadata and suggestions.
+ * Use this for the workshop list so it stays aligned with editor underlines.
+ */
+export function spellHitsFromText(
+  fullText: string,
+  dict: Set<string>,
+  personal: Set<string>,
+  sessionIgnores: Set<string>,
+  mode: SpellMode,
+): SpellHit[] {
+  const ranges = spellErrorRangesFromText(
+    fullText,
+    dict,
+    personal,
+    sessionIgnores,
+    mode,
+  );
+  const hits: SpellHit[] = [];
+  for (const r of ranges) {
+    const raw = fullText.slice(r.from, r.to);
+    const normalized = normalizeWordToken(raw);
+    hits.push({
+      lineNumber: lineNumberAtOffset(fullText, r.from),
+      word: raw,
+      normalized,
+      suggestions: suggestCorrections(normalized, dict, 5),
+      docFrom: r.from,
+      docTo: r.to,
+    });
+  }
+  return hits;
 }
 
 function shouldSkipPermissive(token: string, normalized: string): boolean {
@@ -99,31 +145,11 @@ export function scanLinesForSpelling(
   sessionIgnores: Set<string>,
   mode: SpellMode,
 ): SpellHit[] {
-  const hits: SpellHit[] = [];
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]!;
-    for (const span of wordSpansInLine(line)) {
-      const normalized = normalizeWordToken(span.raw);
-      if (
-        !isMisspelled(
-          span.raw,
-          normalized,
-          dict,
-          personal,
-          sessionIgnores,
-          mode,
-        )
-      )
-        continue;
-
-      hits.push({
-        lineNumber: i + 1,
-        word: span.raw,
-        normalized,
-        suggestions: suggestCorrections(normalized, dict, 5),
-      });
-    }
-  }
-  return hits;
+  return spellHitsFromText(
+    lines.join("\n"),
+    dict,
+    personal,
+    sessionIgnores,
+    mode,
+  );
 }

@@ -14,3 +14,20 @@ export function focusLineInEditor(
   });
   view.focus();
 }
+
+/** Select a character range in the document (0-based offsets, end-exclusive). */
+export function focusCharacterRangeInEditor(
+  view: EditorView,
+  from: number,
+  to: number,
+): void {
+  const doc = view.state.doc;
+  const len = doc.length;
+  const a = Math.max(0, Math.min(from, len));
+  const b = Math.max(0, Math.min(to, len));
+  view.dispatch({
+    selection: { anchor: a, head: b },
+    scrollIntoView: true,
+  });
+  view.focus();
+}

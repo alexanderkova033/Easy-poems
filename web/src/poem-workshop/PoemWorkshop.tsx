@@ -16,6 +16,8 @@ import { ToolsOverviewStrip } from "./ToolsOverviewStrip";
 import { useToolTabListKeyboard } from "./useToolTabListKeyboard";
 import { useWorkshopToolHotkeys } from "./useWorkshopToolHotkeys";
 import { WorkshopToolPanels } from "./WorkshopToolPanels";
+import type { DraftMeta } from "@/draft-library/library-meta";
+import type { PoemRecord } from "@/draft-library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "./AiAnalysis";
 import { FormatToolbar } from "./FormatToolbar";
@@ -62,6 +64,12 @@ export function PoemWorkshop() {
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
   const [findMode, setFindMode] = useState<"find" | "replace">("find");
   const [isFindOpen, setIsFindOpen] = useState(false);
+  const [libraryQuery, setLibraryQuery] = useState("");
+  const [librarySort, setLibrarySort] = useState<
+    "recent" | "title" | "updated"
+  >("recent");
+  const [libraryShowArchived, setLibraryShowArchived] = useState(false);
+  const [mobileToolsExpanded, setMobileToolsExpanded] = useState(true);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
   );
@@ -165,6 +173,92 @@ export function PoemWorkshop() {
     const f = m.formNote.trim();
     return `${t ? `${t}\n\n` : ""}${f ? `${f}\n\n` : ""}${m.body}`;
   }, [m.body, m.formNote, m.title]);
+
+  const checklistOpenCount = useMemo(
+    () => m.publication.items.filter((i) => !i.done).length,
+    [m.publication.items],
+  );
+
+  const issuesQueueCount = useMemo(() => {
+    const spell = m.wordlist ? m.spellHits.length : 0;
+    return (
+      checklistOpenCount +
+      m.goalEvaluation.warnings.length +
+      spell
+    );
+  }, [
+    checklistOpenCount,
+    m.goalEvaluation.warnings.length,
+    m.spellHits.length,
+    m.wordlist,
+  ]);
+
+  const libraryListRows = useMemo(() => {
+    const q = libraryQuery.trim().toLowerCase();
+    const labelFor = (p: PoemRecord) =>
+      m.draftMeta[p.id]?.label?.trim() || p.title.trim() || "Untitled";
+    type Row = {
+      id: string;
+      label: string;
+      poem: PoemRecord;
+      meta: DraftMeta;
+    };
+    const rows: Row[] = m.library.poems.map((poem) => ({
+      id: poem.id,
+      label: labelFor(poem),
+      poem,
+      meta: m.draftMeta[poem.id] ?? {},
+    }));
+    const filtered = rows.filter((r) => {
+      if (
+        !libraryShowArchived &&
+        r.meta.archived &&
+        r.id !== m.activePoemId
+      ) {
+        return false;
+      }
+      if (!q) return true;
+      const tags = (r.meta.tags ?? []).join(" ").toLowerCase();
+      const hay = `${r.label} ${r.poem.title} ${tags}`.toLowerCase();
+      return hay.includes(q);
+    });
+    const sorted = filtered.slice();
+    sorted.sort((a, b) => {
+      const pa = a.meta.pinned ? 1 : 0;
+      const pb = b.meta.pinned ? 1 : 0;
+      if (pa !== pb) return pb - pa;
+      if (librarySort === "title") {
+        return a.label.localeCompare(b.label, undefined, {
+          sensitivity: "base",
+        });
+      }
+      if (librarySort === "updated") {
+        return (
+          new Date(b.poem.updatedAt).getTime() -
+          new Date(a.poem.updatedAt).getTime()
+        );
+      }
+      const oa = a.meta.lastOpenedAt
+        ? new Date(a.meta.lastOpenedAt).getTime()
+        : 0;
+      const ob = b.meta.lastOpenedAt
+        ? new Date(b.meta.lastOpenedAt).getTime()
+        : 0;
+      if (oa !== ob) return ob - oa;
+      return (
+        new Date(b.poem.updatedAt).getTime() -
+        new Date(a.poem.updatedAt).getTime()
+      );
+    });
+    return sorted;
+  }, [
+    m.library.poems,
+    m.draftMeta,
+    m.activePoemId,
+    libraryQuery,
+    libraryShowArchived,
+    librarySort,
+  ]);
 
   const cmdkActions = useMemo<CommandPaletteAction[]>(() => {
     return [
@@ -297,6 +391,7 @@ export function PoemWorkshop() {
                   {m.poemOptions.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.label}
+                      {o.archived ? " (archived)" : ""}
                     </option>
                   ))}
                 </select>
@@ -319,7 +414,7 @@ export function PoemWorkshop() {
             {isFocusMode ? (
               <div className="topbar-context-stats topbar-focus-stats">
                 <span className="topbar-focus-stat">
-                  {m.docStats.totalWords} words
+                  {m.quickDocStats.totalWords} words
                 </span>
                 <span className="topbar-focus-sep" aria-hidden>
                   ·
@@ -327,12 +422,12 @@ export function PoemWorkshop() {
                 <span
                   className="topbar-focus-stat"
                   title={
-                    m.docStats.totalLines !== m.docStats.nonEmptyLines
-                      ? `${m.docStats.totalLines} lines in editor including blank lines`
+                    m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
+                      ? `${m.quickDocStats.totalLines} lines in editor including blank lines`
                       : undefined
                   }
                 >
-                  {m.docStats.nonEmptyLines} lines
+                  {m.quickDocStats.nonEmptyLines} lines
                 </span>
               </div>
             ) : (
@@ -341,7 +436,7 @@ export function PoemWorkshop() {
                   className="topbar-context-stat"
                   title="Word count in poem body"
                 >
-                  {m.docStats.totalWords} words
+                  {m.quickDocStats.totalWords} words
                 </span>
                 <span className="topbar-context-sep" aria-hidden>
                   ·
@@ -349,17 +444,17 @@ export function PoemWorkshop() {
                 <span
                   className="topbar-context-stat"
                   title={
-                    m.docStats.totalLines !== m.docStats.nonEmptyLines
-                      ? `${m.docStats.nonEmptyLines} lines with text; ${m.docStats.totalLines} total in editor (includes blanks)`
+                    m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
+                      ? `${m.quickDocStats.nonEmptyLines} lines with text; ${m.quickDocStats.totalLines} total in editor (includes blanks)`
                       : "Lines containing at least one character"
                   }
                 >
-                  {m.docStats.nonEmptyLines} lines
+                  {m.quickDocStats.nonEmptyLines} lines
                 </span>
-                {m.docStats.totalLines !== m.docStats.nonEmptyLines ? (
+                {m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines ? (
                   <span className="topbar-context-hint">
                     {" "}
-                    ({m.docStats.totalLines} incl. blanks)
+                    ({m.quickDocStats.totalLines} incl. blanks)
                   </span>
                 ) : null}
               </div>
@@ -592,21 +687,64 @@ export function PoemWorkshop() {
                 <p className="drawer-note">
                   Drafts and snapshots stay in this browser unless you export them.
                 </p>
+                <div className="library-filters" role="search">
+                  <label className="library-filter-field">
+                    <span className="library-filter-label">Search</span>
+                    <input
+                      type="search"
+                      value={libraryQuery}
+                      onChange={(e) => setLibraryQuery(e.target.value)}
+                      placeholder="Title, label, tags"
+                      autoComplete="off"
+                      spellCheck={false}
+                      aria-label="Filter drafts in library"
+                    />
+                  </label>
+                  <label className="library-filter-field">
+                    <span className="library-filter-label">Sort</span>
+                    <select
+                      value={librarySort}
+                      onChange={(e) =>
+                        setLibrarySort(e.target.value as typeof librarySort)
+                      }
+                      aria-label="Sort drafts"
+                    >
+                      <option value="recent">Recent (opened)</option>
+                      <option value="updated">Recently edited</option>
+                      <option value="title">Title A–Z</option>
+                    </select>
+                  </label>
+                  <label className="library-filter-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={libraryShowArchived}
+                      onChange={(e) =>
+                        setLibraryShowArchived(e.target.checked)
+                      }
+                    />
+                    Show archived
+                  </label>
+                </div>
+                {libraryListRows.length === 0 ? (
+                  <p className="drawer-note library-empty-msg" role="status">
+                    No drafts match this filter.
+                  </p>
+                ) : (
                 <ul className="draft-list" aria-label="Drafts in library">
-                  {m.poemOptions.map((o) => {
-                    const meta = m.draftMeta[o.id] ?? {};
+                  {libraryListRows.map(({ id, label, meta }) => {
                     const tags = (meta.tags ?? []).join(", ");
-                    const isActive = o.id === m.activePoemId;
+                    const isActive = id === m.activePoemId;
+                    const isArchived = Boolean(meta.archived);
                     return (
                       <li
-                        key={o.id}
-                        className={`draft-item ${isActive ? "is-active" : ""}`}
+                        key={id}
+                        className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""}`}
                       >
                         <div className="draft-item-row">
                           <button
                             type="button"
                             className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
-                            onClick={() => m.togglePinned(o.id)}
+                            onClick={() => m.togglePinned(id)}
                             aria-pressed={Boolean(meta.pinned)}
                             title={meta.pinned ? "Unpin" : "Pin"}
                           >
@@ -616,14 +754,50 @@ export function PoemWorkshop() {
                             type="button"
                             className="draft-open-btn"
                             onClick={() => {
-                              m.selectPoem(o.id);
+                              m.selectPoem(id);
                               setIsLibraryOpen(false);
                             }}
                             aria-current={isActive ? "true" : undefined}
                             title="Open this draft"
                           >
-                            {o.label}
+                            {label}
+                            {isArchived ? " (archived)" : ""}
                           </button>
+                          <button
+                            type="button"
+                            className="small-btn draft-row-dup"
+                            onClick={() => {
+                              m.duplicatePoemById(id);
+                              setIsLibraryOpen(false);
+                            }}
+                            title="Duplicate this draft"
+                          >
+                            Dup
+                          </button>
+                          {isArchived ? (
+                            <button
+                              type="button"
+                              className="small-btn"
+                              onClick={() => m.setDraftArchived(id, false)}
+                              title="Return to main list"
+                            >
+                              Unarchive
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="small-btn"
+                              disabled={isActive}
+                              title={
+                                isActive
+                                  ? "Switch to another draft first"
+                                  : "Hide from list (data kept)"
+                              }
+                              onClick={() => m.setDraftArchived(id, true)}
+                            >
+                              Archive
+                            </button>
+                          )}
                         </div>
                         <div className="draft-item-edit">
                           <label className="draft-edit-field">
@@ -632,7 +806,7 @@ export function PoemWorkshop() {
                               type="text"
                               value={meta.label ?? ""}
                               onChange={(e) =>
-                                m.setDraftLabel(o.id, e.target.value)
+                                m.setDraftLabel(id, e.target.value)
                               }
                               placeholder="Optional display name"
                               autoComplete="off"
@@ -646,7 +820,7 @@ export function PoemWorkshop() {
                               value={tags}
                               onChange={(e) =>
                                 m.setDraftTags(
-                                  o.id,
+                                  id,
                                   e.target.value
                                     .split(",")
                                     .map((t) => t.trim())
@@ -663,6 +837,7 @@ export function PoemWorkshop() {
                     );
                   })}
                 </ul>
+                )}
                 <p className="drawer-note">
                   Pinned drafts stay at the top; drafts also sort by last opened.
                 </p>
@@ -1143,13 +1318,22 @@ export function PoemWorkshop() {
         </section>
 
         <aside
-          className={`tools-panel ${isFocusMode ? "is-collapsed" : ""}`}
+          className={`tools-panel ${isFocusMode ? "is-collapsed" : ""} ${!mobileToolsExpanded ? "is-mobile-collapsed" : ""}`}
           aria-label="Tools"
           id="writing-tools"
         >
           <div className="tools-sticky-head">
             <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
+              <button
+                type="button"
+                className="mobile-tools-panel-toggle"
+                onClick={() => setMobileToolsExpanded((v) => !v)}
+                aria-expanded={mobileToolsExpanded}
+                aria-controls="writing-tools"
+              >
+                {mobileToolsExpanded ? "Hide" : "Show"}
+              </button>
             </div>
             <div
               className="tool-bucket-row"
@@ -1175,11 +1359,17 @@ export function PoemWorkshop() {
             </div>
             {toolTabBucket(m.toolTab) === "overview" ? (
               <ToolsOverviewStrip
-                docStats={m.docStats}
+                issuesQueueCount={issuesQueueCount}
+                quickDocStats={m.quickDocStats}
                 spellHitCount={m.spellHits.length}
                 wordlistReady={Boolean(m.wordlist)}
+                rhymeClusterCount={m.rhymeClusters.length}
                 goalEvaluation={m.goalEvaluation}
                 repeatCount={m.repeated.length}
+                checklistOpenCount={checklistOpenCount}
+                meterCoverage={m.meterCoverageSummary}
+                stressLexiconReady={m.stressLexiconReady}
+                heavyToolsStale={m.heavyToolsStale}
                 activeTab={m.toolTab}
                 onOpenTab={m.setToolTab}
               />
@@ -1229,6 +1419,11 @@ export function PoemWorkshop() {
             spellMode={m.spellMode}
             onSpellModeChange={m.setSpellMode}
             goToLine={m.goToLine}
+            goToSpellHitAt={m.goToSpellHitAt}
+            cycleSpellHit={m.cycleSpellHit}
+            spellNavIndex={m.spellNavIndex}
+            applySpellSuggestion={m.applySpellSuggestion}
+            spellBump={m.spellBump}
             refreshSpell={m.refreshSpell}
             onSpellPersistenceError={m.onSpellPersistenceError}
             updateGoal={m.updateGoal}

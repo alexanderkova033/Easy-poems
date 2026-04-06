@@ -1097,8 +1097,68 @@
 
 .draft-item-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.45rem;
+}
+
+.draft-item.is-archived {
+  opacity: 0.88;
+}
+
+.draft-row-dup {
+  flex: 0 0 auto;
+  min-height: 2.35rem;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.78rem;
+}
+
+.library-filters {
+  display: flex;
+  flex-direction: column;
   gap: 0.55rem;
+  margin: 0.65rem 0 0.75rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+}
+
+.library-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.library-filter-field input,
+.library-filter-field select {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 450;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 2.5rem;
+}
+
+.library-filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.84rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.library-filter-checkbox input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: var(--accent);
 }
 
 .pin-btn {
@@ -1616,6 +1676,45 @@
     position: sticky;
     top: 0;
   }
+
+  .mobile-tools-panel-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  .mobile-tools-panel-toggle:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  }
+
+  .tools-panel.is-mobile-collapsed .tool-bucket-row,
+  .tools-panel.is-mobile-collapsed .tools-overview-wrap,
+  .tools-panel.is-mobile-collapsed .tools-overview-strip,
+  .tools-panel.is-mobile-collapsed .tool-tabs,
+  .tools-panel.is-mobile-collapsed .tool-tab-panel {
+    display: none !important;
+  }
+
+  .tools-panel.is-mobile-collapsed {
+    max-height: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .mobile-tools-panel-toggle {
+    display: none !important;
+  }
 }
 
 .workshop-rail {
@@ -2060,6 +2159,17 @@
   overflow-wrap: anywhere;
 }
 
+.tools-overview-wrap {
+  margin: 0;
+}
+
+.tools-overview-legend {
+  margin: 0 0 0.35rem;
+  padding: 0 0.05rem;
+  line-height: 1.35;
+  max-width: 42rem;
+}
+
 .tools-overview-strip {
   display: flex;
   flex-wrap: wrap;
@@ -2225,6 +2335,80 @@
   gap: 0.35rem;
   font-size: 0.86rem;
   color: var(--muted);
+}
+
+.tool-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 0 0.65rem;
+}
+
+.tool-filter-label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--muted);
+}
+
+.tool-filter-field input {
+  font: inherit;
+  font-size: 0.86rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.personal-dict-details {
+  margin: 0.5rem 0 0.65rem;
+}
+
+.personal-dict-wordlist {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.86rem;
+}
+
+.personal-dict-wordlist li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.personal-dict-remove {
+  flex-shrink: 0;
+}
+
+.personal-dict-io-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+}
+
+.spell-suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.25rem 0 0.4rem;
+}
+
+.rhyme-show-more-wrap,
+.spell-show-more-wrap {
+  margin: 0.5rem 0 0;
+}
+
+.spell-sync-note,
+.spell-hotkey-hint {
+  margin: 0 0 0.5rem;
 }
 
 .meter-threshold input {
@@ -3783,6 +3967,12 @@ button.primary:disabled {
   margin-bottom: 0;
 }
 
+.tool-empty-cmdk {
+  margin: 0.55rem 0 0;
+  padding-top: 0.45rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
 .compare-diff-wrap {
   max-height: 18rem;
   overflow: auto;
@@ -3929,6 +4119,14 @@ button.primary:disabled {
 
 .checklist-item.open .checklist-text {
   color: var(--text);
+}
+
+.checklist-item-needs-attn {
+  border-left: 3px solid color-mix(in srgb, var(--danger) 55%, var(--border));
+  padding-left: 0.35rem;
+  margin-left: -0.1rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--danger) 6%, transparent);
 }
 
 .checklist-mark {

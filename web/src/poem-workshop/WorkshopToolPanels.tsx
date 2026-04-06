@@ -1,5 +1,5 @@
 import type { ChangeEvent, KeyboardEvent } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { SpellMode } from "@/draft-library/local-draft-storage";
 import type { SpellHit } from "@/spellcheck/scan";
 import type { WorkshopGoals } from "@/draft-library/workshop-goals";
@@ -16,7 +16,14 @@ import type {
   LineStressSource,
   MeterCoverageSummary,
 } from "@/writing-tools/meter-hints";
-import { addToPersonalDictionary, ignoreWordForSession } from "@/spellcheck/personal-dictionary";
+import { downloadTextFile } from "@/draft-library/export-poem";
+import {
+  addToPersonalDictionary,
+  ignoreWordForSession,
+  listPersonalDictionaryWords,
+  mergePersonalDictionaryFromJson,
+  removeFromPersonalDictionary,
+} from "@/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
 import {
   RevisionCompareSection,
@@ -43,14 +50,23 @@ function meterStressSourceHint(s: LineStressSource): string {
 function EmptyState({
   title,
   children,
+  cmdkHint,
 }: {
   title: string;
   children: React.ReactNode;
+  cmdkHint?: boolean;
 }) {
   return (
     <div className="tool-empty" role="status" aria-live="polite">
       <p className="tool-empty-title">{title}</p>
       <div className="tool-empty-body">{children}</div>
+      {cmdkHint ? (
+        <p className="tool-empty-cmdk muted small">
+          <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
+          +<kbd className="kbd-hint">K</kbd> opens commands (library, export, focus,
+          tools).
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -112,6 +128,11 @@ export interface WorkshopToolPanelsProps {
   spellMode: SpellMode;
   onSpellModeChange: (mode: SpellMode) => void;
   goToLine: (line1Based: number) => void;
+  goToSpellHitAt: (hit: SpellHit) => void;
+  cycleSpellHit: (delta: number) => void;
+  spellNavIndex: number;
+  applySpellSuggestion: (hit: SpellHit, replacement: string) => boolean;
+  spellBump: number;
   refreshSpell: () => void;
   onSpellPersistenceError: (message: string) => void;
   updateGoal: (
@@ -160,6 +181,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     spellMode,
     onSpellModeChange,
     goToLine,
+    goToSpellHitAt,
+    cycleSpellHit,
+    spellNavIndex,
+    applySpellSuggestion,
+    spellBump,
     refreshSpell,
     onSpellPersistenceError,
     updateGoal,
@@ -187,16 +213,53 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     meterCoverageSummary,
   } = props;
 
-  const [spellStep, setSpellStep] = useState(0);
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
+  const [rhymeVisibleCap, setRhymeVisibleCap] = useState(10);
+  const [spellListCap, setSpellListCap] = useState(50);
+  const [spellReplaceErr, setSpellReplaceErr] = useState<string | null>(null);
+  const dictImportInputRef = useRef<HTMLInputElement | null>(null);
   const [meterHideBlank, setMeterHideBlank] = useState(true);
   const [meterOnlyLowFit, setMeterOnlyLowFit] = useState(false);
   const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
+  const [meterOnlyHeuristic, setMeterOnlyHeuristic] = useState(false);
+  const [rhymeEndingFilter, setRhymeEndingFilter] = useState("");
+  const [repeatWordFilter, setRepeatWordFilter] = useState("");
   const [goLineField, setGoLineField] = useState("");
 
   useEffect(() => {
-    setSpellStep(0);
-  }, [spellHits]);
+    if (toolTab !== "spell") setSpellReplaceErr(null);
+  }, [toolTab]);
+
+  useEffect(() => {
+    setRhymeVisibleCap(10);
+  }, [
+    rhymeClusters,
+    vowelTailClusters,
+    assonanceClusters,
+    consonanceClusters,
+    rhymeEndingFilter,
+  ]);
+
+  useEffect(() => {
+    setSpellListCap(50);
+  }, [spellHits, spellMode]);
+
+  const personalWords = useMemo(
+    () => listPersonalDictionaryWords(),
+    [spellHits, spellBump],
+  );
+
+  const filterEndingClusters = useCallback((clusters: RhymeCluster[]) => {
+    const t = rhymeEndingFilter.trim().toLowerCase();
+    if (!t) return clusters;
+    return clusters.filter((c) => c.ending.toLowerCase().includes(t));
+  }, [rhymeEndingFilter]);
+
+  const filteredRepeated = useMemo(() => {
+    const t = repeatWordFilter.trim().toLowerCase();
+    if (!t) return repeated;
+    return repeated.filter((r) => r.word.toLowerCase().includes(t));
+  }, [repeated, repeatWordFilter]);
 
   const displayedLineRows = useMemo(() => {
     if (!hideEmptyLines) return docStats.lines;
@@ -207,14 +270,188 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     const rows = meterHints.slice(0, METER_TABLE_MAX);
     return rows.filter((r) => {
       if (meterHideBlank && !r.stressPattern) return false;
+      if (meterOnlyHeuristic && r.stressSource !== "heuristic") return false;
       if (!meterOnlyLowFit) return true;
       if (r.iambicFitPercent == null) return false;
       return r.iambicFitPercent < meterLowFitThreshold;
     });
-  }, [meterHideBlank, meterHints, meterLowFitThreshold, meterOnlyLowFit]);
+  }, [
+    meterHideBlank,
+    meterHints,
+    meterLowFitThreshold,
+    meterOnlyHeuristic,
+    meterOnlyLowFit,
+  ]);
+
+  const rhymeFilteredRhyme = filterEndingClusters(rhymeClusters);
+  const rhymeFilteredVowel = filterEndingClusters(vowelTailClusters);
+  const rhymeFilteredAsson = filterEndingClusters(assonanceClusters);
+  const rhymeFilteredCons = filterEndingClusters(consonanceClusters);
+  const rhymeAnyOverCap =
+    rhymeFilteredRhyme.length > rhymeVisibleCap ||
+    rhymeFilteredVowel.length > rhymeVisibleCap ||
+    rhymeFilteredAsson.length > rhymeVisibleCap ||
+    rhymeFilteredCons.length > rhymeVisibleCap;
+
+  const openChecklistItems = publication.items.filter((i) => !i.done);
+  const issuesAllClear =
+    openChecklistItems.length === 0 &&
+    goalEvaluation.warnings.length === 0 &&
+    (!wordlist || spellHits.length === 0);
 
   return (
     <div className="tool-tab-panel" key={toolTab}>
+      {toolTab === "issues" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-issues"
+          role="tabpanel"
+          aria-labelledby="tool-tab-issues"
+        >
+          <LiveSectionTitle>Revision queue</LiveSectionTitle>
+          <p className="muted small">
+            Checklist gaps, goal warnings, and spelling flags together. Jump
+            buttons open the right tool or line.
+          </p>
+          {issuesAllClear ? (
+            <EmptyState title="Nothing queued" cmdkHint>
+              <p className="muted small">
+                When the checklist, goals, or spelling need attention, they show
+                up here.
+              </p>
+            </EmptyState>
+          ) : (
+            <>
+              {openChecklistItems.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Publication checklist</h4>
+                  <ul
+                    className="checklist checklist-draft"
+                    aria-label="Open checklist items"
+                  >
+                    {openChecklistItems.map((item) => (
+                      <li
+                        key={item.text}
+                        className="checklist-item open checklist-item-needs-attn"
+                      >
+                        <span className="checklist-mark" aria-hidden>
+                          ○
+                        </span>
+                        <span className="checklist-text">
+                          {item.text}
+                          {item.detail ? (
+                            <span className="checklist-detail">
+                              {" "}
+                              — {item.detail}
+                            </span>
+                          ) : null}
+                        </span>
+                        {item.focusTitleField || item.openToolTab ? (
+                          <button
+                            type="button"
+                            className="small-btn checklist-jump-btn"
+                            onClick={() =>
+                              item.focusTitleField
+                                ? focusPoemTitle()
+                                : onOpenToolTab(item.openToolTab!)
+                            }
+                          >
+                            {checklistJumpLabel(item)}
+                          </button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {goalEvaluation.warnings.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Goals</h4>
+                  <ul className="goal-warnings">
+                    {goalEvaluation.warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                  <p className="muted small goal-syllable-jumps">
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => onOpenToolTab("goals")}
+                    >
+                      Open Goals
+                    </button>
+                    {goalEvaluation.syllableOverLines.length > 0 ? (
+                      <>
+                        {" "}
+                        · Lines over syllable cap:{" "}
+                        <JumpLineList
+                          lineNumbers={goalEvaluation.syllableOverLines}
+                          goToLine={goToLine}
+                        />
+                      </>
+                    ) : null}
+                  </p>
+                </>
+              ) : null}
+              {!wordlist ? (
+                <p className="muted small" aria-busy="true">
+                  Dictionary loading — spelling flags will appear here when
+                  ready.
+                </p>
+              ) : spellHits.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Spelling</h4>
+                  <p className="muted small">
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => onOpenToolTab("spell")}
+                    >
+                      Open Spelling
+                    </button>{" "}
+                    for the full list and dictionary actions.
+                  </p>
+                  <ul className="spell-hits spell-hits-draft issues-spell-preview">
+                    {spellHits.slice(0, 12).map((h) => (
+                      <li key={`${h.docFrom}-${h.docTo}`}>
+                        <div className="spell-hit-head">
+                          <button
+                            type="button"
+                            className="linkish"
+                            onClick={() => goToSpellHitAt(h)}
+                          >
+                            Line {h.lineNumber}
+                          </button>
+                          <span className="mono">{h.word}</span>
+                        </div>
+                        {h.suggestions.length > 0 ? (
+                          <p className="suggestions">
+                            Try: {h.suggestions.join(", ")}
+                          </p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                  {spellHits.length > 12 ? (
+                    <p className="muted small">
+                      +{spellHits.length - 12} more in{" "}
+                      <button
+                        type="button"
+                        className="linkish"
+                        onClick={() => onOpenToolTab("spell")}
+                      >
+                        Spelling
+                      </button>
+                      .
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : null}
+
       {toolTab === "totals" ? (
         <div
           className="tool-block tool-block-live"
@@ -223,6 +460,16 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-totals"
         >
           <LiveSectionTitle>Totals</LiveSectionTitle>
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Detailed counts (syllables, read-aloud, stanza table) catch up after
+              you pause typing—word and line pills above stay live.
+            </p>
+          ) : null}
           <ul
             className="stat-chips stat-chips-draft"
             role="status"
@@ -554,7 +801,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             {publication.items.map((item) => (
               <li
                 key={item.text}
-                className={`checklist-item ${item.done ? "done" : "open"}`}
+                className={`checklist-item ${item.done ? "done" : "open"}${!item.done ? " checklist-item-needs-attn" : ""}`}
               >
                 <span className="checklist-mark" aria-hidden>
                   {item.done ? "✓" : "○"}
@@ -601,6 +848,15 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-lines"
         >
           <LiveSectionTitle>Line table</LiveSectionTitle>
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Table syllable estimates match your text in a moment.
+            </p>
+          ) : null}
           <form
             className="lines-go-form"
             onSubmit={(e) => {
@@ -773,6 +1029,14 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               />{" "}
               Show low fit
             </label>
+            <label className="meter-toggle">
+              <input
+                type="checkbox"
+                checked={meterOnlyHeuristic}
+                onChange={(e) => setMeterOnlyHeuristic(e.target.checked)}
+              />{" "}
+              Heuristic lines only
+            </label>
             {meterOnlyLowFit ? (
               <label className="meter-threshold">
                 Below{" "}
@@ -887,16 +1151,28 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               These are <abbr title="Based on spelling patterns at the end of words, not phonetic pronunciation. 'love' and 'dove' would match; 'love' and 'above' might not, even though they rhyme in speech.">letter-pattern</abbr> detectors &mdash; a useful first pass, but your ear is the real judge. Tap a line number to jump to it.
             </p>
           </details>
+          <label className="tool-filter-field">
+            <span className="tool-filter-label">Filter endings</span>
+            <input
+              type="search"
+              value={rhymeEndingFilter}
+              onChange={(e) => setRhymeEndingFilter(e.target.value)}
+              placeholder="Substring, e.g. ing"
+              aria-label="Filter rhyme clusters by ending letters"
+            />
+          </label>
           <h4 className="tool-subheading">Shared final letter pattern</h4>
           {rhymeClusters.length === 0 ? (
-            <EmptyState title="No shared endings yet">
+            <EmptyState title="No shared endings yet" cmdkHint>
               <p className="muted small">
                 Keep drafting—this fills in once multiple lines end the same way.
               </p>
             </EmptyState>
+          ) : rhymeFilteredRhyme.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
           ) : (
             <ul className="hint-list hint-list-draft">
-              {rhymeClusters.slice(0, 10).map((c) => (
+              {rhymeFilteredRhyme.slice(0, rhymeVisibleCap).map((c) => (
                 <li key={c.ending}>
                   <span className="mono">…{c.ending}</span> — lines{" "}
                   <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
@@ -911,9 +1187,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 This catches "looks-similar" endings even when pronunciation differs.
               </p>
             </EmptyState>
+          ) : rhymeFilteredVowel.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
           ) : (
             <ul className="hint-list hint-list-draft">
-              {vowelTailClusters.slice(0, 10).map((c) => (
+              {rhymeFilteredVowel.slice(0, rhymeVisibleCap).map((c) => (
                 <li key={c.ending}>
                   <span className="mono">…{c.ending}</span> — lines{" "}
                   <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
@@ -931,9 +1209,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 pattern.
               </p>
             </EmptyState>
+          ) : rhymeFilteredAsson.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
           ) : (
             <ul className="hint-list hint-list-draft">
-              {assonanceClusters.slice(0, 10).map((c) => (
+              {rhymeFilteredAsson.slice(0, rhymeVisibleCap).map((c) => (
                 <li key={c.ending}>
                   <span className="mono">{c.ending}</span> — lines{" "}
                   <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
@@ -951,9 +1231,11 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 coda.
               </p>
             </EmptyState>
+          ) : rhymeFilteredCons.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
           ) : (
             <ul className="hint-list hint-list-draft">
-              {consonanceClusters.slice(0, 10).map((c) => (
+              {rhymeFilteredCons.slice(0, rhymeVisibleCap).map((c) => (
                 <li key={c.ending}>
                   <span className="mono">…{c.ending}</span> — lines{" "}
                   <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
@@ -961,6 +1243,17 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               ))}
             </ul>
           )}
+          {rhymeAnyOverCap ? (
+            <p className="rhyme-show-more-wrap">
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setRhymeVisibleCap((c) => c + 10)}
+              >
+                Show 10 more clusters
+              </button>
+            </p>
+          ) : null}
         </div>
       ) : null}
 
@@ -985,15 +1278,27 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             Non‑stopwords, 4+ letters, appearing twice or more (top 40). Tap a line
             number to jump.
           </p>
+          <label className="tool-filter-field">
+            <span className="tool-filter-label">Filter words</span>
+            <input
+              type="search"
+              value={repeatWordFilter}
+              onChange={(e) => setRepeatWordFilter(e.target.value)}
+              placeholder="Substring"
+              aria-label="Filter repeated words"
+            />
+          </label>
           {repeated.length === 0 ? (
-            <EmptyState title="No repeats detected">
+            <EmptyState title="No repeats detected" cmdkHint>
               <p className="muted small">
                 Nice—this list stays empty unless a non-stopword repeats.
               </p>
             </EmptyState>
+          ) : filteredRepeated.length === 0 ? (
+            <p className="muted small">No words match this filter.</p>
           ) : (
             <ul className="hint-list hint-list-draft">
-              {repeated.map((r) => (
+              {filteredRepeated.map((r) => (
                 <li key={r.word}>
                   <span className="mono">{r.word}</span> ×{r.count} — lines{" "}
                   <JumpLineList lineNumbers={r.lines} goToLine={goToLine} />
@@ -1012,6 +1317,21 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-spell"
         >
           <LiveSectionTitle>Spelling</LiveSectionTitle>
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Catching up to your latest typing. This list and the editor
+              underlines use the same scan after the same short pause; jumps
+              select the whole line until that catches up.
+            </p>
+          ) : (
+            <p className="muted small spell-sync-note" role="status">
+              List matches editor underlines (same dictionary pass on your draft).
+            </p>
+          )}
           <div
             className="spell-strategy-toggle"
             role="group"
@@ -1055,8 +1375,93 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               <p className="muted small">
                 Local list + your additions—many "unknowns" are on purpose.
               </p>
+              <details className="tool-hint-details personal-dict-details">
+                <summary className="tool-hint-summary">
+                  Personal dictionary ({personalWords.length})
+                </summary>
+                <p className="muted small tool-hint-body">
+                  Words you add with <strong>Add word</strong> are saved in this
+                  browser only.
+                </p>
+                {personalWords.length === 0 ? (
+                  <p className="muted small">No words yet.</p>
+                ) : (
+                  <ul className="personal-dict-wordlist">
+                    {personalWords.map((w) => (
+                      <li key={w}>
+                        <span className="mono">{w}</span>
+                        <button
+                          type="button"
+                          className="small-btn personal-dict-remove"
+                          onClick={() => {
+                            if (!removeFromPersonalDictionary(w)) {
+                              onSpellPersistenceError(
+                                "Could not update your dictionary (browser storage blocked or full).",
+                              );
+                              return;
+                            }
+                            refreshSpell();
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="personal-dict-io-row">
+                  {personalWords.length > 0 ? (
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() =>
+                        downloadTextFile(
+                          "easy-poems-personal-dictionary.json",
+                          `${JSON.stringify(personalWords, null, 2)}\n`,
+                        )
+                      }
+                    >
+                      Export JSON
+                    </button>
+                  ) : null}
+                  <input
+                    ref={dictImportInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="sr-only"
+                    aria-label="Import personal dictionary JSON"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!f) return;
+                      void (async () => {
+                        try {
+                          const text = await f.text();
+                          const res = mergePersonalDictionaryFromJson(text);
+                          if (!res.ok) {
+                            onSpellPersistenceError(res.error);
+                            return;
+                          }
+                          refreshSpell();
+                        } catch {
+                          onSpellPersistenceError(
+                            "Could not read that file.",
+                          );
+                        }
+                      })();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => dictImportInputRef.current?.click()}
+                  >
+                    Import JSON
+                  </button>
+                </div>
+              </details>
               {spellHits.length === 0 ? (
-                <EmptyState title="No spelling flags">
+                <EmptyState title="No spelling flags" cmdkHint>
                   <p className="muted small">
                     Looks clean under your current mode. Switch modes if you want a
                     stricter scan.
@@ -1068,43 +1473,41 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     <button
                       type="button"
                       className="small-btn"
-                      onClick={() => {
-                        const n = spellHits.length;
-                        const i = (spellStep - 1 + n) % n;
-                        setSpellStep(i);
-                        goToLine(spellHits[i]!.lineNumber);
-                      }}
+                      onClick={() => cycleSpellHit(-1)}
                     >
                       ← Previous
                     </button>
                     <span className="spell-hit-nav-pos" aria-live="polite">
-                      {spellStep + 1} / {spellHits.length}
+                      {spellNavIndex + 1} / {spellHits.length}
                     </span>
                     <button
                       type="button"
                       className="small-btn"
-                      onClick={() => {
-                        const n = spellHits.length;
-                        const i = (spellStep + 1) % n;
-                        setSpellStep(i);
-                        goToLine(spellHits[i]!.lineNumber);
-                      }}
+                      onClick={() => cycleSpellHit(1)}
                     >
                       Next →
                     </button>
                   </div>
+                  <p className="muted small spell-hotkey-hint">
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">Alt</kbd> +{" "}
+                    <kbd className="kbd-hint">,</kbd> /{" "}
+                    <kbd className="kbd-hint">.</kbd> cycles flags whenever there
+                    are any (not while typing in the poem or another field).
+                  </p>
+                  {spellReplaceErr ? (
+                    <p className="error compact" role="alert">
+                      {spellReplaceErr}
+                    </p>
+                  ) : null}
                 <ul className="spell-hits spell-hits-draft">
-                  {spellHits.slice(0, 50).map((h) => (
-                    <li key={`${h.lineNumber}-${h.normalized}`}>
+                  {spellHits.slice(0, spellListCap).map((h) => (
+                    <li key={`${h.docFrom}-${h.docTo}`}>
                       <div className="spell-hit-head">
                         <button
                           type="button"
                           className="linkish"
-                          onClick={() => {
-                            const idx = spellHits.indexOf(h);
-                            if (idx >= 0) setSpellStep(idx);
-                            goToLine(h.lineNumber);
-                          }}
+                          onClick={() => goToSpellHitAt(h)}
                         >
                           Line {h.lineNumber}
                         </button>
@@ -1114,6 +1517,35 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                         <p className="suggestions">
                           Try: {h.suggestions.join(", ")}
                         </p>
+                      ) : null}
+                      {h.suggestions.length > 0 ? (
+                        <div className="spell-suggestion-actions">
+                          {h.suggestions.slice(0, 3).map((sug) => (
+                            <button
+                              key={sug}
+                              type="button"
+                              className="small-btn"
+                              disabled={heavyToolsStale}
+                              title={
+                                heavyToolsStale
+                                  ? "Pause typing so the list matches the editor"
+                                  : `Replace with “${sug}”`
+                              }
+                              onClick={() => {
+                                setSpellReplaceErr(null);
+                                if (!applySpellSuggestion(h, sug)) {
+                                  setSpellReplaceErr(
+                                    "Could not replace — wait until tools match your draft (pause typing), then try again.",
+                                  );
+                                  return;
+                                }
+                                refreshSpell();
+                              }}
+                            >
+                              Use “{sug}”
+                            </button>
+                          ))}
+                        </div>
                       ) : null}
                       <div className="spell-actions">
                         <button
@@ -1150,11 +1582,19 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                     </li>
                   ))}
                 </ul>
+                {spellHits.length > spellListCap ? (
+                  <p className="spell-show-more-wrap">
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() => setSpellListCap((c) => c + 50)}
+                    >
+                      Show 50 more
+                    </button>
+                  </p>
+                ) : null}
                 </>
               )}
-              {spellHits.length > 50 ? (
-                <p className="muted small">First 50.</p>
-              ) : null}
             </>
           )}
         </div>
@@ -1218,6 +1658,13 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <li>
               <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
               + <kbd className="kbd-hint">H</kbd> — replace in poem.
+            </li>
+            <li>
+              When spelling flags exist:{" "}
+              <kbd className="kbd-hint">Ctrl</kbd> + <kbd className="kbd-hint">Alt</kbd>{" "}
+              + <kbd className="kbd-hint">,</kbd> / <kbd className="kbd-hint">.</kbd>{" "}
+              — previous / next flag (skipped while the cursor is in the poem or a
+              field).
             </li>
           </ul>
           <p className="tools-shortcuts-note muted small">

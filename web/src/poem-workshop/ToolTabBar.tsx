@@ -1,6 +1,21 @@
 import type { JSX, ReactNode } from "react";
 import type { ToolTab } from "./workshop-helpers";
 
+function IconTabIssues() {
+  return (
+    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 7v6m0 3.5h.01M9.8 4.5h4.4L18 8.3v7.4l-3.8 3.8H9.8L6 15.7V8.3l3.8-3.8z"
+      />
+    </svg>
+  );
+}
+
 function IconTabTotals() {
   return (
     <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
@@ -142,12 +157,13 @@ function IconTabShortcuts() {
   );
 }
 
-/** Order tuned for flow: counts → spelling → line work → polish → versions → external help */
+/** Order tuned for flow: triage → counts → spelling → line work → polish → versions → external help */
 export const TOOL_TABS: {
   id: ToolTab;
   label: string;
   Icon: () => JSX.Element;
 }[] = [
+  { id: "issues", label: "Issues", Icon: IconTabIssues },
   { id: "totals", label: "Totals", Icon: IconTabTotals },
   { id: "spell", label: "Spell", Icon: IconTabSpell },
   { id: "lines", label: "Lines", Icon: IconTabLines },

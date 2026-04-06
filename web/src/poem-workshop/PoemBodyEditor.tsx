@@ -3,7 +3,7 @@ import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { highlightSelectionMatches, search } from "@codemirror/search";
 import type { MutableRefObject } from "react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import CodeMirror from "@uiw/react-codemirror";
 import { basicSetup } from "@uiw/codemirror-extensions-basic-setup";
 import {
@@ -90,6 +90,22 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     };
   }, []);
 
+  const extensions = useMemo(
+    () => [
+      EditorView.contentAttributes.of({ spellcheck: "false" }),
+      spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
+      search({ top: true }),
+      highlightSelectionMatches(),
+      lineFlashField,
+      ...poemSpellExtensions,
+      formatMarksExtension,
+      formatMarksTheme,
+      ...basicSetup(),
+      poemEditorTheme,
+    ],
+    [props.spellBump, props.spellMode],
+  );
+
   return (
     <div className="poem-cm-wrap" id={props.id}>
       <CodeMirror
@@ -97,19 +113,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         value={props.value}
         height="auto"
         theme="none"
-        extensions={[
-          EditorView.contentAttributes.of({ spellcheck: "false" }),
-          spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
-          search({ top: true }),
-          highlightSelectionMatches(),
-          lineFlashField,
-          ...poemSpellExtensions,
-          formatMarksExtension,
-          formatMarksTheme,
-          ...basicSetup(),
-          /* After basicSetup so caret & active line beat default theme */
-          poemEditorTheme,
-        ]}
+        extensions={extensions}
         onChange={(v) => props.onChange(v)}
         onCreateEditor={(view) => {
           props.editorViewRef.current = view;
