@@ -3296,6 +3296,35 @@
   outline-offset: 1px;
 }
 
+.fmt-size-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.25rem;
+}
+
+.fmt-size-label-text {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.fmt-size-select {
+  font-size: 0.78rem;
+  padding: 0.18rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  height: 1.9rem;
+}
+
+.fmt-size-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .fmt-hint {
   font-size: 0.72rem;
   color: var(--muted);

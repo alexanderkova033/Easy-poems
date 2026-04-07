@@ -1404,7 +1404,13 @@ export function PoemWorkshop() {
                     Poem{" "}
                     <span className="label-hint">(one line per line break)</span>
                   </label>
-                  <FormatToolbar editorViewRef={m.editorViewRef} />
+                  <FormatToolbar
+                    editorViewRef={m.editorViewRef}
+                    poemSize={appearance.poemSize}
+                    onSizeChange={(size) =>
+                      setAppearance((prev) => ({ ...prev, poemSize: size }))
+                    }
+                  />
                 </div>
                 <div className="poem-editor-shell">
                   <PoemBodyEditor

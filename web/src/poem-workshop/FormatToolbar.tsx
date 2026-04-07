@@ -1,11 +1,16 @@
 import type { EditorView } from "@codemirror/view";
 import type { MutableRefObject } from "react";
 import { toggleBold, toggleUnderline } from "@/poem-editor/format-marks";
+import { POEM_SIZE_OPTIONS, type PoemSizeId } from "./appearance";
 
 export function FormatToolbar({
   editorViewRef,
+  poemSize,
+  onSizeChange,
 }: {
   editorViewRef: MutableRefObject<EditorView | null>;
+  poemSize: PoemSizeId;
+  onSizeChange: (size: PoemSizeId) => void;
 }) {
   const apply = (fn: (v: EditorView) => void) => {
     const view = editorViewRef.current;
@@ -38,6 +43,20 @@ export function FormatToolbar({
       >
         <span style={{ textDecoration: "underline" }}>U</span>
       </button>
+      <label className="fmt-size-label">
+        <span className="fmt-size-label-text">Size</span>
+        <select
+          className="fmt-size-select"
+          value={poemSize}
+          onChange={(e) => onSizeChange(e.target.value as PoemSizeId)}
+        >
+          {POEM_SIZE_OPTIONS.map((o) => (
+            <option key={o.id} value={o.id}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <span className="fmt-hint">Select text, then click</span>
     </div>
   );
