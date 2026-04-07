@@ -63,8 +63,7 @@ function EmptyState({
       {cmdkHint ? (
         <p className="tool-empty-cmdk muted small">
           <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-          +<kbd className="kbd-hint">K</kbd> opens commands (library, export, focus,
-          tools).
+          +<kbd className="kbd-hint">K</kbd> opens commands (export, focus mode, tools).
         </p>
       ) : null}
     </div>

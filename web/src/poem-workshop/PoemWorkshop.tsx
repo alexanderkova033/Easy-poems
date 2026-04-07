@@ -10,6 +10,7 @@ import {
 import { AppearanceFormFields } from "./AppearanceFormFields";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { FirstVisitHint } from "./FirstVisitHint";
+import { FeedbackWidget } from "./FeedbackWidget";
 import { PoemBodyEditor } from "./PoemBodyEditor";
 import { TOOL_TABS } from "./ToolTabBar";
 import { ToolsOverviewStrip } from "./ToolsOverviewStrip";
@@ -410,7 +411,34 @@ export function PoemWorkshop() {
         <div className="topbar-primary topbar-primary-tiered">
           <div className="topbar-cluster topbar-cluster-brand">
             <div className="brand brand-tiered">
-              <h1 className="brand-mark">Easy-poems</h1>
+              <h1 className="brand-mark">
+                <svg
+                  className="brand-logo-icon"
+                  viewBox="0 0 18 24"
+                  aria-hidden
+                  focusable="false"
+                >
+                  <path
+                    d="M14 2C17 4 18 9 13 15L10 20L9 23L8 20C6 15 7 9 14 2Z"
+                    fill="#7a9b7c"
+                  />
+                  <path
+                    d="M14 2L9 20"
+                    stroke="rgba(10,15,13,0.25)"
+                    strokeWidth="0.65"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  <path
+                    d="M8 20L9 23"
+                    stroke="#c5d4c8"
+                    strokeWidth="1.3"
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                </svg>
+                Easy Poems
+              </h1>
               <div className="topbar-draft-inline">
                 <label className="draft-library-label" htmlFor="draft-poem-select">
                   Draft
@@ -598,7 +626,7 @@ export function PoemWorkshop() {
               className="topbar-quick-btn topbar-quick-cmd"
               onClick={() => setIsCmdkOpen(true)}
               aria-label="Open command palette"
-              title="Ctrl or ⌘ K (library, export, focus, and more)"
+              title="Ctrl or ⌘ K (export, focus mode, and more)"
             >
               <span className="topbar-quick-label">Commands</span>
               <span className="topbar-quick-keys">
@@ -1641,6 +1669,8 @@ export function PoemWorkshop() {
         lines={m.lines}
         onJumpToLine={m.goToLine}
       />
+
+      <FeedbackWidget />
 
       <footer className="privacy">
         <h2 className="privacy-title">Privacy</h2>

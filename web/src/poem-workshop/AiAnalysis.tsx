@@ -330,8 +330,8 @@ export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
             <span className="ai-model-label-text">Model</span>
             <select className="ai-model-select" value={model}
               onChange={(e) => saveModel(e.target.value)}>
-              <option value="gpt-4o-mini">gpt-4o-mini (fast)</option>
-              <option value="gpt-4o">gpt-4o (nuanced)</option>
+              <option value="gpt-4o-mini">gpt-4o-mini (recommended)</option>
+              <option value="gpt-4o">gpt-4o (for final-draft deep dives)</option>
             </select>
           </label>
 
