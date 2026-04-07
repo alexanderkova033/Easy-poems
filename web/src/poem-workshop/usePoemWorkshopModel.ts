@@ -311,8 +311,6 @@ export function usePoemWorkshopModel() {
       .catch((e) => {
         const msg = e instanceof Error ? e.message : "Could not load word list.";
         setWordlistErr(msg);
-        // Surface to the top banner so users see it regardless of active tab
-        setPersistenceError((prev) => prev ?? `Spell check unavailable: ${msg}`);
       });
   }, []);
 
@@ -366,7 +364,10 @@ export function usePoemWorkshopModel() {
         setPersistenceError((p) => (p === DRAFT_STORAGE_MSG ? null : p));
         setSavedFlash(true);
         if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => setSavedFlash(false), 900);
+        saveTimer.current = setTimeout(() => {
+          setSavedFlash(false);
+          saveTimer.current = null;
+        }, 900);
         return next;
       });
     }, 500);
@@ -762,6 +763,12 @@ export function usePoemWorkshopModel() {
         setLibrary(merged.lib);
         applyLoadedPoem(merged.lib);
       };
+      reader.onerror = () => {
+        setImportNotice("Could not read the file. Check that it is a valid text file and try again.");
+      };
+      reader.onabort = () => {
+        setImportNotice("File read was cancelled.");
+      };
       reader.readAsText(file, "utf-8");
     },
     [applyLoadedPoem],
@@ -784,7 +791,6 @@ export function usePoemWorkshopModel() {
   }, []);
 
   const dismissExportReminder = useCallback(() => {
-    recordExportAt();
     setShowExportReminder(false);
   }, []);
 
@@ -807,7 +813,10 @@ export function usePoemWorkshopModel() {
     setSnapshotLabel("");
     setSnapshotFlash(true);
     if (snapshotFlashTimer.current) clearTimeout(snapshotFlashTimer.current);
-    snapshotFlashTimer.current = setTimeout(() => setSnapshotFlash(false), 1800);
+    snapshotFlashTimer.current = setTimeout(() => {
+      setSnapshotFlash(false);
+      snapshotFlashTimer.current = null;
+    }, 1800);
     setCompareLeftId((left) =>
       left === COMPARE_CURRENT_ID || (left && next.some((s) => s.id === left))
         ? left
@@ -877,6 +886,7 @@ export function usePoemWorkshopModel() {
       stripFormatMarkers(bodyLiveRef.current),
     );
     downloadTextFile(exportFilename(title, "txt"), text);
+    recordExportAt();
   }, [title, formNote]);
 
   const onDownloadMd = useCallback(() => {
@@ -888,6 +898,7 @@ export function usePoemWorkshopModel() {
       cleanBody,
     );
     downloadTextFile(exportFilename(title, "md"), text);
+    recordExportAt();
   }, [title, formNote]);
 
   const onCopyMarkdown = useCallback(async () => {
@@ -897,17 +908,31 @@ export function usePoemWorkshopModel() {
       formNote.trim() || undefined,
       cleanBody,
     );
-    await copyTextToClipboard(text);
-    setCopyExportFlash(true);
-    if (copyExportTimer.current) clearTimeout(copyExportTimer.current);
-    copyExportTimer.current = setTimeout(() => setCopyExportFlash(false), 1200);
+    try {
+      await copyTextToClipboard(text);
+      setCopyExportFlash(true);
+      if (copyExportTimer.current) clearTimeout(copyExportTimer.current);
+      copyExportTimer.current = setTimeout(() => {
+        setCopyExportFlash(false);
+        copyExportTimer.current = null;
+      }, 1200);
+    } catch {
+      setPersistenceError("Could not copy to clipboard. Check browser permissions.");
+    }
   }, [title, formNote]);
 
   const onQuickCopyPlain = useCallback(async () => {
-    await copyTextToClipboard(stripFormatMarkers(bodyLiveRef.current));
-    setQuickCopyFlash(true);
-    if (quickCopyTimer.current) clearTimeout(quickCopyTimer.current);
-    quickCopyTimer.current = setTimeout(() => setQuickCopyFlash(false), 1200);
+    try {
+      await copyTextToClipboard(stripFormatMarkers(bodyLiveRef.current));
+      setQuickCopyFlash(true);
+      if (quickCopyTimer.current) clearTimeout(quickCopyTimer.current);
+      quickCopyTimer.current = setTimeout(() => {
+        setQuickCopyFlash(false);
+        quickCopyTimer.current = null;
+      }, 1200);
+    } catch {
+      setPersistenceError("Could not copy to clipboard. Check browser permissions.");
+    }
   }, []);
 
   const onDownloadDocx = useCallback(async () => {
@@ -919,6 +944,7 @@ export function usePoemWorkshopModel() {
         formNote.trim() || undefined,
         stripFormatMarkers(bodyLiveRef.current),
       );
+      recordExportAt();
     } catch (e) {
       setDocxExportErr(
         e instanceof Error ? e.message : "Could not build the Word file.",

@@ -487,6 +487,18 @@
   background: color-mix(in srgb, var(--accent) 7%, var(--surface));
 }
 
+.first-visit-hint-list {
+  margin: 0;
+  flex: 1 1 14rem;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text);
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 .first-visit-hint-text {
   margin: 0;
   flex: 1 1 14rem;
@@ -1517,6 +1529,20 @@
   flex-shrink: 0;
 }
 
+.spell-warn-banner {
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--warning, #e8a000) 40%, var(--border));
+  background: color-mix(in srgb, var(--warning, #e8a000) 8%, var(--surface));
+}
+
+.spell-warn-banner-text {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
 .draft-library-bar {
   display: flex;
   flex-wrap: wrap;
@@ -1558,6 +1584,11 @@
   gap: 0.35rem 0.5rem;
   flex: 1 1 auto;
   justify-content: flex-end;
+}
+
+.topbar-library-btn {
+  flex-shrink: 0;
+  font-size: 0.82rem;
 }
 
 .appearance-fields {
@@ -2622,10 +2653,16 @@
 }
 
 .tools-heading {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.1rem;
   font-size: 1.1rem;
   font-weight: 750;
   letter-spacing: -0.01em;
+}
+
+.tools-panel-hint {
+  margin: 0 0 0.35rem;
+  font-size: 0.78rem;
+  line-height: 1.4;
 }
 
 .tools-disclaimer {

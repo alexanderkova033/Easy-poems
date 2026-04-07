@@ -12,6 +12,20 @@ export default defineConfig({
     },
   },
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/scheduler")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/@codemirror") || id.includes("node_modules/@uiw/codemirror") || id.includes("node_modules/@uiw/react-codemirror") || id.includes("node_modules/codemirror") || id.includes("node_modules/@lezer") || id.includes("node_modules/@marijn") || id.includes("node_modules/style-mod") || id.includes("node_modules/w3c-keyname") || id.includes("node_modules/crelt")) {
+            return "vendor-codemirror";
+          }
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     // In local dev, "vercel dev" runs on :3000 and handles /api/*.

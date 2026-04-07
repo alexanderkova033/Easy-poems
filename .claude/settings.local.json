@@ -12,7 +12,8 @@
       "Bash(npm test:*)",
       "Bash(xargs grep:*)",
       "Bash(wc -l /c/Users/lorta/Documents/repos/Easy-poems/web/src/**/*.tsx /c/Users/lorta/Documents/repos/Easy-poems/web/src/**/*.ts)",
-      "Bash(find /c/Users/lorta/Documents/repos/Easy-poems -name \"package.json\" ! -path \"*/node_modules/*\" -exec grep -l \"\\\\\"test\\\\\"\" {} \\\\;)"
+      "Bash(find /c/Users/lorta/Documents/repos/Easy-poems -name \"package.json\" ! -path \"*/node_modules/*\" -exec grep -l \"\\\\\"test\\\\\"\" {} \\\\;)",
+      "Bash(npx vite:*)"
     ]
   }
 }

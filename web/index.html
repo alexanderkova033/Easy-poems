@@ -3,7 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Easy-poems</title>
+
+    <!-- TODO: update title, description, and og:url once you have a domain -->
+    <title>Easy Poems — Poetry Workshop</title>
+    <meta
+      name="description"
+      content="A local-first poetry workshop for drafting, revising, and analysing poems with built-in writing tools — syllables, meter, rhyme, spelling, and more."
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph / social preview -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://easy-poems.vercel.app/" />
+    <meta property="og:title" content="Easy Poems — Poetry Workshop" />
+    <meta
+      property="og:description"
+      content="A local-first poetry workshop for drafting, revising, and analysing poems with built-in writing tools — syllables, meter, rhyme, spelling, and more."
+    />
+
+    <!-- Twitter / X card -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Easy Poems — Poetry Workshop" />
+    <meta
+      name="twitter:description"
+      content="A local-first poetry workshop for drafting, revising, and analysing poems with built-in writing tools."
+    />
+
+    <!-- Google Fonts — display=swap is already set so text renders with system fallbacks while fonts load -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -12,6 +40,12 @@
     />
   </head>
   <body>
+    <noscript>
+      <div style="font-family:Georgia,serif;max-width:480px;margin:4rem auto;padding:2rem;text-align:center;color:#253028;background:#f6faf7;border-radius:12px;border:1px solid #cfd9d1;">
+        <p style="font-size:1.15rem;margin:0 0 0.75rem;">Easy Poems requires JavaScript to run.</p>
+        <p style="font-size:0.9rem;color:#4d5f54;margin:0;">Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/app/main.tsx"></script>
   </body>

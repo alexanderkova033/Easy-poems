@@ -10,7 +10,6 @@ import {
 import { AppearanceFormFields } from "./AppearanceFormFields";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { FirstVisitHint } from "./FirstVisitHint";
-import { readFirstVisitHintDismissed } from "./firstVisitHintStorage";
 import { PoemBodyEditor } from "./PoemBodyEditor";
 import { TOOL_TABS } from "./ToolTabBar";
 import { ToolsOverviewStrip } from "./ToolsOverviewStrip";
@@ -73,9 +72,6 @@ export function PoemWorkshop() {
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(true);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
-  );
-  const [brandSubConcealed, setBrandSubConcealed] = useState(
-    readFirstVisitHintDismissed,
   );
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -352,7 +348,7 @@ export function PoemWorkshop() {
         id: "snapshot",
         title: "Save snapshot",
         keywords: "snapshot revision",
-        run: () => m.saveSnapshot(),
+        run: () => { m.setToolTab("snapshots"); m.saveSnapshot(); },
       },
       {
         id: "revision-pass",
@@ -433,11 +429,18 @@ export function PoemWorkshop() {
                     </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className="small-btn topbar-library-btn"
+                  onClick={() => setIsLibraryOpen(true)}
+                  aria-label="Open draft library"
+                  title="Library: manage all your drafts"
+                >
+                  Library
+                </button>
               </div>
             </div>
-            <p
-              className={`brand-sub ${brandSubConcealed ? "is-concealed" : ""}`}
-            >
+            <p className="brand-sub">
               Local poem desk: write on the left, line tools on the right. Nothing
               leaves your browser until you export or copy.
             </p>
@@ -625,7 +628,7 @@ export function PoemWorkshop() {
         ) : null}
       </header>
 
-      <FirstVisitHint onDismissed={() => setBrandSubConcealed(true)} />
+      <FirstVisitHint />
 
       {m.persistenceError ? (
         <div
@@ -654,6 +657,18 @@ export function PoemWorkshop() {
           >
             Dismiss
           </button>
+        </div>
+      ) : null}
+
+      {m.wordlistErr ? (
+        <div
+          className="spell-warn-banner"
+          role="status"
+          aria-live="polite"
+        >
+          <p className="spell-warn-banner-text">
+            Spell check unavailable: {m.wordlistErr}
+          </p>
         </div>
       ) : null}
 
@@ -1431,13 +1446,17 @@ export function PoemWorkshop() {
         </section>
 
         <aside
+          ref={toolsPanelRef}
           className={`tools-panel ${isFocusMode ? "is-collapsed" : ""} ${!mobileToolsExpanded ? "is-mobile-collapsed" : ""}`}
           aria-label="Tools"
           id="writing-tools"
         >
           <div className="tools-sticky-head">
             <div className="tools-head-row tools-head-row-simple">
-              <h2 className="tools-heading">Tools</h2>
+              <div>
+                <h2 className="tools-heading">Tools</h2>
+                <p className="tools-panel-hint muted">Live analysis — updates as you write</p>
+              </div>
               <button
                 type="button"
                 className="mobile-tools-panel-toggle"
@@ -1445,7 +1464,7 @@ export function PoemWorkshop() {
                 aria-expanded={mobileToolsExpanded}
                 aria-controls="writing-tools"
               >
-                {mobileToolsExpanded ? "Hide" : "Show"}
+                {mobileToolsExpanded ? "Hide tools" : "Show tools"}
               </button>
             </div>
             <div

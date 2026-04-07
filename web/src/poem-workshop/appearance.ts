@@ -138,6 +138,8 @@ function isPoemDecorationId(x: string): x is PoemDecorationId {
   return POEM_DECORATION_OPTIONS.some((o) => o.id === x);
 }
 
+const APPEARANCE_SCHEMA_VERSION = 1;
+
 export function loadAppearance(): AppearanceSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -177,7 +179,10 @@ export function loadAppearance(): AppearanceSettings {
 }
 
 export function saveAppearance(s: AppearanceSettings): boolean {
-  return tryLocalStorageSetItem(STORAGE_KEY, JSON.stringify(s));
+  return tryLocalStorageSetItem(
+    STORAGE_KEY,
+    JSON.stringify({ schemaVersion: APPEARANCE_SCHEMA_VERSION, ...s }),
+  );
 }
 
 const POEM_SIZE_VAR: Record<PoemSizeId, string> = {

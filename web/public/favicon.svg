@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="7" fill="#0a0f0d"/>
+  <!-- Quill feather body -->
+  <path d="M23 5C26 6 28 10 23 17L17 24L15 30L13 24C10 19 11 12 23 5Z" fill="#7a9b7c"/>
+  <!-- Quill tip / nib -->
+  <path d="M15 30L17 24" stroke="#d5ddd7" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  <!-- Central quill spine -->
+  <path d="M23 5L15 22" stroke="#0a0f0d" stroke-width="0.9" stroke-linecap="round" opacity="0.5" fill="none"/>
+</svg>

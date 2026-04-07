@@ -4,7 +4,7 @@ A browser workshop for drafting poems with **local writing tools** (syllable est
 
 ## Live site
 
-Add your production URL here when you want it documented in the repository.
+[easy-poems.vercel.app](https://easy-poems.vercel.app)
 
 ## Project docs
 
@@ -21,7 +21,21 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to `localStorage`** (poem library under `easy-poems:library:v1`; snapshots per poem under `easy-poems:revisions:v2`). Use the **Writing tools** sidebar for stats, meter, rhyme, spelling (`web/public/wordlist-en.txt` plus your personal dictionary in this browser), goals, checklist, and export. **Export backup** downloads all drafts and snapshots; **Import backup** merges poems from a file.
+Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to `localStorage`**. Use the **Writing tools** sidebar for stats, meter, rhyme, spelling (`web/public/wordlist-en.txt` plus your personal dictionary in this browser), goals, checklist, and export. **Export backup** downloads all drafts and snapshots; **Import backup** merges poems from a file.
+
+**`localStorage` keys used by the app:**
+
+| Key | Contents |
+|-----|----------|
+| `easy-poems:library:v1` | Poem library (all drafts) |
+| `easy-poems:revisions:v2` | Per-poem revision snapshots |
+| `easy-poems:libraryMeta:v1` | Draft labels, pins, tags, archive state |
+| `easy-poems:appearance:v1` | Font, theme, and background preferences |
+| `easy-poems:goals:v1` | Writing goals |
+| `easy-poems:spell:personal:v1` | Personal spell-check dictionary |
+| `easy-poems:spell:ignore-session:v1` | Session-only spell-check ignores (sessionStorage) |
+| `easy-poems:first-hint-dismissed` | Whether the first-visit hint has been dismissed |
+| `easy-poems:lastExportAt` | Timestamp of last export (for the export reminder) |
 
 **Tests:** `cd web && npm test`
 
