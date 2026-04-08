@@ -8,6 +8,7 @@ import {
   type AppearanceSettings,
 } from "./appearance";
 import { AppearanceFormFields } from "./AppearanceFormFields";
+import { BackdropFormFields } from "./BackdropFormFields";
 import { BackgroundPicker } from "./BackgroundPicker";
 import { FirstVisitHint } from "./FirstVisitHint";
 import { FeedbackWidget } from "./FeedbackWidget";
@@ -1187,6 +1188,10 @@ export function PoemWorkshop() {
                   background={appearance.background}
                   onChange={setAppearance}
                 />
+                <div className="drawer-note">
+                  <strong>Backdrop settings</strong> (strength + motion + low‑power)
+                </div>
+                <BackdropFormFields appearance={appearance} onChange={setAppearance} />
               </div>
             </details>
 
@@ -1461,6 +1466,10 @@ export function PoemWorkshop() {
               background={appearance.background}
               onChange={setAppearance}
             />
+            <div className="modal-note">
+              <strong>Backdrop settings</strong> (strength + motion + low‑power)
+            </div>
+            <BackdropFormFields appearance={appearance} onChange={setAppearance} />
           </section>
         </div>
       ) : null}

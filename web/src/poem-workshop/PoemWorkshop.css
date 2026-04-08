@@ -1272,8 +1272,13 @@
 .draft-item {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--bg);
+  background: color-mix(in srgb, var(--surface) 88%, var(--bg));
   padding: 0.55rem 0.6rem 0.6rem;
+}
+
+.draft-item:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
 }
 
 .draft-item.is-active {
@@ -1384,6 +1389,7 @@
   font-weight: 650;
   cursor: pointer;
   padding: 0.15rem 0.1rem;
+  line-height: 1.25;
 }
 
 .draft-open-btn:hover {
@@ -2128,10 +2134,9 @@
 }
 
 .rail-btn-fonts {
-  border-width: 2px;
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
-  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .rail-btn-fonts:hover {
@@ -2144,16 +2149,30 @@
 }
 
 .rail-btn-scene {
-  border-width: 2px;
   border-style: dashed;
   border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
-  background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
 }
 
 .rail-btn-scene:hover {
   border-style: solid;
   border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
   background: color-mix(in srgb, var(--accent) 11%, var(--bg));
+}
+
+/* When a rail modal is open, make the matching button look "selected". */
+.rail-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  background:
+    radial-gradient(
+      circle at 32% 22%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--accent) 12%, var(--bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .rail-btn-scene .workshop-rail-icon {
@@ -6013,6 +6032,8 @@ button.primary:disabled {
   --reading-paper-2: color-mix(in srgb, #e7d2aa 72%, var(--bg) 28%);
   --reading-ink: color-mix(in srgb, #221a12 78%, var(--text) 22%);
   --reading-muted: color-mix(in srgb, rgba(34, 26, 18, 0.62) 70%, var(--muted) 30%);
+  /* Ensure the paper itself stays crisp even if other UI uses blur effects. */
+  filter: none;
   background:
     radial-gradient(ellipse 125% 92% at 50% 50%, transparent 58%, rgba(40, 26, 10, 0.12) 92%),
     radial-gradient(ellipse 120% 84% at 12% 18%, rgba(120, 85, 40, 0.09), transparent 62%),
@@ -6043,6 +6064,16 @@ button.primary:disabled {
   overflow-y: auto;
   box-sizing: border-box;
   position: relative;
+}
+
+/* Torn-ish paper edge: soft irregular mask (supported browsers). */
+.reading-mode-modal {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 840'%3E%3Cpath d='M20 36 C46 18 70 24 98 18 C132 10 166 26 196 18 C230 10 264 28 300 18 C338 6 374 30 408 18 C446 4 482 30 520 18 C548 10 566 18 580 32 L592 52 L592 792 L580 808 C558 826 536 820 508 830 C474 844 442 820 412 830 C378 844 346 820 312 830 C276 842 244 820 210 830 C176 842 144 820 110 830 C76 842 52 828 28 816 L12 796 L12 56 Z' fill='white'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 840'%3E%3Cpath d='M20 36 C46 18 70 24 98 18 C132 10 166 26 196 18 C230 10 264 28 300 18 C338 6 374 30 408 18 C446 4 482 30 520 18 C548 10 566 18 580 32 L592 52 L592 792 L580 808 C558 826 536 820 508 830 C474 844 442 820 412 830 C378 844 346 820 312 830 C276 842 244 820 210 830 C176 842 144 820 110 830 C76 842 52 828 28 816 L12 796 L12 56 Z' fill='white'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
 }
 
 .reading-mode-modal::before {
@@ -6101,7 +6132,7 @@ button.primary:disabled {
   color: var(--reading-ink);
   text-rendering: optimizeLegibility;
   font-kerning: normal;
-  font-weight: 700;
+  font-weight: 550;
 }
 
 .reading-mode-line {

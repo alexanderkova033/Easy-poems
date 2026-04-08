@@ -9,9 +9,10 @@
 
 - **A clean poem editor**: title + optional form note + poem body (one line per line break).
 - **A “workshop” side panel**: syllables, meter hints, rhyme / repeats signals, spelling flags, line stats, checklists, goals, and revision comparisons.
-- **Fast navigation**: **⌘/Ctrl + K** opens Commands (search any action by name), plus a Shortcuts sheet and a quick guide.
+- **Library**: multiple drafts, pinning, search, sorting, tags, and archive/unarchive.
 - **Reading view**: a distraction-free “paper” view for proofreading.
-- **Export + backup**: export common formats and download/import a JSON backup to move drafts between devices.
+- **Export + backup**: download your poem as `.txt`, `.md`, or `.docx`, and export/import a JSON workshop backup (drafts + snapshots).
+- **Appearance**: poem/UI fonts and backdrop themes (saved per-browser).
 
 ### AI analysis (optional)
 

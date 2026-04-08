@@ -14,11 +14,6 @@ export function KeyboardShortcutsContent() {
         </li>
         <li>
           <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-          <kbd className="kbd-hint">K</kbd> — Commands (search any action by name — try
-          typing “comment”, “reading”, “export”, “templates”…).
-        </li>
-        <li>
-          <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
           <kbd className="kbd-hint">F</kbd> — find in poem.
         </li>
         <li>

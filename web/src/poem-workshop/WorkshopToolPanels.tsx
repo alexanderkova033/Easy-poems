@@ -61,22 +61,14 @@ function NoLinesYetHint() {
 function EmptyState({
   title,
   children,
-  cmdkHint,
 }: {
   title: string;
   children: React.ReactNode;
-  cmdkHint?: boolean;
 }) {
   return (
     <div className="tool-empty" role="status" aria-live="polite">
       <p className="tool-empty-title">{title}</p>
       <div className="tool-empty-body">{children}</div>
-      {cmdkHint ? (
-        <p className="tool-empty-cmdk muted small">
-          <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-          +<kbd className="kbd-hint">K</kbd> opens commands (export, focus mode, tools).
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -331,7 +323,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             buttons open the right tool or line.
           </p>
           {issuesAllClear ? (
-            <EmptyState title="All clear — keep writing." cmdkHint>
+            <EmptyState title="All clear — keep writing.">
               <p className="muted small">
                 Checklist, goals, and spelling are all satisfied. Issues appear
                 here as you draft.
@@ -1224,7 +1216,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           </label>
           <h4 className="tool-subheading">Shared final letter pattern</h4>
           {rhymeClusters.length === 0 ? (
-            <EmptyState title="No shared endings yet" cmdkHint>
+            <EmptyState title="No shared endings yet">
               <p className="muted small">
                 Keep drafting—this fills in once multiple lines end the same way.
               </p>
@@ -1353,7 +1345,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             />
           </label>
           {repeated.length === 0 ? (
-            <EmptyState title="No repeats detected" cmdkHint>
+            <EmptyState title="No repeats detected">
               <p className="muted small">
                 Nice—this list stays empty unless a non-stopword repeats.
               </p>
@@ -1526,7 +1518,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                 </div>
               </details>
               {spellHits.length === 0 ? (
-                <EmptyState title="No spelling flags" cmdkHint>
+                <EmptyState title="No spelling flags">
                   <p className="muted small">
                     Looks clean under your current mode. Switch modes if you want a
                     stricter scan.
