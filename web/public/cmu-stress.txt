@@ -1,3 +1,4 @@
+# wordlist-sha256: 18257e34e5b70ce92548f65d359d2f249fadf8b8a2231524c1242284354ac293
 # Stress patterns from CMU Pronouncing Dictionary (filtered). x=unstressed /=stressed syllable.
 aardvark	//
 aardvarks	//

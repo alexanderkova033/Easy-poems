@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { dictionary } from "cmu-pronouncing-dictionary";
+import { createHash } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const root = resolve(__dirname, "..");
@@ -32,11 +33,13 @@ function loadWordlist() {
     const w = line.trim().toLowerCase();
     if (w && !w.startsWith("#")) set.add(w);
   }
-  return set;
+  const wordlistHash = createHash("sha256").update(text, "utf8").digest("hex");
+  return { set, wordlistHash };
 }
 
-const allow = loadWordlist();
+const { set: allow, wordlistHash } = loadWordlist();
 const lines = [
+  `# wordlist-sha256: ${wordlistHash}`,
   "# Stress patterns from CMU Pronouncing Dictionary (filtered). x=unstressed /=stressed syllable.",
 ];
 
