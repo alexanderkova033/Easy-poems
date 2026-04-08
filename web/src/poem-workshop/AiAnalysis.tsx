@@ -79,11 +79,33 @@ function DimensionBar({
   );
 }
 
-function IssueCard({ issue, onJump }: { issue: AnalysisIssue; onJump?: (line: number) => void }) {
+function IssueCard({
+  issue,
+  onJump,
+  onHighlight,
+  onClearHighlight,
+}: {
+  issue: AnalysisIssue;
+  onJump?: (line: number) => void;
+  onHighlight?: (start: number, end: number) => void;
+  onClearHighlight?: () => void;
+}) {
   const rangeLabel = issue.line_start === issue.line_end
     ? `Line ${issue.line_start}` : `Lines ${issue.line_start}–${issue.line_end}`;
   return (
-    <details className="ai-issue">
+    <details
+      className="ai-issue"
+      onMouseEnter={() => onHighlight?.(issue.line_start, issue.line_end)}
+      onMouseLeave={() => onClearHighlight?.()}
+      onToggle={(e) => {
+        // Mobile: highlight on expand, clear on collapse
+        if ((e.currentTarget as HTMLDetailsElement).open) {
+          onHighlight?.(issue.line_start, issue.line_end);
+        } else {
+          onClearHighlight?.();
+        }
+      }}
+    >
       <summary className="ai-issue-head">
         <span className="ai-issue-head-inner">
           {onJump ? (
@@ -139,10 +161,14 @@ function AnalysisResults({
   result,
   previous,
   onJump,
+  onHighlight,
+  onClearHighlight,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
   onJump?: (line: number) => void;
+  onHighlight?: (start: number, end: number) => void;
+  onClearHighlight?: () => void;
 }) {
   const isCompare = "comparison" in result;
   const deltas = previous
@@ -197,7 +223,13 @@ function AnalysisResults({
           </h4>
           <div className="ai-issues-list">
             {result.issues.map((iss) => (
-              <IssueCard key={iss.id} issue={iss} onJump={onJump} />
+              <IssueCard
+                key={iss.id}
+                issue={iss}
+                onJump={onJump}
+                onHighlight={onHighlight}
+                onClearHighlight={onClearHighlight}
+              />
             ))}
           </div>
         </div>
@@ -220,9 +252,11 @@ export interface AiAnalysisProps {
   title: string;
   lines: string[];
   onJumpToLine?: (line: number) => void;
+  onHighlightLines?: (start: number, end: number) => void;
+  onClearHighlight?: () => void;
 }
 
-export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onClearHighlight }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -397,6 +431,8 @@ export function AiAnalysis({ title, lines, onJumpToLine }: AiAnalysisProps) {
           result={result}
           previous={effectiveMode === "compare" ? savedResult : null}
           onJump={onJumpToLine}
+          onHighlight={onHighlightLines}
+          onClearHighlight={onClearHighlight}
         />
       )}
     </section>

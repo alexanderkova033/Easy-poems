@@ -87,6 +87,30 @@ export const BACKGROUND_OPTIONS = [
     blurb: "Quiet grey, diamond lattice, minimal.",
     glyph: "◆",
   },
+  {
+    id: "crimson",
+    label: "Crimson dusk",
+    blurb: "Deep red haze, ember glow, dark warmth.",
+    glyph: "♦",
+  },
+  {
+    id: "ocean",
+    label: "Open ocean",
+    blurb: "Teal depths, wave shimmer, salt air.",
+    glyph: "≋",
+  },
+  {
+    id: "aurora",
+    label: "Aurora",
+    blurb: "Northern lights, violet sweep, cool dark.",
+    glyph: "✧",
+  },
+  {
+    id: "parchment",
+    label: "Old parchment",
+    blurb: "Aged cream, sepia grain, candlelit warmth.",
+    glyph: "📜",
+  },
 ] as const;
 
 export type PoemFontId = (typeof POEM_FONT_OPTIONS)[number]["id"];

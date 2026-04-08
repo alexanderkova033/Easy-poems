@@ -22,6 +22,9 @@ import type { PoemRecord } from "@/draft-library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "./AiAnalysis";
 import { FormatToolbar } from "./FormatToolbar";
+import { WordLookupPopup } from "./WordLookupPopup";
+import { TemplatesModal } from "./TemplatesModal";
+import { ReadingModeModal } from "./ReadingModeModal";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "./CommandPalette";
 import { FindReplaceBar } from "./FindReplaceBar";
 import {
@@ -71,6 +74,10 @@ export function PoemWorkshop() {
   >("recent");
   const [libraryShowArchived, setLibraryShowArchived] = useState(false);
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(true);
+  const [issueHighlight, setIssueHighlight] = useState<[number, number] | null>(null);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [isReadingMode, setIsReadingMode] = useState(false);
+  const workshopGridRef = useRef<HTMLDivElement | null>(null);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
   );
@@ -136,6 +143,30 @@ export function PoemWorkshop() {
     return () =>
       document.documentElement.removeAttribute("data-writing-focus-v2");
   }, [isFocusMode]);
+
+  // Mobile swipe: horizontal swipe on workshop grid toggles tools panel
+  useEffect(() => {
+    const el = workshopGridRef.current;
+    if (!el) return;
+    let startX = 0;
+    let startY = 0;
+    const onTouchStart = (e: TouchEvent) => {
+      startX = e.touches[0]?.clientX ?? 0;
+      startY = e.touches[0]?.clientY ?? 0;
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dx = (e.changedTouches[0]?.clientX ?? 0) - startX;
+      const dy = (e.changedTouches[0]?.clientY ?? 0) - startY;
+      if (Math.abs(dx) < 48 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+      setMobileToolsExpanded(dx > 0);
+    };
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     applyAppearance(appearance);
@@ -393,6 +424,18 @@ export function PoemWorkshop() {
             document.getElementById("go-line-input")?.focus();
           });
         },
+      },
+      {
+        id: "templates",
+        title: "Form templates",
+        keywords: "template haiku sonnet villanelle limerick form",
+        run: () => setIsTemplatesOpen(true),
+      },
+      {
+        id: "reading-mode",
+        title: "Reading view",
+        keywords: "reading view clean fullscreen poem display",
+        run: () => setIsReadingMode(true),
       },
     ];
   }, [focusPoemTitle, isFocusMode, m]);
@@ -1101,6 +1144,14 @@ export function PoemWorkshop() {
               >
                 Copy Markdown
               </button>
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => window.print()}
+                title="Print or save as PDF via your browser’s print dialog"
+              >
+                Print / PDF
+              </button>
             </div>
             {m.docxExportErr ? (
               <p className="export-error compact" role="alert">
@@ -1111,6 +1162,30 @@ export function PoemWorkshop() {
               Export/copy sends text only where you choose—check the destination’s
               terms.
             </p>
+            <div className="export-backup-row">
+              <h3 className="export-backup-title">Workshop backup</h3>
+              <p className="modal-note">
+                Export or import all drafts + snapshots as a single JSON file—useful for switching devices.
+              </p>
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="small-btn"
+                  onClick={() => void m.exportWorkshopBackup()}
+                  title="Download all drafts and snapshots as a JSON backup"
+                >
+                  Export backup (.json)
+                </button>
+                <button
+                  type="button"
+                  className="small-btn"
+                  onClick={m.triggerImportBackup}
+                  title="Import a previously exported backup JSON file"
+                >
+                  Import backup
+                </button>
+              </div>
+            </div>
           </section>
         </div>
       ) : null}
@@ -1202,7 +1277,7 @@ export function PoemWorkshop() {
         onChange={m.onImportBackupFile}
       />
 
-      <div className="workshop-grid">
+      <div className="workshop-grid" ref={workshopGridRef}>
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           <button
             type="button"
@@ -1410,6 +1485,8 @@ export function PoemWorkshop() {
                     onSizeChange={(size) =>
                       setAppearance((prev) => ({ ...prev, poemSize: size }))
                     }
+                    getBody={() => m.body}
+                    onReadingMode={() => setIsReadingMode(true)}
                   />
                 </div>
                 <div className="poem-editor-shell">
@@ -1425,7 +1502,9 @@ export function PoemWorkshop() {
                     spellBump={m.spellBump}
                     jumpLine={m.jumpLine}
                     jumpBump={m.jumpBump}
+                    issueHighlight={issueHighlight}
                   />
+                  <WordLookupPopup editorViewRef={m.editorViewRef} />
                   <div
                     className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
                   >
@@ -1616,6 +1695,8 @@ export function PoemWorkshop() {
             stressLexiconErr={m.stressLexiconErr}
             heavyToolsStale={m.heavyToolsStale}
             meterCoverageSummary={m.meterCoverageSummary}
+            rhymeScheme={m.rhymeScheme}
+            clicheHits={m.clicheHits}
           />
         </aside>
       </div>
@@ -1674,7 +1755,28 @@ export function PoemWorkshop() {
         title={m.title}
         lines={m.lines}
         onJumpToLine={m.goToLine}
+        onHighlightLines={(start, end) => setIssueHighlight([start, end])}
+        onClearHighlight={() => setIssueHighlight(null)}
       />
+
+      {isTemplatesOpen && (
+        <TemplatesModal
+          onClose={() => setIsTemplatesOpen(false)}
+          onInsert={(body, form) => {
+            m.applyTemplate(body, form);
+            setIsTemplatesOpen(false);
+          }}
+        />
+      )}
+
+      {isReadingMode && (
+        <ReadingModeModal
+          title={m.title}
+          formNote={m.formNote}
+          body={m.body}
+          onClose={() => setIsReadingMode(false)}
+        />
+      )}
 
       <FeedbackWidget />
 

@@ -187,10 +187,6 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         <span className="tools-overview-pill-l">ready</span>
       </button>
     </div>
-    <p className="tools-overview-legend muted small" role="note">
-      Pill tints: stronger highlight = worth a look (spelling, goals, checklist).
-      Softer highlight = optional heads-up (repeats, meter coverage).
-    </p>
-    </div>
+</div>
   );
 }

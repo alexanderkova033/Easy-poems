@@ -25,6 +25,8 @@ import {
   removeFromPersonalDictionary,
 } from "@/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
+import { RhymeFinder } from "./RhymeFinder";
+import type { ClicheHit } from "@/writing-tools/cliche-scan";
 import {
   RevisionCompareSection,
   type CompareSnapshotOption,
@@ -120,6 +122,8 @@ export interface WorkshopToolPanelsProps {
   vowelTailClusters: RhymeCluster[];
   assonanceClusters: RhymeCluster[];
   consonanceClusters: RhymeCluster[];
+  rhymeScheme: string[];
+  clicheHits: ClicheHit[];
   repeated: RepeatedWord[];
   spellHits: SpellHit[];
   wordlist: Set<string> | null;
@@ -174,6 +178,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     vowelTailClusters,
     assonanceClusters,
     consonanceClusters,
+    rhymeScheme,
+    clicheHits,
     repeated,
     spellHits,
     wordlist,
@@ -298,7 +304,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
   const issuesAllClear =
     openChecklistItems.length === 0 &&
     goalEvaluation.warnings.length === 0 &&
-    (!wordlist || spellHits.length === 0);
+    (!wordlist || spellHits.length === 0) &&
+    clicheHits.length === 0;
 
   return (
     <div className="tool-tab-panel" key={toolTab}>
@@ -446,6 +453,28 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
                       .
                     </p>
                   ) : null}
+                </>
+              ) : null}
+              {clicheHits.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Possible clichés</h4>
+                  <p className="muted small">
+                    Common phrases that may weaken your poem's originality.
+                  </p>
+                  <ul className="cliche-list">
+                    {clicheHits.map((h, i) => (
+                      <li key={i} className="cliche-hit">
+                        <button
+                          type="button"
+                          className="linkish cliche-line-btn"
+                          onClick={() => goToLine(h.lineNumber)}
+                        >
+                          Line {h.lineNumber}
+                        </button>
+                        <span className="cliche-phrase mono">&ldquo;{h.phrase}&rdquo;</span>
+                      </li>
+                    ))}
+                  </ul>
                 </>
               ) : null}
             </>
@@ -1137,6 +1166,22 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-rhyme"
         >
           <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
+          <RhymeFinder />
+          {rhymeScheme.some((l) => l) && (
+            <div className="rhyme-scheme-block">
+              <h4 className="tool-subheading">End-rhyme scheme</h4>
+              <div className="rhyme-scheme-lines">
+                {rhymeScheme.map((label, i) =>
+                  label ? (
+                    <div key={i} className="rhyme-scheme-row">
+                      <span className="rhyme-scheme-linenum muted small">{i + 1}</span>
+                      <span className={`rhyme-scheme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
+                    </div>
+                  ) : null,
+                )}
+              </div>
+            </div>
+          )}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"

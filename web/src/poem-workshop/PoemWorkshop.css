@@ -5188,3 +5188,505 @@ button.primary:disabled {
 @media print {
   .feedback-float-btn { display: none !important; }
 }
+
+/* ---- Tidy toolbar additions ---- */
+.fmt-sep {
+  display: inline-block;
+  width: 1px;
+  height: 1.4em;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  align-self: center;
+  margin: 0 0.1rem;
+}
+
+.fmt-tidy-btn {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.3rem 0.52rem;
+  /* Ensure comfortable touch target on mobile */
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+}
+
+@media (pointer: coarse) {
+  .fmt-btn,
+  .fmt-tidy-btn {
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+}
+
+/* ---- Issue highlight in editor ---- */
+.cm-line-issue-highlight {
+  background: color-mix(in srgb, var(--danger) 10%, transparent) !important;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--danger) 50%, transparent);
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+
+/* ---- Rhyme Finder ---- */
+.rhyme-finder {
+  margin-bottom: 1.1rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.rhyme-finder-heading {
+  margin-bottom: 0.55rem;
+}
+
+.rhyme-finder-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.rhyme-finder-input-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.rhyme-finder-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.38rem 0.55rem;
+  font: inherit;
+  font-size: 0.88rem;
+  background: var(--bg);
+  color: var(--text);
+  min-width: 0;
+}
+
+.rhyme-finder-input:focus {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rhyme-strength-row {
+  display: flex;
+  gap: 0.28rem;
+}
+
+.rhyme-strength-btn {
+  appearance: none;
+  flex: 1;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.3rem 0.4rem;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  text-align: center;
+}
+
+.rhyme-strength-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.rhyme-strength-btn.active {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.rhyme-strength-btn:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.rhyme-finder-results-label {
+  margin: 0.45rem 0 0.35rem;
+}
+
+.rhyme-finder-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.rhyme-chip {
+  display: inline-block;
+  padding: 0.22rem 0.52rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  font-size: 0.82rem;
+  color: var(--text);
+  user-select: text;
+}
+
+.rhyme-finder-error,
+.rhyme-finder-empty {
+  margin-top: 0.45rem;
+}
+
+/* ---- Word Lookup Popup ---- */
+.word-lookup-popup {
+  position: fixed;
+  z-index: 900;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-3);
+  padding: 0.75rem 0.9rem 0.8rem;
+  min-width: 220px;
+  max-width: 340px;
+  pointer-events: all;
+}
+
+.word-lookup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.word-lookup-word {
+  font-family: var(--font-poem);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.word-lookup-close {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.1rem 0.25rem;
+  border-radius: 6px;
+  transition: color 0.1s, background 0.1s;
+}
+
+.word-lookup-close:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.word-lookup-loading,
+.word-lookup-notfound {
+  margin: 0;
+}
+
+.word-lookup-def {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.word-lookup-pos {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.word-lookup-text {
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.word-lookup-group {
+  margin-top: 0.5rem;
+}
+
+.word-lookup-group-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+}
+
+.word-lookup-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+}
+
+.word-lookup-chip {
+  display: inline-block;
+  padding: 0.16rem 0.42rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg));
+  font-size: 0.78rem;
+  color: var(--text);
+  user-select: text;
+}
+
+.word-lookup-chip-ant {
+  border-color: color-mix(in srgb, var(--border) 85%, var(--danger));
+  background: color-mix(in srgb, var(--danger) 8%, var(--bg));
+}
+
+/* ── Syllable count inline widget ─────────────────────────────── */
+.cm-syllable-count {
+  display: inline-block;
+  margin-left: 0.55em;
+  font-size: 0.72em;
+  font-variant-numeric: tabular-nums;
+  color: color-mix(in srgb, var(--muted) 70%, var(--accent));
+  opacity: 0.75;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* ── Rhyme scheme labels ──────────────────────────────────────── */
+.rhyme-scheme-list {
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.rhyme-scheme-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.83rem;
+}
+
+.rhyme-scheme-label {
+  display: inline-block;
+  min-width: 1.3em;
+  font-weight: 700;
+  font-size: 0.8em;
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  color: var(--accent);
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.rhyme-scheme-text {
+  color: var(--muted);
+  font-size: 0.82em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 14rem;
+}
+
+/* ── Cliché list ─────────────────────────────────────────────── */
+.cliche-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cliche-hit {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.83rem;
+}
+
+.cliche-phrase {
+  font-style: italic;
+  color: color-mix(in srgb, var(--warning, #b07b00) 100%, transparent);
+}
+
+.cliche-hit-meta {
+  color: var(--muted);
+  font-size: 0.78em;
+  flex-shrink: 0;
+}
+
+/* ── Templates modal ─────────────────────────────────────────── */
+.templates-modal {
+  max-width: 36rem;
+  width: 92vw;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.templates-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.template-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+  background: var(--surface);
+}
+
+.template-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+}
+
+.template-item-name {
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.template-item-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Reading mode overlay ────────────────────────────────────── */
+.reading-mode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.reading-mode-modal {
+  background: var(--page-bg, var(--bg));
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+  padding: 2.5rem 3rem;
+  max-width: 42rem;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.reading-mode-close {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+}
+
+.reading-mode-close:hover {
+  color: var(--text);
+  background: var(--surface);
+}
+
+.reading-mode-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  color: var(--text);
+  font-family: var(--poem-font, inherit);
+}
+
+.reading-mode-form {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-style: italic;
+  margin: 0 0 1.2rem;
+}
+
+.reading-mode-body {
+  font-family: var(--poem-font, inherit);
+  font-size: var(--poem-size, 1.05rem);
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.reading-mode-line {
+  display: block;
+}
+
+.reading-mode-stanza-break {
+  display: block;
+  height: 1em;
+}
+
+/* ── Export backup row ───────────────────────────────────────── */
+.export-backup-row {
+  margin-top: 1.2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.export-backup-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  color: var(--text);
+}
+
+/* ── Rhyme scheme block (inside tool panel) ──────────────────── */
+.rhyme-scheme-block {
+  margin: 0.75rem 0;
+}
+
+.rhyme-scheme-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  margin-top: 0.35rem;
+}
+
+.rhyme-scheme-linenum {
+  min-width: 1.8em;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Color code first 8 scheme letters */
+.rhyme-label-a { background: color-mix(in srgb, #4c8eff 18%, var(--bg)); color: #2a6dd9; }
+.rhyme-label-b { background: color-mix(in srgb, #27ae60 18%, var(--bg)); color: #1c8048; }
+.rhyme-label-c { background: color-mix(in srgb, #e67e22 18%, var(--bg)); color: #b5620a; }
+.rhyme-label-d { background: color-mix(in srgb, #9b59b6 18%, var(--bg)); color: #7a3a9e; }
+.rhyme-label-e { background: color-mix(in srgb, #e74c3c 18%, var(--bg)); color: #c0392b; }
+.rhyme-label-f { background: color-mix(in srgb, #1abc9c 18%, var(--bg)); color: #148a72; }
+.rhyme-label-g { background: color-mix(in srgb, #f39c12 18%, var(--bg)); color: #c47d0a; }
+.rhyme-label-h { background: color-mix(in srgb, #34495e 18%, var(--bg)); color: #2c3e50; }
+
+/* cliche jump button */
+.cliche-line-btn {
+  font-size: 0.78em;
+  flex-shrink: 0;
+}
+
+.template-item-form {
+  font-size: 0.78em;
+  color: var(--muted);
+}

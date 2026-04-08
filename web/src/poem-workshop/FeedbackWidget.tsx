@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 // Change this to your preferred feedback destination:
 // - A mailto address: "mailto:you@example.com"
 // - A Google Form, Tally, or Typeform URL: "https://tally.so/r/yourform"
-const FEEDBACK_HREF = "mailto:feedback@easy-poems.com";
+const FEEDBACK_HREF = "mailto:easywritingpoem@gmail.com";
 
 export function FeedbackWidget() {
   const [open, setOpen] = useState(false);

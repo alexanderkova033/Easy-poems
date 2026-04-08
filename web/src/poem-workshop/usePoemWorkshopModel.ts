@@ -83,6 +83,8 @@ import {
   lightVowelTailClusters,
   roughRhymeClusters,
 } from "@/writing-tools/rhyme-hints";
+import { scanCliches } from "@/writing-tools/cliche-scan";
+import { detectRhymeScheme } from "@/writing-tools/rhyme-scheme";
 import {
   focusCharacterRangeInEditor,
   focusLineInEditor,
@@ -405,6 +407,8 @@ export function usePoemWorkshopModel() {
     [heavyLines],
   );
   const repeated = useMemo(() => findRepeatedWords(heavyLines), [heavyLines]);
+  const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
+  const rhymeScheme = useMemo(() => detectRhymeScheme(heavyLines), [heavyLines]);
   const heavyToolsStale = body !== heavyBody;
   const heavyDocStats = useMemo(
     () => computeDocumentStats(heavyBody),
@@ -829,6 +833,43 @@ export function usePoemWorkshopModel() {
     });
   }, [activePoemId, revisions, title, formNote, snapshotLabel]);
 
+  // Auto-snapshot every 10 minutes when the poem body has actually changed
+  const lastAutoSnapshotBodyRef = useRef<string>("");
+  useEffect(() => {
+    const AUTO_INTERVAL_MS = 10 * 60 * 1000;
+    const id = setInterval(() => {
+      const { title: t, body: b, formNote: f, library: lib } = workshopStateRef.current;
+      const poemId = lib.activeId;
+      if (!b.trim()) return;
+      if (b === lastAutoSnapshotBodyRef.current) return;
+      const current = loadRevisions(poemId);
+      const result = addRevision(poemId, current, {
+        title: t,
+        body: b,
+        form: f.trim() || undefined,
+        label: "Auto",
+      });
+      if (result.ok) {
+        lastAutoSnapshotBodyRef.current = b;
+        setRevisions(result.revisions);
+      }
+    }, AUTO_INTERVAL_MS);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyTemplate = useCallback((body: string, form: string) => {
+    if (bodyToReactTimer.current) {
+      clearTimeout(bodyToReactTimer.current);
+      bodyToReactTimer.current = null;
+    }
+    setBody(body);
+    bodyLiveRef.current = body;
+    setHeavyBody(body);
+    if (form) setFormNote(form);
+    setBodySyncNonce((n) => n + 1);
+  }, []);
+
   const restoreRevision = useCallback((snap: RevisionSnapshot) => {
     if (bodyToReactTimer.current) {
       clearTimeout(bodyToReactTimer.current);
@@ -1088,6 +1129,8 @@ export function usePoemWorkshopModel() {
     assonanceClusters,
     consonanceClusters,
     repeated,
+    clicheHits,
+    rhymeScheme,
     spellHits,
     heavyToolsStale,
     meterCoverageSummary,
@@ -1122,5 +1165,6 @@ export function usePoemWorkshopModel() {
     triggerImportBackup,
     onImportBackupFile,
     importInputRef,
+    applyTemplate,
   };
 }

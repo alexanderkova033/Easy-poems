@@ -1002,3 +1002,166 @@ html[data-workshop-bg="stone"] body::before {
     animation: none !important;
   }
 }
+
+/* ---- Crimson dusk: dark red ember palette ---- */
+html[data-workshop-bg="crimson"] {
+  color-scheme: dark;
+  --bg: #0e0608;
+  --surface: #1a0c0e;
+  --surface-2: #211014;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #4a1a22;
+  --text: #f0d8da;
+  --muted: #a87880;
+  --accent: #d46070;
+  --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9aa1;
+  --net-line: rgba(220, 130, 140, 0.045);
+  --ambient-a: rgba(180, 40, 60, 0.09);
+  --ambient-b: rgba(130, 20, 40, 0.07);
+  --ambient-c: rgba(200, 80, 90, 0.06);
+  --ambient-d: rgba(100, 30, 45, 0.05);
+  --shine-top: rgba(255, 160, 170, 0.055);
+  --shine-mid: rgba(160, 50, 65, 0.04);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 55%, transparent);
+}
+
+html[data-workshop-bg="crimson"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(ellipse 130% 110% at 15% 25%, var(--ambient-a), transparent 70%),
+    radial-gradient(ellipse 110% 95% at 85% 20%, var(--ambient-b), transparent 68%),
+    radial-gradient(ellipse 140% 120% at 50% 95%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 100% 88% at 70% 60%, var(--ambient-d), transparent 66%),
+    repeating-linear-gradient(135deg, transparent, transparent 18px, color-mix(in srgb, var(--net-line) 60%, transparent) 18px, color-mix(in srgb, var(--net-line) 60%, transparent) 18.5px),
+    repeating-linear-gradient(45deg, transparent, transparent 18px, color-mix(in srgb, var(--net-line) 40%, transparent) 18px, color-mix(in srgb, var(--net-line) 40%, transparent) 18.5px);
+  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 100% 100%, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 50% 100%, 70% 55%, 0 0, 0 0;
+}
+
+/* ---- Open ocean: teal-blue depths ---- */
+html[data-workshop-bg="ocean"] {
+  color-scheme: dark;
+  --bg: #020c14;
+  --surface: #071520;
+  --surface-2: #0c1e2c;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #1a3a52;
+  --text: #d0eaf8;
+  --muted: #6a9ab8;
+  --accent: #4ab8d8;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 28%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a9a;
+  --net-line: rgba(100, 190, 225, 0.042);
+  --ambient-a: rgba(30, 120, 180, 0.09);
+  --ambient-b: rgba(20, 80, 130, 0.07);
+  --ambient-c: rgba(50, 160, 200, 0.065);
+  --ambient-d: rgba(15, 60, 100, 0.052);
+  --shine-top: rgba(140, 220, 255, 0.06);
+  --shine-mid: rgba(60, 140, 190, 0.04);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
+}
+
+html[data-workshop-bg="ocean"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(ellipse 140% 120% at 20% 30%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 120% 100% at 80% 15%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 150% 130% at 50% 90%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 110% 95% at 75% 65%, var(--ambient-d), transparent 68%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='20'%3E%3Cpath fill='none' stroke='%234ab8d814' stroke-width='0.6' d='M0 10 Q15 4 30 10 Q45 16 60 10'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, transparent, transparent 30px, color-mix(in srgb, var(--net-line) 50%, transparent) 30px, color-mix(in srgb, var(--net-line) 50%, transparent) 30.5px);
+  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 60px 20px, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 50% 100%, 75% 58%, 0 0, 0 0;
+}
+
+/* ---- Aurora: violet-green northern lights ---- */
+html[data-workshop-bg="aurora"] {
+  color-scheme: dark;
+  --bg: #050810;
+  --surface: #0c1020;
+  --surface-2: #12182e;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #2a2050;
+  --text: #e0d8f8;
+  --muted: #8878b8;
+  --accent: #a070e0;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #ff9a9a;
+  --net-line: rgba(150, 120, 220, 0.038);
+  --ambient-a: rgba(80, 40, 180, 0.085);
+  --ambient-b: rgba(40, 160, 120, 0.065);
+  --ambient-c: rgba(120, 60, 200, 0.06);
+  --ambient-d: rgba(50, 180, 140, 0.05);
+  --shine-top: rgba(190, 160, 255, 0.06);
+  --shine-mid: rgba(90, 60, 160, 0.038);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
+}
+
+html[data-workshop-bg="aurora"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(ellipse 160% 80% at 10% 20%, var(--ambient-a), transparent 68%),
+    radial-gradient(ellipse 160% 80% at 90% 30%, var(--ambient-b), transparent 68%),
+    radial-gradient(ellipse 140% 70% at 50% 60%, var(--ambient-c), transparent 65%),
+    radial-gradient(ellipse 140% 70% at 30% 85%, var(--ambient-d), transparent 65%),
+    repeating-linear-gradient(170deg, transparent, transparent 40px, color-mix(in srgb, var(--net-line) 55%, transparent) 40px, color-mix(in srgb, var(--net-line) 55%, transparent) 40.5px);
+  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 50% 55%, 30% 90%, 0 0;
+}
+
+html[data-workshop-bg="aurora"] body::after {
+  opacity: 0.5;
+}
+
+/* ---- Old parchment: aged cream warm light ---- */
+html[data-workshop-bg="parchment"] {
+  color-scheme: light;
+  --bg: #eee4cc;
+  --surface: #f7f0dc;
+  --surface-2: #f2e8d0;
+  --surface-elevated: #fdf8ec;
+  --border: #c8b898;
+  --text: #2e2418;
+  --muted: #6b5840;
+  --accent: #7a5028;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 16%, #e8d8b8);
+  --selection-fg: var(--text);
+  --danger: #9a1c10;
+  --net-line: rgba(80, 55, 25, 0.055);
+  --ambient-a: rgba(180, 130, 70, 0.07);
+  --ambient-b: rgba(140, 100, 50, 0.055);
+  --ambient-c: rgba(200, 160, 90, 0.065);
+  --ambient-d: rgba(120, 90, 45, 0.045);
+  --shine-top: rgba(255, 250, 225, 0.5);
+  --shine-mid: rgba(200, 165, 100, 0.055);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 18%, transparent);
+}
+
+html[data-workshop-bg="parchment"] body::before {
+  animation: none;
+  background-image:
+    radial-gradient(ellipse 130% 110% at 12% 22%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 110% 95% at 88% 18%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' x='1' y='1' fill='%237a502814' rx='0.5'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, transparent, transparent 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 29px);
+  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 4px 4px, 100% 100%;
+  background-position: 0% 0%, 100% 0%, 50% 100%, 70% 55%, 0 0, 0 0;
+}
