@@ -122,6 +122,7 @@ Poem-level **comments** or **critiques** between users (similar in spirit to lar
 | NFR-01 | Analysis latency (when AI exists; typical short poem) | Under ~10–30 s P95, or streaming partial results |
 | NFR-02 | Editor responsiveness | Typing stays smooth; heavy work off main thread or debounced |
 | NFR-03 | Accessibility | Keyboard nav, readable contrast, screen reader for core panels |
+| NFR-05 | Senior-friendly onboarding | Provide a **plain-language**, **large-text** guide that covers the core workflow (drafts, tools, reading view) and emphasizes **backup/export** and restore steps |
 | NFR-04 | Future i18n | English-only UI now; avoid hard-coding strings in a way that blocks later translation |
 
 ## 9. Out of scope (initial release)

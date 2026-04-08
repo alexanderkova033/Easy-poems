@@ -76,6 +76,8 @@ export function PoemWorkshop() {
     "recent" | "title" | "updated"
   >("recent");
   const [libraryShowArchived, setLibraryShowArchived] = useState(false);
+  const librarySearchRef = useRef<HTMLInputElement | null>(null);
+  const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(true);
   const [issueHighlight, setIssueHighlight] = useState<[number, number] | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
@@ -157,9 +159,16 @@ export function PoemWorkshop() {
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-writing-focus-v2", isFocusMode);
-    return () =>
+    return () => {
       document.documentElement.removeAttribute("data-writing-focus-v2");
+    };
   }, [isFocusMode]);
+
+  useEffect(() => {
+    const simplify = isFocusMode || appearance.backdropPower !== "off";
+    document.documentElement.toggleAttribute("data-backdrop-simplify", simplify);
+    return () => document.documentElement.removeAttribute("data-backdrop-simplify");
+  }, [appearance.backdropPower, isFocusMode]);
 
   // Mobile swipe: horizontal swipe on workshop grid toggles tools panel
   useEffect(() => {
@@ -358,11 +367,57 @@ export function PoemWorkshop() {
     overscan: 3,
   });
 
+  useEffect(() => {
+    if (!isLibraryOpen) return;
+    setLibraryActiveIdx(0);
+    queueMicrotask(() => librarySearchRef.current?.focus());
+  }, [isLibraryOpen]);
+
+  useEffect(() => {
+    if (!isLibraryOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return;
+      // Don't steal keys while typing in a field.
+      if (e.target && (e.target as HTMLElement).closest?.("input,textarea,select,[contenteditable='true']")) {
+        return;
+      }
+      if (libraryListRows.length === 0) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setLibraryActiveIdx((i) => Math.min(i + 1, libraryListRows.length - 1));
+        return;
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setLibraryActiveIdx((i) => Math.max(i - 1, 0));
+        return;
+      }
+      if (e.key === "Enter") {
+        const row = libraryListRows[libraryActiveIdx];
+        if (!row) return;
+        e.preventDefault();
+        m.selectPoem(row.id);
+        setIsLibraryOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [isLibraryOpen, libraryActiveIdx, libraryListRows, m]);
+
+  useEffect(() => {
+    if (!isLibraryOpen) return;
+    try {
+      libraryVirtualizer.scrollToIndex(libraryActiveIdx, { align: "auto" });
+    } catch {
+      /* ignore */
+    }
+  }, [isLibraryOpen, libraryActiveIdx, libraryVirtualizer]);
+
   const cmdkActions = useMemo<CommandPaletteAction[]>(() => {
     return [
       {
         id: "workshop-guide",
-        title: "Getting started",
+        title: "Quick guide",
         keywords: "help guide tour new introduction overview",
         run: () => setIsGuideOpen(true),
       },
@@ -810,7 +865,7 @@ export function PoemWorkshop() {
 
       {m.importNotice ? (
         <div
-          className="import-notice-banner"
+          className={`import-notice-banner ${m.importNoticeKind === "error" ? "is-error" : "is-success"}`}
           role="status"
           aria-live="polite"
         >
@@ -856,14 +911,14 @@ export function PoemWorkshop() {
 
       {isLibraryOpen ? (
         <div
-          className="overlay"
+          className="overlay overlay-center"
           role="presentation"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setIsLibraryOpen(false);
           }}
         >
           <section
-            className="drawer"
+            className="drawer library-modal"
             role="dialog"
             aria-modal="true"
             aria-label="Draft library"
@@ -921,6 +976,7 @@ export function PoemWorkshop() {
                   <label className="library-filter-field">
                     <span className="library-filter-label">Search</span>
                     <input
+                      ref={librarySearchRef}
                       type="search"
                       value={libraryQuery}
                       onChange={(e) => setLibraryQuery(e.target.value)}
@@ -964,10 +1020,7 @@ export function PoemWorkshop() {
                     No drafts match this filter.
                   </p>
                 ) : (
-                <div
-                  ref={libraryListParentRef}
-                  style={{ overflowY: "auto", maxHeight: "28rem" }}
-                >
+                <div ref={libraryListParentRef} className="library-list-scroll">
                   <div
                     role="list"
                     aria-label="Drafts in library"
@@ -986,6 +1039,7 @@ export function PoemWorkshop() {
                         <div
                           key={id}
                           role="listitem"
+                          aria-selected={vItem.index === libraryActiveIdx}
                           data-index={vItem.index}
                           ref={libraryVirtualizer.measureElement}
                           style={{
@@ -999,7 +1053,7 @@ export function PoemWorkshop() {
                           }}
                         >
                           <div
-                            className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""}`}
+                            className={`draft-item ${isActive ? "is-active" : ""} ${isArchived ? "is-archived" : ""} ${vItem.index === libraryActiveIdx ? "is-keyboard-active" : ""}`}
                           >
                             <div className="draft-item-row">
                               <button
@@ -1306,7 +1360,7 @@ export function PoemWorkshop() {
           >
             <div className="modal-head">
               <h2 id="guide-modal-title" className="modal-title">
-                Getting started
+                Quick guide
               </h2>
               <button
                 type="button"
@@ -1802,7 +1856,7 @@ export function PoemWorkshop() {
                 className="linkish"
                 onClick={() => setIsGuideOpen(true)}
               >
-                Getting started
+                Quick guide
               </button>
               {" · "}
               <button
@@ -1954,16 +2008,19 @@ export function PoemWorkshop() {
       <footer className="privacy">
         <h2 className="privacy-title">Privacy</h2>
         <p>
-          This app does not use analytics, ads, or third-party trackers. Your drafts,
-          snapshots, goals, and personal spelling list stay in this browser unless you
-          export or copy them out.
+          This workshop does not use analytics, advertising, or third-party tracking.
+          By default, your drafts, snapshots, goals, and personal spelling list are stored
+          locally in this browser and are not transmitted to our servers.
         </p>
         <p>
-          Export or paste sends text only where you choose—check that site&apos;s terms.
+          Any export, copy, paste, or share action sends text only to destinations you
+          explicitly choose. If you paste content into another site or tool, please review
+          that service&apos;s terms and privacy policy.
         </p>
         <p>
-          You are responsible for what you write and share; use the workshop only
-          for content you may lawfully create and publish.
+          If you enable optional network features (for example, AI analysis or online word
+          lookup), the relevant text may be sent to the selected provider for that request.
+          Please use the workshop only for content you may lawfully create and publish.
         </p>
         <p>
           New to the layout?{" "}
@@ -1976,7 +2033,7 @@ export function PoemWorkshop() {
           </button>
           {" "}
           any time — or press <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
-          <kbd className="kbd-hint">K</kbd> and choose <strong>Getting started</strong>.
+          <kbd className="kbd-hint">K</kbd> and choose <strong>Quick guide</strong>.
         </p>
       </footer>
     </div>

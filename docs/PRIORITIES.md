@@ -26,6 +26,7 @@ Stakeholder choices that still apply: **website**, **English only**, **local poe
 ### Should (next)
 
 - Jump from **more** tool hits to lines (ongoing polish).
+- Publish a **senior-friendly guide** (plain language, large text, step-by-step): how to create/open drafts, use Commands, enter reading view, and—most importantly—**export a backup (JSON)** and restore it.
 - Richer **meter** (dictionary-backed stress) if you add data or a library—still labeled approximate.
 - Optional **in-app AI** via `server/` proxy when budget/ops allow ([AI_INTEGRATION.md](./AI_INTEGRATION.md)).
 

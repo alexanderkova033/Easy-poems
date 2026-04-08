@@ -186,6 +186,9 @@ export function usePoemWorkshopModel() {
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [storageNearlyFull, setStorageNearlyFull] = useState(false);
   const [importNotice, setImportNotice] = useState<string | null>(null);
+  const [importNoticeKind, setImportNoticeKind] = useState<"success" | "error">(
+    "success",
+  );
   const [showExportReminder, setShowExportReminder] = useState(false);
   const [spellHitsState, setSpellHitsState] = useState<SpellHit[]>([]);
   const [, startSpellTransition] = useTransition();
@@ -756,6 +759,7 @@ export function usePoemWorkshopModel() {
         }
         const merged = mergeImportedPoems(flushed, text);
         if ("error" in merged) {
+          setImportNoticeKind("error");
           setImportNotice(merged.error);
           return;
         }
@@ -763,14 +767,17 @@ export function usePoemWorkshopModel() {
           setPersistenceError(DRAFT_STORAGE_MSG);
           return;
         }
+        setImportNoticeKind("success");
         setImportNotice(`Imported ${merged.added} poem(s).`);
         setLibrary(merged.lib);
         applyLoadedPoem(merged.lib);
       };
       reader.onerror = () => {
+        setImportNoticeKind("error");
         setImportNotice("Could not read the file. Check that it is a valid text file and try again.");
       };
       reader.onabort = () => {
+        setImportNoticeKind("error");
         setImportNotice("File read was cancelled.");
       };
       reader.readAsText(file, "utf-8");
@@ -1084,6 +1091,7 @@ export function usePoemWorkshopModel() {
     storageNearlyFull,
     dismissPersistenceError,
     importNotice,
+    importNoticeKind,
     dismissImportNotice,
     showExportReminder,
     dismissExportReminder,

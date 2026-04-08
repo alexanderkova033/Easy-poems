@@ -197,10 +197,18 @@
 }
 
 .topbar-ghost-btn.is-selected {
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  color: color-mix(in srgb, var(--accent) 78%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 62%, var(--border));
+  background:
+    radial-gradient(
+      circle at 30% 25%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--accent) 14%, var(--bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 6px 18px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .topbar-ghost-btn-backdrop {
@@ -209,6 +217,11 @@
 
 .topbar-ghost-btn-backdrop.is-selected {
   border-style: solid;
+}
+
+/* Selected state: keep Export / Fonts / Backdrop distinct via subtle texture. */
+.topbar-ghost-btn.is-selected .topbar-ghost-icon {
+  filter: drop-shadow(0 0 0.45rem color-mix(in srgb, var(--accent) 24%, transparent));
 }
 
 .topbar-ghost-icon {
@@ -795,6 +808,23 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  position: relative;
+}
+
+.brand-mark::after {
+  content: "";
+  position: absolute;
+  left: 1.65em;
+  right: 0;
+  bottom: -0.18rem;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 55%, transparent),
+    transparent 70%
+  );
+  opacity: 0.55;
 }
 
 .brand-logo-icon {
@@ -941,6 +971,15 @@
     max(0.75rem, env(safe-area-inset-right, 0px))
     max(0.75rem, env(safe-area-inset-bottom, 0px))
     max(0.75rem, env(safe-area-inset-left, 0px));
+}
+
+.overlay-center {
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.overlay-center .drawer {
+  margin-top: 6vh;
 }
 
 /* ---- Command palette ---- */
@@ -1097,6 +1136,19 @@
   -webkit-backdrop-filter: blur(10px) saturate(1.05);
 }
 
+.drawer.library-modal {
+  width: min(980px, 100%);
+  height: min(86vh, 48rem);
+}
+
+.library-list-scroll {
+  overflow-y: auto;
+  max-height: min(52vh, 32rem);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent;
+  border-radius: 12px;
+}
+
 .drawer-head {
   display: flex;
   align-items: center;
@@ -1227,6 +1279,13 @@
 .draft-item.is-active {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.draft-item.is-keyboard-active {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .draft-item-row {
@@ -1500,55 +1559,95 @@
 
 .bg-picker-swatch--default {
   background:
-    radial-gradient(circle at 30% 25%, rgba(100, 170, 140, 0.26), transparent 58%),
-    radial-gradient(circle at 78% 70%, rgba(60, 120, 100, 0.14), transparent 52%),
-    linear-gradient(145deg, #e5efe8 0%, #d0e0d6 48%, #b8d0c4 100%);
+    radial-gradient(circle at 32% 24%, rgba(95, 175, 145, 0.28), transparent 56%),
+    radial-gradient(circle at 76% 72%, rgba(55, 115, 95, 0.16), transparent 52%),
+    linear-gradient(148deg, #e6f0e9 0%, #d2e3d8 46%, #bcd0c6 100%);
 }
 
 .bg-picker-swatch--paper {
   background:
+    radial-gradient(circle at 85% 12%, rgba(96, 72, 48, 0.08), transparent 55%),
     repeating-linear-gradient(
       transparent 0 26px,
-      rgba(90, 70, 45, 0.055) 26px,
-      rgba(90, 70, 45, 0.055) 27px
+      rgba(88, 72, 52, 0.06) 26px,
+      rgba(88, 72, 52, 0.06) 27px
     ),
-    linear-gradient(95deg, #f7f0e6 0%, #ece2d4 100%);
+    linear-gradient(98deg, #f5efe4 0%, #ebe0d2 100%);
 }
 
 .bg-picker-swatch--night {
   background:
-    radial-gradient(circle at 18% 18%, rgba(220, 255, 245, 0.14) 0 1px, transparent 2px),
-    radial-gradient(circle at 72% 38%, rgba(255, 255, 255, 0.1) 0 1px, transparent 2px),
-    radial-gradient(circle at 50% 108%, rgba(95, 175, 140, 0.28), transparent 56%),
-    linear-gradient(180deg, #050807 0%, #0c1411 100%);
+    radial-gradient(ellipse 80% 50% at 22% 14%, rgba(200, 224, 255, 0.12), transparent 58%),
+    radial-gradient(circle at 50% 110%, rgba(95, 185, 145, 0.32), transparent 54%),
+    linear-gradient(182deg, #040806 0%, #0b1411 52%, #060a08 100%);
 }
 
 .bg-picker-swatch--forest {
   background:
-    radial-gradient(ellipse 125% 85% at 50% 100%, rgba(50, 185, 125, 0.38), transparent 58%),
-    radial-gradient(circle at 20% 15%, rgba(80, 200, 140, 0.12), transparent 45%),
-    linear-gradient(168deg, #06120c 0%, #0d1c15 48%, #071510 100%);
+    radial-gradient(ellipse 130% 90% at 50% 100%, rgba(55, 200, 130, 0.42), transparent 56%),
+    radial-gradient(circle at 18% 12%, rgba(70, 210, 150, 0.14), transparent 48%),
+    linear-gradient(168deg, #05100a 0%, #0c1814 50%, #07120d 100%);
 }
 
 .bg-picker-swatch--dawn {
   background:
-    radial-gradient(ellipse 90% 70% at 20% -10%, rgba(255, 210, 230, 0.38), transparent 60%),
-    radial-gradient(ellipse 80% 50% at 90% 30%, rgba(255, 190, 210, 0.24), transparent 56%),
-    linear-gradient(185deg, #f9f4f6 0%, #efe3e8 100%);
+    radial-gradient(ellipse 95% 72% at 18% -8%, rgba(255, 200, 220, 0.42), transparent 58%),
+    radial-gradient(ellipse 75% 48% at 92% 28%, rgba(255, 175, 200, 0.22), transparent 56%),
+    linear-gradient(186deg, #faf4f7 0%, #efe4ea 100%);
 }
 
 .bg-picker-swatch--slate {
   background:
-    linear-gradient(135deg, rgba(100, 160, 220, 0.15) 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(45deg, rgba(100, 160, 220, 0.12) 25%, transparent 25%) 0 0 / 12px 12px,
-    linear-gradient(160deg, #0c1018 0%, #141c2a 100%);
+    radial-gradient(ellipse 100% 80% at 50% 100%, rgba(45, 85, 130, 0.35), transparent 55%),
+    linear-gradient(135deg, rgba(110, 170, 220, 0.16) 25%, transparent 25%) 0 0 / 11px 11px,
+    linear-gradient(45deg, rgba(110, 170, 220, 0.12) 25%, transparent 25%) 0 0 / 11px 11px,
+    linear-gradient(162deg, #080b10 0%, #121a28 100%);
 }
 
 .bg-picker-swatch--stone {
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath fill='none' stroke='%23b0a89820' stroke-width='0.7' d='M14 0L28 14L14 28L0 14z'/%3E%3Ccircle cx='14' cy='14' r='2' fill='%23b0a89816'/%3E%3C/svg%3E") 0 0 / 28px 28px,
-    repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(176,168,152,0.08) 7px, rgba(176,168,152,0.08) 7.5px),
-    linear-gradient(160deg, #252523 0%, #1e1e1c 100%);
+    radial-gradient(circle at 88% 8%, rgba(200, 195, 180, 0.12), transparent 45%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath fill='none' stroke='%23b5ae9622' stroke-width='0.7' d='M14 0L28 14L14 28L0 14z'/%3E%3Ccircle cx='14' cy='14' r='2' fill='%23b5ae9618'/%3E%3C/svg%3E") 0 0 / 28px 28px,
+    repeating-linear-gradient(45deg, transparent, transparent 7px, rgba(180, 174, 160, 0.09) 7px, rgba(180, 174, 160, 0.09) 7.5px),
+    linear-gradient(158deg, #262623 0%, #1c1c1a 100%);
+}
+
+.bg-picker-swatch--crimson {
+  background:
+    radial-gradient(circle at 28% 26%, rgba(255, 110, 95, 0.26), transparent 56%),
+    radial-gradient(circle at 72% 72%, rgba(180, 55, 70, 0.2), transparent 54%),
+    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(100, 20, 35, 0.45), transparent 50%),
+    linear-gradient(156deg, #190b0d 40%, #0d0507 100%);
+}
+
+.bg-picker-swatch--ocean {
+  background:
+    radial-gradient(circle at 22% 22%, rgba(110, 235, 255, 0.26), transparent 56%),
+    radial-gradient(circle at 78% 68%, rgba(30, 130, 185, 0.22), transparent 56%),
+    radial-gradient(ellipse 100% 50% at 50% 100%, rgba(0, 15, 25, 0.65), transparent 48%),
+    linear-gradient(155deg, #06141e 0%, #010b12 100%);
+}
+
+.bg-picker-swatch--aurora {
+  background:
+    radial-gradient(circle at 50% 8%, rgba(112, 88, 216, 0.35), transparent 55%),
+    radial-gradient(circle at 18% 28%, rgba(72, 240, 200, 0.2), transparent 58%),
+    radial-gradient(circle at 82% 40%, rgba(200, 160, 255, 0.22), transparent 58%),
+    linear-gradient(158deg, #0b1024 0%, #070f1c 55%, #030711 100%);
+}
+
+.bg-picker-swatch--parchment {
+  background:
+    radial-gradient(circle at 24% 32%, rgba(150, 105, 55, 0.18), transparent 58%),
+    radial-gradient(circle at 76% 68%, rgba(210, 170, 95, 0.16), transparent 60%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(85, 58, 28, 0.035),
+      rgba(85, 58, 28, 0.035) 1px,
+      transparent 1px,
+      transparent 9px
+    ),
+    linear-gradient(180deg, #f2e8d4 0%, #e4d4b4 100%);
 }
 
 .bg-picker-glyph {
@@ -1619,6 +1718,16 @@
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.import-notice-banner.is-success {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.import-notice-banner.is-error {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
 }
 
 .import-notice-text {
@@ -1720,6 +1829,29 @@
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text);
+}
+
+.appearance-field input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.appearance-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--muted) 20%, var(--text));
+}
+
+.appearance-field--checkbox input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.appearance-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
 }
 
 .line-jump-inline {
@@ -2290,11 +2422,18 @@
   gap: 0.5rem;
   font-size: 0.88rem;
   line-height: 1.45;
-  color: color-mix(in srgb, var(--muted) 22%, var(--text));
+  color: color-mix(in srgb, var(--muted) 10%, var(--text));
 }
 
 .shortcuts-modal-list .kbd-hint {
   font-size: 0.82em;
+}
+
+.shortcuts-modal-list li {
+  padding: 0.42rem 0.5rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .shortcuts-modal-note {
@@ -2560,14 +2699,16 @@
   padding: 0.09rem 0.3rem;
   margin: 0 0.06rem;
   border-radius: 4px;
-  border: 1px solid color-mix(in srgb, var(--border) 88%, var(--accent-soft));
-  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--text));
+  background: color-mix(in srgb, var(--surface-2) 78%, var(--bg));
   font-family: var(--font-metric, ui-monospace, monospace);
   font-size: 0.82em;
-  font-weight: 600;
+  font-weight: 750;
   line-height: 1.2;
-  color: color-mix(in srgb, var(--muted) 22%, var(--text));
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--border) 80%, transparent);
+  color: color-mix(in srgb, var(--muted) 8%, var(--text));
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--border) 80%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent);
 }
 
 .tools-hotkey-hint {
@@ -5868,13 +6009,14 @@ button.primary:disabled {
 
 .reading-mode-modal {
   color-scheme: light;
-  --reading-paper: #f4ecd8;
-  --reading-paper-2: #efe2c6;
-  --reading-ink: #221a12;
-  --reading-muted: rgba(34, 26, 18, 0.62);
+  --reading-paper: color-mix(in srgb, #f3e7cc 72%, var(--surface) 28%);
+  --reading-paper-2: color-mix(in srgb, #e7d2aa 72%, var(--bg) 28%);
+  --reading-ink: color-mix(in srgb, #221a12 78%, var(--text) 22%);
+  --reading-muted: color-mix(in srgb, rgba(34, 26, 18, 0.62) 70%, var(--muted) 30%);
   background:
+    radial-gradient(ellipse 125% 92% at 50% 50%, transparent 58%, rgba(40, 26, 10, 0.12) 92%),
     radial-gradient(ellipse 120% 84% at 12% 18%, rgba(120, 85, 40, 0.09), transparent 62%),
-    radial-gradient(ellipse 90% 70% at 96% 6%, rgba(255, 255, 255, 0.55), transparent 58%),
+    radial-gradient(ellipse 90% 70% at 96% 6%, rgba(255, 255, 255, 0.42), transparent 58%),
     radial-gradient(ellipse 120% 90% at 88% 96%, rgba(90, 60, 20, 0.08), transparent 58%),
     radial-gradient(ellipse 70% 60% at 18% 96%, rgba(60, 40, 10, 0.06), transparent 56%),
     repeating-linear-gradient(
@@ -5882,15 +6024,17 @@ button.primary:disabled {
       rgba(90, 60, 20, 0.03),
       rgba(90, 60, 20, 0.03) 1px,
       transparent 1px,
-      transparent 8px
+      transparent 9px
     ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cpath fill='none' stroke='%2350301816' stroke-width='0.65' d='M10 46 Q56 34 102 48 T210 44'/%3E%3Cpath fill='none' stroke='%2350301810' stroke-width='0.55' d='M8 168 Q64 156 116 172 T214 166'/%3E%3Cpath fill='none' stroke='%235030180c' stroke-width='0.5' d='M42 12 Q98 28 176 14'/%3E%3C/svg%3E"),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E"),
+    radial-gradient(circle at 18% 14%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 46%),
     linear-gradient(180deg, var(--reading-paper), var(--reading-paper-2));
   border-radius: 12px;
   border: 1px solid rgba(80, 55, 25, 0.22);
   box-shadow:
     0 18px 70px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
     inset 0 0 0 1px rgba(60, 40, 10, 0.06);
   padding: 2.5rem 3rem;
   max-width: 42rem;
@@ -5899,6 +6043,21 @@ button.primary:disabled {
   overflow-y: auto;
   box-sizing: border-box;
   position: relative;
+}
+
+.reading-mode-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 60%),
+    radial-gradient(ellipse 120% 80% at 50% 110%, rgba(60, 40, 10, 0.14), transparent 60%),
+    radial-gradient(circle at 0% 40%, rgba(60, 40, 10, 0.12), transparent 55%),
+    radial-gradient(circle at 100% 60%, rgba(60, 40, 10, 0.12), transparent 55%);
+  mix-blend-mode: multiply;
+  opacity: 0.55;
 }
 
 .reading-mode-close {
@@ -5942,6 +6101,7 @@ button.primary:disabled {
   color: var(--reading-ink);
   text-rendering: optimizeLegibility;
   font-kerning: normal;
+  font-weight: 700;
 }
 
 .reading-mode-line {
