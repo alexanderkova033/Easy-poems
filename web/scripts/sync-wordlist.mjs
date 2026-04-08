@@ -36,8 +36,13 @@ try {
     const raw = fs.readFileSync(src, "utf8");
     const normalized = normalizeLines(raw);
     ensureParentDir(dest);
-    fs.writeFileSync(dest, normalized, "utf8");
-    console.log(`[sync-wordlist] Wrote ${dest} (${normalized.split("\n").length - 1} words)`);
+    const existing = fs.existsSync(dest) ? fs.readFileSync(dest, "utf8") : null;
+    if (existing === normalized) {
+      console.log(`[sync-wordlist] ${dest} is already up to date.`);
+    } else {
+      fs.writeFileSync(dest, normalized, "utf8");
+      console.log(`[sync-wordlist] Wrote ${dest} (${normalized.split("\n").length - 1} words)`);
+    }
   }
 } catch (err) {
   console.error("[sync-wordlist] Failed:", err);
