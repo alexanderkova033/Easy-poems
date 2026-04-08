@@ -54,7 +54,7 @@ export const BACKGROUND_OPTIONS = [
   {
     id: "paper",
     label: "Warm paper",
-    blurb: "Ruled margins, ink flecks, linen grain.",
+    blurb: "Notebook rules, ink washes, layered cream warmth.",
     glyph: "✎",
   },
   {
@@ -72,7 +72,7 @@ export const BACKGROUND_OPTIONS = [
   {
     id: "dawn",
     label: "Dawn blush",
-    blurb: "Sun pillars, rose mist, soft bloom.",
+    blurb: "Rose sunbeams, haze bands, pearlescent highlights.",
     glyph: "✦",
   },
   {
@@ -90,25 +90,25 @@ export const BACKGROUND_OPTIONS = [
   {
     id: "crimson",
     label: "Crimson dusk",
-    blurb: "Deep red haze, ember glow, dark warmth.",
+    blurb: "Slow ember drift, horizon glow, ash ribbons and sparks.",
     glyph: "♦",
   },
   {
     id: "ocean",
     label: "Open ocean",
-    blurb: "Teal depths, wave shimmer, salt air.",
+    blurb: "Depth haze, caustic diamonds, kelp veils, rising bubbles.",
     glyph: "≋",
   },
   {
     id: "aurora",
     label: "Aurora",
-    blurb: "Northern lights, violet sweep, cool dark.",
+    blurb: "Twin light-curtains, violet-mint wash, moving starfield.",
     glyph: "✧",
   },
   {
     id: "parchment",
     label: "Old parchment",
-    blurb: "Aged cream, sepia grain, candlelit warmth.",
+    blurb: "Laid fibers, foxing blooms, candlelit fold-shadows.",
     glyph: "📜",
   },
 ] as const;

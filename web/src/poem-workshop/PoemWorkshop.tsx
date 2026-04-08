@@ -35,17 +35,17 @@ import {
   toolTabBucket,
 } from "./workshop-helpers";
 import { STORAGE_KEY_SHOW_LINE_SYLLABLES } from "@/shared/storage-keys";
+import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
+import { WorkshopGuideContent } from "./WorkshopGuideContent";
+import {
+  useHoverHintBinder,
+  useHoverHintsSettings,
+} from "./HoverHintsContext";
 import "./PoemWorkshop.css";
 
-function RailIcon({
-  children,
-  title,
-}: {
-  children: ReactNode;
-  title: string;
-}) {
+function RailIcon({ children }: { children: ReactNode }) {
   return (
-    <span className="workshop-rail-icon" aria-hidden title={title}>
+    <span className="workshop-rail-icon" aria-hidden>
       {children}
     </span>
   );
@@ -67,6 +67,8 @@ export function PoemWorkshop() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [findMode, setFindMode] = useState<"find" | "replace">("find");
   const [isFindOpen, setIsFindOpen] = useState(false);
   const [libraryQuery, setLibraryQuery] = useState("");
@@ -91,6 +93,9 @@ export function PoemWorkshop() {
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
   );
+  const hint = useHoverHintBinder();
+  const { enabled: hoverHintsEnabled, setEnabled: setHoverHintsEnabled } =
+    useHoverHintsSettings();
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
@@ -102,7 +107,9 @@ export function PoemWorkshop() {
     Number(isAppearanceOpen) +
     Number(isBackgroundOpen) +
     Number(isCmdkOpen) +
-    Number(isFindOpen);
+    Number(isFindOpen) +
+    Number(isShortcutsOpen) +
+    Number(isGuideOpen);
 
   useEffect(() => {
     const prev = overlayOpenCountPrev.current;
@@ -203,14 +210,16 @@ export function PoemWorkshop() {
       isAppearanceOpen ||
       isBackgroundOpen ||
       isExportOpen ||
-      isCmdkOpen;
+      isCmdkOpen ||
+      isShortcutsOpen ||
+      isGuideOpen;
     if (!lockScroll) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isLibraryOpen, isAppearanceOpen, isBackgroundOpen, isExportOpen, isCmdkOpen]);
+  }, [isLibraryOpen, isAppearanceOpen, isBackgroundOpen, isExportOpen, isCmdkOpen, isShortcutsOpen, isGuideOpen]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -238,6 +247,8 @@ export function PoemWorkshop() {
       setIsExportOpen(false);
       setIsCmdkOpen(false);
       setIsFindOpen(false);
+      setIsShortcutsOpen(false);
+      setIsGuideOpen(false);
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
@@ -350,6 +361,21 @@ export function PoemWorkshop() {
   const cmdkActions = useMemo<CommandPaletteAction[]>(() => {
     return [
       {
+        id: "workshop-guide",
+        title: "Getting started",
+        keywords: "help guide tour new introduction overview",
+        run: () => setIsGuideOpen(true),
+      },
+      {
+        id: "toggle-hover-hints",
+        title: hoverHintsEnabled
+          ? "Turn off delayed hover explanations"
+          : "Turn on delayed hover explanations",
+        keywords:
+          "hover tooltip tip button explain description help hints delayed hover",
+        run: () => setHoverHintsEnabled((v) => !v),
+      },
+      {
         id: "library",
         title: "Open Library",
         keywords: "draft poem library",
@@ -407,8 +433,14 @@ export function PoemWorkshop() {
         id: "revision-pass",
         title: "Revision pass (open checklist)",
         keywords: "revision pass polish review spelling repeats",
-        hint: "Shortcuts to spelling, rhyme & repeats, lines, meter",
+        hint: "Shortcuts to spelling, rhyme, repeats, lines, meter",
         run: () => m.setToolTab("checklist"),
+      },
+      {
+        id: "keyboard-shortcuts",
+        title: "Keyboard shortcuts",
+        keywords: "shortcuts keys hotkeys keyboard help",
+        run: () => setIsShortcutsOpen(true),
       },
       ...toolTabActions({ openToolTab: m.setToolTab }),
       {
@@ -459,7 +491,12 @@ export function PoemWorkshop() {
         run: () => setIsReadingMode(true),
       },
     ];
-  }, [focusPoemTitle, isFocusMode, m]);
+  }, [focusPoemTitle, hoverHintsEnabled, isFocusMode, m, setHoverHintsEnabled]);
+
+  const topbarLinesHint =
+    m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
+      ? `${m.quickDocStats.nonEmptyLines} lines with text; ${m.quickDocStats.totalLines} total in editor (includes blanks)`
+      : "Lines containing at least one character";
 
   return (
     <div className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}>
@@ -526,7 +563,7 @@ export function PoemWorkshop() {
                   className="small-btn topbar-library-btn"
                   onClick={() => setIsLibraryOpen(true)}
                   aria-label="Open draft library"
-                  title="Library: manage all your drafts"
+                  {...hint("Library: manage all your drafts — create, switch, or archive.")}
                 >
                   Library
                 </button>
@@ -554,11 +591,11 @@ export function PoemWorkshop() {
                 </span>
                 <span
                   className="topbar-focus-stat"
-                  title={
+                  {...hint(
                     m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
                       ? `${m.quickDocStats.totalLines} lines in editor including blank lines`
-                      : undefined
-                  }
+                      : "",
+                  )}
                 >
                   {m.quickDocStats.nonEmptyLines} lines
                 </span>
@@ -567,7 +604,7 @@ export function PoemWorkshop() {
               <div className="topbar-context-stats">
                 <span
                   className="topbar-context-stat"
-                  title="Word count in poem body"
+                  {...hint("Word count in poem body")}
                 >
                   {m.quickDocStats.totalWords} words
                 </span>
@@ -576,11 +613,7 @@ export function PoemWorkshop() {
                 </span>
                 <span
                   className="topbar-context-stat"
-                  title={
-                    m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
-                      ? `${m.quickDocStats.nonEmptyLines} lines with text; ${m.quickDocStats.totalLines} total in editor (includes blanks)`
-                      : "Lines containing at least one character"
-                  }
+                  {...hint(topbarLinesHint)}
                 >
                   {m.quickDocStats.nonEmptyLines} lines
                 </span>
@@ -604,7 +637,7 @@ export function PoemWorkshop() {
                   aria-haspopup="dialog"
                   aria-expanded={isAppearanceOpen}
                   aria-label="Fonts and typography"
-                  title="Fonts: poem & interface typefaces"
+                  {...hint("Fonts: poem and interface typefaces")}
                 >
                   <svg
                     className="topbar-ghost-icon"
@@ -637,7 +670,7 @@ export function PoemWorkshop() {
                   aria-haspopup="dialog"
                   aria-expanded={isBackgroundOpen}
                   aria-label="Page backdrop"
-                  title="Backdrop: scene behind the page (decorative)"
+                  {...hint("Backdrop: scene behind the page (decorative)")}
                 >
                   <svg
                     className="topbar-ghost-icon"
@@ -675,7 +708,7 @@ export function PoemWorkshop() {
                 className="small-btn topbar-focus-exit-btn"
                 onClick={() => setIsFocusMode(false)}
                 aria-label="Exit focus mode and show tools"
-                title="Exit focus mode"
+                {...hint("Exit focus mode — bring back tools and the side rail")}
               >
                 Show tools
               </button>
@@ -690,7 +723,7 @@ export function PoemWorkshop() {
               className="topbar-quick-btn topbar-quick-cmd"
               onClick={() => setIsCmdkOpen(true)}
               aria-label="Open command palette"
-              title="Ctrl or ⌘ K (export, focus mode, and more)"
+              {...hint("Commands — search export, focus mode, templates, and more (⌘/Ctrl+K)")}
             >
               <span className="topbar-quick-label">Commands</span>
               <span className="topbar-quick-keys">
@@ -707,7 +740,7 @@ export function PoemWorkshop() {
                 setIsFindOpen(true);
               }}
               aria-label="Find in poem"
-              title="Ctrl or ⌘ F"
+              {...hint("Find text in the poem (⌘/Ctrl+F)")}
             >
               <span className="topbar-quick-label">Find</span>
               <span className="topbar-quick-keys">
@@ -716,11 +749,22 @@ export function PoemWorkshop() {
                 <kbd className="kbd-hint">F</kbd>
               </span>
             </button>
+            <button
+              type="button"
+              className="topbar-quick-btn topbar-quick-shortcuts"
+              onClick={() => setIsShortcutsOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={isShortcutsOpen}
+              aria-label="Keyboard shortcuts"
+              {...hint("All keyboard shortcuts for the workshop")}
+            >
+              <span className="topbar-quick-label">Shortcuts</span>
+            </button>
           </nav>
         ) : null}
       </header>
 
-      <FirstVisitHint />
+      <FirstVisitHint onOpenGuide={() => setIsGuideOpen(true)} />
 
       {m.persistenceError ? (
         <div
@@ -963,7 +1007,7 @@ export function PoemWorkshop() {
                                 className={`pin-btn ${meta.pinned ? "is-on" : ""}`}
                                 onClick={() => m.togglePinned(id)}
                                 aria-pressed={Boolean(meta.pinned)}
-                                title={meta.pinned ? "Unpin" : "Pin"}
+                                {...hint(meta.pinned ? "Unpin draft" : "Pin draft")}
                               >
                                 {meta.pinned ? "★" : "☆"}
                               </button>
@@ -975,7 +1019,7 @@ export function PoemWorkshop() {
                                   setIsLibraryOpen(false);
                                 }}
                                 aria-current={isActive ? "true" : undefined}
-                                title="Open this draft"
+                                {...hint("Open this draft in the editor")}
                               >
                                 {label}
                                 {isArchived ? " (archived)" : ""}
@@ -987,7 +1031,7 @@ export function PoemWorkshop() {
                                   m.duplicatePoemById(id);
                                   setIsLibraryOpen(false);
                                 }}
-                                title="Duplicate this draft"
+                                {...hint("Duplicate this draft")}
                               >
                                 Dup
                               </button>
@@ -996,7 +1040,7 @@ export function PoemWorkshop() {
                                   type="button"
                                   className="small-btn"
                                   onClick={() => m.setDraftArchived(id, false)}
-                                  title="Return to main list"
+                                  {...hint("Return draft to main list")}
                                 >
                                   Unarchive
                                 </button>
@@ -1005,11 +1049,11 @@ export function PoemWorkshop() {
                                   type="button"
                                   className="small-btn"
                                   disabled={isActive}
-                                  title={
+                                  {...hint(
                                     isActive
-                                      ? "Switch to another draft first"
-                                      : "Hide from list (data kept)"
-                                  }
+                                      ? "Switch to another draft before archiving this one"
+                                      : "Archive — hide from list (data kept)",
+                                  )}
                                   onClick={() => m.setDraftArchived(id, true)}
                                 >
                                   Archive
@@ -1100,7 +1144,7 @@ export function PoemWorkshop() {
                     type="button"
                     className="small-btn"
                     onClick={() => void m.exportWorkshopBackup()}
-                    title="Download all drafts and their snapshots as JSON"
+                    {...hint("Download all drafts and their snapshots as JSON")}
                   >
                     Export backup (JSON)
                   </button>
@@ -1108,7 +1152,7 @@ export function PoemWorkshop() {
                     type="button"
                     className="small-btn"
                     onClick={() => void m.triggerImportBackup()}
-                    title="Add poems from an Easy-poems backup JSON file"
+                    {...hint("Import drafts from an Easy-poems backup JSON file")}
                   >
                     Import backup (JSON)
                   </button>
@@ -1161,7 +1205,9 @@ export function PoemWorkshop() {
                 type="button"
                 className="small-btn"
                 onClick={() => void m.onCopyMarkdown()}
-                title="Copies your poem as Markdown: title becomes a # heading, form note is italic, each line stays a line—handy for Notion, GitHub, blogs, or ChatGPT."
+                {...hint(
+                  "Copy as Markdown: title becomes a heading, form note is italic, each line preserved — handy for Notion, GitHub, blogs, or ChatGPT.",
+                )}
               >
                 Copy Markdown
               </button>
@@ -1169,7 +1215,7 @@ export function PoemWorkshop() {
                 type="button"
                 className="small-btn"
                 onClick={() => window.print()}
-                title="Print or save as PDF via your browser’s print dialog"
+                {...hint("Print or save as PDF via your browser’s print dialog")}
               >
                 Print / PDF
               </button>
@@ -1193,7 +1239,7 @@ export function PoemWorkshop() {
                   type="button"
                   className="small-btn"
                   onClick={() => void m.exportWorkshopBackup()}
-                  title="Download all drafts and snapshots as a JSON backup"
+                  {...hint("Download all drafts and snapshots as a JSON backup")}
                 >
                   Export backup (.json)
                 </button>
@@ -1201,11 +1247,77 @@ export function PoemWorkshop() {
                   type="button"
                   className="small-btn"
                   onClick={m.triggerImportBackup}
-                  title="Import a previously exported backup JSON file"
+                  {...hint("Import a previously exported backup JSON file")}
                 >
                   Import backup
                 </button>
               </div>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isShortcutsOpen ? (
+        <div
+          className="overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsShortcutsOpen(false);
+          }}
+        >
+          <section
+            className="modal shortcuts-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcuts-modal-title"
+          >
+            <div className="modal-head">
+              <h2 id="shortcuts-modal-title" className="modal-title">
+                Keyboard shortcuts
+              </h2>
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setIsShortcutsOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="shortcuts-modal-body">
+              <KeyboardShortcutsContent />
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isGuideOpen ? (
+        <div
+          className="overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsGuideOpen(false);
+          }}
+        >
+          <section
+            className="modal guide-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guide-modal-title"
+          >
+            <div className="modal-head">
+              <h2 id="guide-modal-title" className="modal-title">
+                Getting started
+              </h2>
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setIsGuideOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            <div className="guide-modal-body">
+              <WorkshopGuideContent />
             </div>
           </section>
         </div>
@@ -1245,6 +1357,17 @@ export function PoemWorkshop() {
               appearance={appearance}
               onChange={setAppearance}
             />
+            <label className="appearance-hints-toggle">
+              <input
+                type="checkbox"
+                checked={hoverHintsEnabled}
+                onChange={(e) => setHoverHintsEnabled(e.target.checked)}
+              />
+              <span>
+                After hovering a moment, show what buttons do (hover devices
+                only). Turn off here or via Commands: “delayed hover”.
+              </span>
+            </label>
           </section>
         </div>
       ) : null}
@@ -1304,11 +1427,12 @@ export function PoemWorkshop() {
             type="button"
             className="rail-btn rail-btn-library"
             onClick={() => setIsLibraryOpen(true)}
+            aria-label="Open library"
             aria-haspopup="dialog"
             aria-expanded={isLibraryOpen}
-            title="Open Library"
+            {...hint("Open Library — manage drafts")}
           >
-            <RailIcon title="Library">
+            <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
                 <path
                   d="M5 19V6.5A2.5 2.5 0 0 1 7.5 4H20v14.5A1.5 1.5 0 0 1 18.5 20H7.5A2.5 2.5 0 0 1 5 17.5"
@@ -1337,9 +1461,9 @@ export function PoemWorkshop() {
             onClick={() => setIsAppearanceOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isAppearanceOpen}
-            title="Poem font and UI font"
+            {...hint("Fonts — poem and UI typefaces")}
           >
-            <RailIcon title="Fonts">
+            <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
                 <path
                   fill="none"
@@ -1368,9 +1492,9 @@ export function PoemWorkshop() {
             onClick={() => setIsBackgroundOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isBackgroundOpen}
-            title="Page backdrop — symbols and mood"
+            {...hint("Page backdrop — scene and mood behind the page")}
           >
-            <RailIcon title="Backdrop">
+            <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
                 <path
                   fill="none"
@@ -1399,9 +1523,9 @@ export function PoemWorkshop() {
             onClick={() => setIsExportOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isExportOpen}
-            title="Open Export"
+            {...hint("Export — copy or download the poem and backups")}
           >
-            <RailIcon title="Export">
+            <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
                 <path
                   d="M12 14V3"
@@ -1437,9 +1561,13 @@ export function PoemWorkshop() {
             className="rail-btn"
             onClick={() => setIsFocusMode((v) => !v)}
             aria-pressed={isFocusMode}
-            title={isFocusMode ? "Exit focus mode" : "Enter focus mode"}
+            {...hint(
+              isFocusMode
+                ? "Exit focus mode — show tools and side rail again"
+                : "Focus mode — hide tools for a calmer writing space",
+            )}
           >
-            <RailIcon title="Focus">
+            <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
                 <path
                   d="M4 9V6a2 2 0 0 1 2-2h3M20 9V6a2 2 0 0 0-2-2h-3M4 15v3a2 2 0 0 0 2 2h3M20 15v3a2 2 0 0 1-2 2h-3"
@@ -1537,7 +1665,7 @@ export function PoemWorkshop() {
                         type="button"
                         className="quick-copy-face quick-copy-face-icon"
                         onClick={() => void m.onQuickCopyPlain()}
-                        title="Copy poem body as plain text (no title or form)"
+                        {...hint("Copy poem body as plain text (no title or form)")}
                         aria-label="Copy poem body as plain text"
                         tabIndex={m.quickCopyFlash ? -1 : 0}
                         aria-hidden={m.quickCopyFlash}
@@ -1668,52 +1796,25 @@ export function PoemWorkshop() {
                 ),
               )}
             </nav>
-            <details className="workshop-head-shortcuts">
-              <summary className="workshop-head-shortcuts-summary">
+            <p className="tools-shortcuts-inline muted small">
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => setIsGuideOpen(true)}
+              >
+                Getting started
+              </button>
+              {" · "}
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => setIsShortcutsOpen(true)}
+              >
                 Keyboard shortcuts
-              </summary>
-              <div className="workshop-head-shortcuts-body">
-                <p className="workshop-head-shortcuts-lead muted small">
-                  These work globally unless your cursor is in the poem or another
-                  text field.
-                </p>
-                <ul className="workshop-head-shortcuts-list">
-                  <li>
-                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-                    <kbd className="kbd-hint">Alt</kbd> +{" "}
-                    <kbd className="kbd-hint">[</kbd> /{" "}
-                    <kbd className="kbd-hint">]</kbd> — cycle tools in the current
-                    group (Overview or Sound).
-                  </li>
-                  <li>
-                    <kbd className="kbd-hint">⌘</kbd> /{" "}
-                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-                    <kbd className="kbd-hint">K</kbd> — command palette.
-                  </li>
-                  <li>
-                    <kbd className="kbd-hint">⌘</kbd> /{" "}
-                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-                    <kbd className="kbd-hint">F</kbd> — find in poem.
-                  </li>
-                  <li>
-                    <kbd className="kbd-hint">⌘</kbd> /{" "}
-                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-                    <kbd className="kbd-hint">H</kbd> — replace in poem.
-                  </li>
-                  <li>
-                    When spelling flags exist:{" "}
-                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
-                    <kbd className="kbd-hint">Alt</kbd> +{" "}
-                    <kbd className="kbd-hint">,</kbd> /{" "}
-                    <kbd className="kbd-hint">.</kbd> — previous / next flag.
-                  </li>
-                </ul>
-                <p className="workshop-head-shortcuts-note muted small">
-                  Syllable, meter, and rhyme hints are rough English heuristics—signals,
-                  not a grade.
-                </p>
-              </div>
-            </details>
+              </button>
+              {" "}— <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>{" "}
+              <kbd className="kbd-hint">K</kbd> for Commands
+            </p>
           </div>
 
           <WorkshopToolPanels
@@ -1863,6 +1964,19 @@ export function PoemWorkshop() {
         <p>
           You are responsible for what you write and share; use the workshop only
           for content you may lawfully create and publish.
+        </p>
+        <p>
+          New to the layout?{" "}
+          <button
+            type="button"
+            className="privacy-inline-link"
+            onClick={() => setIsGuideOpen(true)}
+          >
+            Open the quick guide
+          </button>
+          {" "}
+          any time — or press <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
+          <kbd className="kbd-hint">K</kbd> and choose <strong>Getting started</strong>.
         </p>
       </footer>
     </div>

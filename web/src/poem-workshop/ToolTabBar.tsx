@@ -96,6 +96,21 @@ function IconTabRhyme() {
   );
 }
 
+function IconTabRepeat() {
+  return (
+    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16 5.5h3v3M8 18.5H5v-3m0-5.5a7.5 7.5 0 0112.85-5.3M19 12a7.5 7.5 0 01-12.85 5.3"
+      />
+    </svg>
+  );
+}
+
 function IconTabSpell() {
   return (
     <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
@@ -138,7 +153,8 @@ export const TOOL_TABS: {
   { id: "spell", label: "Spell", Icon: IconTabSpell },
   { id: "lines", label: "Lines", Icon: IconTabLines },
   { id: "meter", label: "Meter", Icon: IconTabMeter },
-  { id: "rhyme", label: "Rhyme & repeats", Icon: IconTabRhyme },
+  { id: "rhyme", label: "Rhyme", Icon: IconTabRhyme },
+  { id: "repeat", label: "Repeats", Icon: IconTabRepeat },
   { id: "goals", label: "Goals", Icon: IconTabGoals },
   { id: "checklist", label: "Ready", Icon: IconTabChecklist },
   { id: "snapshots", label: "Snapshots", Icon: IconTabSnapshots },

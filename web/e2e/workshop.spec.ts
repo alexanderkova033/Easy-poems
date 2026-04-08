@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  // Clear localStorage before each test for a clean state
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  await page.evaluate(() => {
+    localStorage.clear();
+    // Avoid the first-visit banner covering controls in headless runs
+    localStorage.setItem("easy-poems:first-hint-dismissed", "1");
+  });
   await page.reload();
 });
 
@@ -22,12 +25,11 @@ test("types into the editor", async ({ page }) => {
   const editor = page.locator(".cm-content");
   await editor.click();
   await page.keyboard.type("Shall I compare thee to a summer's day?");
-  // Word count should update
-  await expect(page.locator(".word-count, .stat-value").first()).toBeVisible();
+  await expect(page.locator(".topbar-context-stat").first()).toContainText(/\d/);
 });
 
 test("title field updates", async ({ page }) => {
-  const titleInput = page.locator('[placeholder*="title"], [aria-label*="title"]').first();
+  const titleInput = page.locator("#poem-title");
   await titleInput.fill("My Test Poem");
   await expect(titleInput).toHaveValue("My Test Poem");
 });
@@ -36,8 +38,7 @@ test("saved flash appears after editing", async ({ page }) => {
   const editor = page.locator(".cm-content");
   await editor.click();
   await page.keyboard.type("Testing autosave");
-  // Saved indicator should appear
-  await expect(page.locator(".saved-flash, [class*='saved']")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator(".save-dot.is-on")).toBeVisible({ timeout: 3000 });
 });
 
 test("library drawer opens and closes", async ({ page }) => {
@@ -61,12 +62,12 @@ test("export backup downloads a file", async ({ page }) => {
   await editor.click();
   await page.keyboard.type("A poem to export");
 
-  // Open library and find export button
   await page.locator('[aria-label="Open library"]').click();
+  await page.getByText("Backup", { exact: true }).click();
 
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: /export backup/i }).click(),
+    page.getByRole("button", { name: /export backup.*json/i }).click(),
   ]);
   expect(download.suggestedFilename()).toMatch(/easy-poems-backup.*\.json$/);
 });
@@ -86,10 +87,9 @@ test("import backup restores poems", async ({ page }) => {
     ],
   });
 
-  // Inject a fake file input trigger
   await page.locator('[aria-label="Open library"]').click();
+  await page.getByText("Backup", { exact: true }).click();
 
-  // Use the file chooser to provide the backup
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: /import backup/i }).click();
   const fileChooser = await fileChooserPromise;
@@ -113,6 +113,7 @@ test("import rejects invalid version backup", async ({ page }) => {
   });
 
   await page.locator('[aria-label="Open library"]').click();
+  await page.getByText("Backup", { exact: true }).click();
 
   const fileChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("button", { name: /import backup/i }).click();
@@ -153,5 +154,14 @@ test("find bar opens with Ctrl+F", async ({ page }) => {
   const editor = page.locator(".cm-content");
   await editor.click();
   await page.keyboard.press("Control+f");
-  await expect(page.locator(".find-bar, [class*='find']").first()).toBeVisible();
+  await expect(page.locator(".findbar")).toBeVisible();
+});
+
+test("opens Getting started from the command palette", async ({ page }) => {
+  await page.keyboard.press("Control+k");
+  await expect(page.getByRole("dialog", { name: /command palette/i })).toBeVisible();
+  await page.getByRole("textbox", { name: /command search/i }).fill("getting started");
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("dialog", { name: /^Getting started$/i })).toBeVisible();
+  await page.keyboard.press("Escape");
 });

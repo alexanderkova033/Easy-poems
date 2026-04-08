@@ -174,7 +174,7 @@ body::before {
     100% 0%,
     center -1px,
     center -1px;
-  animation: ambient-drift 140s ease-in-out infinite alternate;
+  animation: ambient-drift 118s ease-in-out infinite alternate;
 }
 
 /* Soft zenith glow — matches sage palette */
@@ -261,6 +261,225 @@ body::after {
   }
 }
 
+@keyframes crimson-backdrop-drift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 100%,
+      70% 55%,
+      50% 34%,
+      50% 100%,
+      4% 72%,
+      62% 44%,
+      16% 18%,
+      72% 64%,
+      0 0,
+      0 0;
+  }
+  50% {
+    background-position:
+      8% 6%,
+      92% 4%,
+      48% 94%,
+      76% 58%,
+      52% 32%,
+      50% 102%,
+      2% 70%,
+      54% 40%,
+      22% 28%,
+      60% 58%,
+      0 0,
+      0 0;
+  }
+  100% {
+    background-position:
+      4% 2%,
+      96% 6%,
+      52% 98%,
+      68% 54%,
+      48% 36%,
+      50% 100%,
+      6% 74%,
+      58% 46%,
+      14% 20%,
+      68% 68%,
+      0 0,
+      0 0;
+  }
+}
+
+@keyframes crimson-horizon-glow {
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 0.46;
+  }
+}
+
+@keyframes ocean-backdrop-drift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 100%,
+      75% 58%,
+      52% 44%,
+      42% 58%,
+      8% 62%,
+      0 0,
+      64% 32%,
+      48% 52%,
+      52% 48%,
+      0 0;
+  }
+  50% {
+    background-position:
+      6% 4%,
+      94% 6%,
+      48% 94%,
+      72% 60%,
+      56% 40%,
+      52% 52%,
+      4% 58%,
+      10% 8%,
+      56% 28%,
+      44% 56%,
+      48% 50%,
+      0 0;
+  }
+  100% {
+    background-position:
+      2% 2%,
+      98% 4%,
+      52% 98%,
+      76% 56%,
+      54% 42%,
+      46% 56%,
+      6% 60%,
+      0 0,
+      68% 30%,
+      50% 50%,
+      50% 46%,
+      0 0;
+  }
+}
+
+@keyframes ocean-shimmer {
+  0% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes aurora-backdrop-drift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 6%,
+      52% 56%,
+      32% 88%,
+      44% 18%,
+      58% 72%,
+      48% 22%,
+      8% 14%,
+      0 0;
+  }
+  50% {
+    background-position:
+      8% 4%,
+      92% 2%,
+      48% 52%,
+      28% 84%,
+      52% 22%,
+      46% 68%,
+      52% 28%,
+      16% 22%,
+      0 0;
+  }
+  100% {
+    background-position:
+      4% 2%,
+      96% 8%,
+      50% 54%,
+      30% 86%,
+      48% 20%,
+      50% 70%,
+      50% 24%,
+      12% 18%,
+      0 0;
+  }
+}
+
+@keyframes aurora-veil-shift {
+  0% {
+    opacity: 0.36;
+  }
+  100% {
+    opacity: 0.54;
+  }
+}
+
+@keyframes parchment-backdrop-drift {
+  0% {
+    background-position:
+      0% 0%,
+      100% 0%,
+      50% 100%,
+      70% 55%,
+      6% 94%,
+      94% 72%,
+      50% 100%,
+      0 0,
+      64% 28%,
+      38% 62%,
+      0 0,
+      38% 0%;
+  }
+  50% {
+    background-position:
+      6% 4%,
+      94% 2%,
+      48% 94%,
+      74% 58%,
+      8% 90%,
+      92% 76%,
+      50% 99%,
+      0 0,
+      58% 32%,
+      42% 58%,
+      0 0,
+      42% 2%;
+  }
+  100% {
+    background-position:
+      2% 2%,
+      98% 4%,
+      52% 98%,
+      68% 54%,
+      10% 96%,
+      94% 70%,
+      50% 100%,
+      0 0,
+      62% 30%,
+      40% 60%,
+      0 0,
+      40% 0%;
+  }
+}
+
+@keyframes parchment-candlelight {
+  0% {
+    opacity: 0.34;
+  }
+  100% {
+    opacity: 0.45;
+  }
+}
+
 html[data-writing-focus-v2] body::before {
   opacity: 0.48;
 }
@@ -303,6 +522,24 @@ html[data-writing-focus-v2] body::after {
 @media (prefers-color-scheme: light) and (prefers-reduced-motion: reduce) {
   body::after {
     opacity: 0.38;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --border: color-mix(in srgb, var(--border) 65%, var(--text));
+    --muted: color-mix(in srgb, var(--muted) 68%, var(--text));
+    --focus-ring: 3px solid color-mix(in srgb, var(--accent) 88%, #fff);
+    --shadow-1: 0 0 0 2px color-mix(in srgb, var(--border) 60%, transparent);
+    --shadow-2: 0 0 0 3px color-mix(in srgb, var(--border) 70%, transparent);
+  }
+
+  body::after {
+    opacity: 0.22;
+  }
+
+  html[data-writing-focus-v2] body::after {
+    opacity: 0.06 !important;
   }
 }
 
@@ -654,6 +891,28 @@ html[data-workshop-bg="paper"] body::before {
     42% 38%;
 }
 
+/* Brighter paper: extra warm bloom + subtle sheen (ambient detail) */
+html[data-workshop-bg="paper"] body::after {
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+  background:
+    radial-gradient(
+      ellipse 88% 58% at 16% 86%,
+      color-mix(in srgb, var(--ambient-c) 70%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 50% 44% at 92% 6%,
+      color-mix(in srgb, #fff 62%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      75% 48% at 50% -8%,
+      color-mix(in srgb, #fff 38%, transparent),
+      transparent 58%
+    );
+}
+
 html[data-workshop-bg="night"] body::before {
   animation: none;
   background-image:
@@ -931,6 +1190,28 @@ html[data-workshop-bg="dawn"] body::before {
     28% 72%;
 }
 
+html[data-workshop-bg="dawn"] body::after {
+  mix-blend-mode: multiply;
+  opacity: 0.38;
+  background:
+    radial-gradient(
+      ellipse 72% 52% at 6% 90%,
+      color-mix(in srgb, var(--ambient-a) 72%, transparent),
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 48% 40% at 96% 8%,
+      color-mix(in srgb, #fff 58%, transparent),
+      transparent 50%
+    ),
+    conic-gradient(
+      from 200deg at 78% 72%,
+      transparent 0deg,
+      color-mix(in srgb, var(--accent) 14%, transparent) 55deg,
+      transparent 110deg
+    );
+}
+
 html[data-workshop-bg="slate"] body::before {
   animation: none;
   background-image:
@@ -998,6 +1279,28 @@ html[data-workshop-bg="slate"] body::before {
     40% 42%;
 }
 
+html[data-workshop-bg="slate"] body::after {
+  mix-blend-mode: screen;
+  opacity: 0.36;
+  background:
+    radial-gradient(
+      ellipse 92% 56% at 50% -12%,
+      color-mix(in srgb, #cfe8ff 14%, transparent),
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 72% 52% at 96% 92%,
+      color-mix(in srgb, var(--accent) 14%, transparent),
+      transparent 56%
+    ),
+    linear-gradient(
+      118deg,
+      transparent 38%,
+      color-mix(in srgb, #88c8ff 7%, transparent) 52%,
+      transparent 66%
+    );
+}
+
 /* ---- Stone: dark charcoal with cross-hatch + concentric diamond motif ---- */
 html[data-workshop-bg="stone"] body::before {
   animation: none;
@@ -1036,6 +1339,28 @@ html[data-workshop-bg="stone"] body::before {
     0 0;
 }
 
+html[data-workshop-bg="stone"] body::after {
+  mix-blend-mode: screen;
+  opacity: 0.28;
+  background:
+    radial-gradient(
+      ellipse 90% 55% at 50% -10%,
+      color-mix(in srgb, #f2efe6 10%, transparent),
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse 58% 52% at 14% 86%,
+      color-mix(in srgb, var(--accent) 10%, transparent),
+      transparent 58%
+    ),
+    conic-gradient(
+      from 220deg at 74% 66%,
+      transparent 0deg,
+      color-mix(in srgb, var(--accent) 8%, transparent) 50deg,
+      transparent 110deg
+    );
+}
+
 @media (prefers-reduced-motion: reduce) {
   html[data-workshop-bg] body::before {
     animation: none !important;
@@ -1057,29 +1382,98 @@ html[data-workshop-bg="crimson"] {
   --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9aa1;
-  --net-line: rgba(220, 130, 140, 0.045);
-  --ambient-a: rgba(180, 40, 60, 0.09);
-  --ambient-b: rgba(130, 20, 40, 0.07);
-  --ambient-c: rgba(200, 80, 90, 0.06);
-  --ambient-d: rgba(100, 30, 45, 0.05);
-  --shine-top: rgba(255, 160, 170, 0.055);
-  --shine-mid: rgba(160, 50, 65, 0.04);
+  --net-line: rgba(220, 130, 140, 0.048);
+  --ambient-a: rgba(190, 45, 65, 0.095);
+  --ambient-b: rgba(135, 22, 42, 0.075);
+  --ambient-c: rgba(205, 82, 92, 0.068);
+  --ambient-d: rgba(105, 32, 48, 0.055);
+  --shine-top: rgba(255, 160, 170, 0.062);
+  --shine-mid: rgba(160, 50, 65, 0.045);
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 55%, transparent);
 }
 
 html[data-workshop-bg="crimson"] body::before {
-  animation: none;
+  animation: crimson-backdrop-drift 170s ease-in-out infinite alternate;
   background-image:
-    radial-gradient(ellipse 130% 110% at 15% 25%, var(--ambient-a), transparent 70%),
-    radial-gradient(ellipse 110% 95% at 85% 20%, var(--ambient-b), transparent 68%),
-    radial-gradient(ellipse 140% 120% at 50% 95%, var(--ambient-c), transparent 74%),
-    radial-gradient(ellipse 100% 88% at 70% 60%, var(--ambient-d), transparent 66%),
-    repeating-linear-gradient(135deg, transparent, transparent 18px, color-mix(in srgb, var(--net-line) 60%, transparent) 18px, color-mix(in srgb, var(--net-line) 60%, transparent) 18.5px),
-    repeating-linear-gradient(45deg, transparent, transparent 18px, color-mix(in srgb, var(--net-line) 40%, transparent) 18px, color-mix(in srgb, var(--net-line) 40%, transparent) 18.5px);
-  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 100% 100%, 100% 100%;
-  background-position: 0% 0%, 100% 0%, 50% 100%, 70% 55%, 0 0, 0 0;
+    radial-gradient(ellipse 132% 112% at 15% 25%, var(--ambient-a), transparent 70%),
+    radial-gradient(ellipse 112% 96% at 85% 20%, var(--ambient-b), transparent 68%),
+    radial-gradient(ellipse 142% 122% at 50% 95%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 102% 90% at 70% 60%, var(--ambient-d), transparent 66%),
+    radial-gradient(
+      circle at 48% 36%,
+      color-mix(in srgb, #ff7a68 17%, transparent),
+      transparent 42%
+    ),
+    radial-gradient(
+      ellipse 88% 32% at 50% 104%,
+      color-mix(in srgb, var(--accent) 26%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 72% 58% at 10% 76%,
+      color-mix(in srgb, #240810 48%, transparent),
+      transparent 58%
+    ),
+    conic-gradient(
+      from 28deg at 66% 50%,
+      transparent 0deg,
+      color-mix(in srgb, #ff5538 10%, transparent) 30deg,
+      transparent 78deg
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='126' height='126'%3E%3Ccircle cx='26' cy='34' r='0.72' fill='%23ff8a7048'/%3E%3Ccircle cx='90' cy='24' r='0.56' fill='%23ffa0903a'/%3E%3Ccircle cx='58' cy='76' r='0.8' fill='%23ff706542'/%3E%3Ccircle cx='98' cy='92' r='0.52' fill='%23ffb09036'/%3E%3Ccircle cx='36' cy='94' r='0.46' fill='%23ff6a5040'/%3E%3Cpath stroke='%23ff5a4834' stroke-width='0.46' fill='none' d='M6 64 Q46 42 94 68'/%3E%3Cpath stroke='%23ff806040' stroke-width='0.4' fill='none' d='M12 100 Q58 80 108 96'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='248' height='248' viewBox='0 0 200 200'%3E%3Cpath fill='none' stroke='%23ff44281a' stroke-width='0.52' d='M18 158 Q88 118 128 138 T192 126'/%3E%3Cpath fill='none' stroke='%23ff66401a' stroke-width='0.44' d='M32 50 Q102 86 170 42'/%3E%3Ccircle cx='46' cy='68' r='1.25' fill='%23ff88662a'/%3E%3Ccircle cx='158' cy='102' r='0.95' fill='%23ffb09022'/%3E%3Ccircle cx='92' cy='156' r='1.05' fill='%23ff8a5030'/%3E%3Cpath stroke='%23ff302018' stroke-width='0.38' fill='none' d='M76 12 Q124 28 162 8'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(135deg, transparent, transparent 18px, color-mix(in srgb, var(--net-line) 62%, transparent) 18px, color-mix(in srgb, var(--net-line) 62%, transparent) 18.5px),
+    repeating-linear-gradient(46deg, transparent, transparent 22px, color-mix(in srgb, var(--net-line) 40%, transparent) 22px, color-mix(in srgb, var(--net-line) 40%, transparent) 22.5px);
+  background-size:
+    165% 165%,
+    158% 158%,
+    172% 172%,
+    152% 152%,
+    96% 96%,
+    136% 44%,
+    100% 100%,
+    192% 192%,
+    142px 142px,
+    268px 268px,
+    100% 100%,
+    100% 100%;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    70% 55%,
+    50% 34%,
+    50% 100%,
+    4% 72%,
+    62% 44%,
+    16% 18%,
+    72% 64%,
+    0 0,
+    0 0;
+}
+
+html[data-workshop-bg="crimson"] body::after {
+  mix-blend-mode: screen;
+  opacity: 0.38;
+  animation: crimson-horizon-glow 34s ease-in-out infinite alternate;
+  background:
+    radial-gradient(
+      ellipse 130% 52% at 50% 114%,
+      color-mix(in srgb, var(--accent) 42%, transparent),
+      transparent 54%
+    ),
+    radial-gradient(
+      ellipse 58% 50% at 12% 6%,
+      color-mix(in srgb, #ff8866 16%, transparent),
+      transparent 56%
+    ),
+    radial-gradient(
+      circle at 88% 20%,
+      color-mix(in srgb, #ff4030 12%, transparent),
+      transparent 46%
+    );
 }
 
 /* ---- Open ocean: teal-blue depths ---- */
@@ -1097,29 +1491,95 @@ html[data-workshop-bg="ocean"] {
   --selection-bg: color-mix(in srgb, var(--accent) 28%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9a9a;
-  --net-line: rgba(100, 190, 225, 0.042);
-  --ambient-a: rgba(30, 120, 180, 0.09);
-  --ambient-b: rgba(20, 80, 130, 0.07);
-  --ambient-c: rgba(50, 160, 200, 0.065);
-  --ambient-d: rgba(15, 60, 100, 0.052);
-  --shine-top: rgba(140, 220, 255, 0.06);
-  --shine-mid: rgba(60, 140, 190, 0.04);
+  --net-line: rgba(100, 190, 225, 0.046);
+  --ambient-a: rgba(32, 128, 188, 0.095);
+  --ambient-b: rgba(22, 88, 138, 0.078);
+  --ambient-c: rgba(52, 168, 208, 0.072);
+  --ambient-d: rgba(18, 68, 110, 0.056);
+  --shine-top: rgba(140, 220, 255, 0.068);
+  --shine-mid: rgba(60, 140, 190, 0.045);
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
 }
 
 html[data-workshop-bg="ocean"] body::before {
-  animation: none;
+  animation: ocean-backdrop-drift 190s ease-in-out infinite alternate;
   background-image:
-    radial-gradient(ellipse 140% 120% at 20% 30%, var(--ambient-a), transparent 72%),
-    radial-gradient(ellipse 120% 100% at 80% 15%, var(--ambient-b), transparent 70%),
-    radial-gradient(ellipse 150% 130% at 50% 90%, var(--ambient-c), transparent 76%),
-    radial-gradient(ellipse 110% 95% at 75% 65%, var(--ambient-d), transparent 68%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='20'%3E%3Cpath fill='none' stroke='%234ab8d814' stroke-width='0.6' d='M0 10 Q15 4 30 10 Q45 16 60 10'/%3E%3C/svg%3E"),
-    repeating-linear-gradient(0deg, transparent, transparent 30px, color-mix(in srgb, var(--net-line) 50%, transparent) 30px, color-mix(in srgb, var(--net-line) 50%, transparent) 30.5px);
-  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 60px 20px, 100% 100%;
-  background-position: 0% 0%, 100% 0%, 50% 100%, 75% 58%, 0 0, 0 0;
+    radial-gradient(ellipse 142% 122% at 20% 30%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 122% 102% at 80% 15%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 152% 132% at 50% 90%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 112% 97% at 75% 65%, var(--ambient-d), transparent 68%),
+    radial-gradient(
+      ellipse 58% 50% at 58% 42%,
+      color-mix(in srgb, var(--accent) 13%, transparent),
+      transparent 64%
+    ),
+    linear-gradient(
+      118deg,
+      transparent 36%,
+      color-mix(in srgb, #58e8ff 8%, transparent) 48%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 48% 38% at 26% 54%,
+      color-mix(in srgb, #082838 52%, transparent),
+      transparent 62%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='22'%3E%3Cpath fill='none' stroke='%2348d8f01a' stroke-width='0.55' d='M0 11 Q16 3 32 11 Q48 19 64 11'/%3E%3Cpath fill='none' stroke='%2338b8d812' stroke-width='0.4' d='M0 16 Q20 9 40 16 T64 14'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Ccircle cx='30' cy='42' r='2.35' fill='none' stroke='%234ab8d81c' stroke-width='0.38'/%3E%3Ccircle cx='76' cy='64' r='1.5' fill='%2368e8ff18'/%3E%3Ccircle cx='102' cy='36' r='1.85' fill='none' stroke='%2358c8e818' stroke-width='0.32'/%3E%3Ccircle cx='52' cy='98' r='1.15' fill='%234ab8d814'/%3E%3Ccircle cx='168' cy='72' r='1.65' fill='none' stroke='%2348d0f016' stroke-width='0.3'/%3E%3Ccircle cx='128' cy='134' r='0.95' fill='%2358e0ff12'/%3E%3Cpath stroke='%234ab8d810' stroke-width='0.48' fill='none' d='M10 112 Q74 90 132 104'/%3E%3Cpath stroke='%233898c00c' stroke-width='0.4' fill='none' d='M24 52 Q96 28 176 48'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96'%3E%3Cpath fill='none' stroke='%2358d0e824' stroke-width='0.52' d='M48 5L91 48L48 91L5 48z'/%3E%3Cpath fill='none' stroke='%2368e8ff16' stroke-width='0.42' d='M48 17L79 48L48 79L17 48z'/%3E%3Ccircle cx='48' cy='48' r='2.6' fill='%2348c8e818'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='52' height='220'%3E%3Cpath stroke='%2338a8c81a' stroke-width='0.55' fill='none' d='M12 0 Q8 55 14 110 T12 220'/%3E%3Cpath stroke='%2348c0d814' stroke-width='0.48' fill='none' d='M26 0 Q30 58 24 116 T28 220'/%3E%3Cpath stroke='%232878980e' stroke-width='0.42' fill='none' d='M40 0 Q36 52 42 108 T38 220'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(0deg, transparent, transparent 32px, color-mix(in srgb, var(--net-line) 52%, transparent) 32px, color-mix(in srgb, var(--net-line) 52%, transparent) 32.5px);
+  background-size:
+    165% 165%,
+    158% 158%,
+    172% 172%,
+    152% 152%,
+    116% 102%,
+    168% 88%,
+    100% 100%,
+    64px 22px,
+    248px 248px,
+    92px 92px,
+    56px 220px,
+    100% 100%;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    75% 58%,
+    52% 44%,
+    42% 58%,
+    8% 62%,
+    0 0,
+    64% 32%,
+    48% 52%,
+    52% 48%,
+    0 0;
+}
+
+html[data-workshop-bg="ocean"] body::after {
+  mix-blend-mode: screen;
+  opacity: 0.4;
+  animation: ocean-shimmer 38s ease-in-out infinite alternate;
+  background:
+    radial-gradient(
+      ellipse 92% 58% at 50% -10%,
+      color-mix(in srgb, var(--accent) 22%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 72% 52% at 92% 90%,
+      color-mix(in srgb, #206080 32%, transparent),
+      transparent 54%
+    ),
+    linear-gradient(
+      112deg,
+      transparent 36%,
+      color-mix(in srgb, #78f0ff 9%, transparent) 50%,
+      transparent 64%
+    );
 }
 
 /* ---- Aurora: violet-green northern lights ---- */
@@ -1137,32 +1597,94 @@ html[data-workshop-bg="aurora"] {
   --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9a9a;
-  --net-line: rgba(150, 120, 220, 0.038);
-  --ambient-a: rgba(80, 40, 180, 0.085);
-  --ambient-b: rgba(40, 160, 120, 0.065);
-  --ambient-c: rgba(120, 60, 200, 0.06);
-  --ambient-d: rgba(50, 180, 140, 0.05);
-  --shine-top: rgba(190, 160, 255, 0.06);
-  --shine-mid: rgba(90, 60, 160, 0.038);
+  --net-line: rgba(150, 120, 220, 0.04);
+  --ambient-a: rgba(88, 44, 188, 0.092);
+  --ambient-b: rgba(44, 168, 128, 0.072);
+  --ambient-c: rgba(128, 64, 210, 0.068);
+  --ambient-d: rgba(54, 188, 148, 0.055);
+  --shine-top: rgba(190, 160, 255, 0.068);
+  --shine-mid: rgba(90, 60, 160, 0.042);
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
 }
 
 html[data-workshop-bg="aurora"] body::before {
-  animation: none;
+  animation: aurora-backdrop-drift 200s ease-in-out infinite alternate;
   background-image:
-    radial-gradient(ellipse 160% 80% at 10% 20%, var(--ambient-a), transparent 68%),
-    radial-gradient(ellipse 160% 80% at 90% 30%, var(--ambient-b), transparent 68%),
-    radial-gradient(ellipse 140% 70% at 50% 60%, var(--ambient-c), transparent 65%),
-    radial-gradient(ellipse 140% 70% at 30% 85%, var(--ambient-d), transparent 65%),
-    repeating-linear-gradient(170deg, transparent, transparent 40px, color-mix(in srgb, var(--net-line) 55%, transparent) 40px, color-mix(in srgb, var(--net-line) 55%, transparent) 40.5px);
-  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 100% 100%;
-  background-position: 0% 0%, 100% 0%, 50% 55%, 30% 90%, 0 0;
+    radial-gradient(ellipse 162% 82% at 10% 20%, var(--ambient-a), transparent 68%),
+    radial-gradient(ellipse 162% 82% at 90% 30%, var(--ambient-b), transparent 68%),
+    radial-gradient(ellipse 142% 72% at 50% 60%, var(--ambient-c), transparent 65%),
+    radial-gradient(ellipse 142% 72% at 30% 85%, var(--ambient-d), transparent 65%),
+    linear-gradient(
+      102deg,
+      transparent 30%,
+      color-mix(in srgb, #58f0b0 12%, transparent) 46%,
+      transparent 64%
+    ),
+    linear-gradient(
+      168deg,
+      transparent 36%,
+      color-mix(in srgb, #9880ff 10%, transparent) 52%,
+      transparent 70%
+    ),
+    conic-gradient(
+      from 198deg at 46% 36%,
+      transparent 0deg,
+      color-mix(in srgb, var(--accent) 13%, transparent) 40deg,
+      transparent 80deg
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='248' height='248'%3E%3Ccircle cx='28' cy='52' r='0.5' fill='%23e8d8ff52'/%3E%3Ccircle cx='88' cy='28' r='0.58' fill='%23c8f8e842'/%3E%3Ccircle cx='132' cy='68' r='0.66' fill='%23d8c0ff46'/%3E%3Ccircle cx='58' cy='124' r='0.44' fill='%23b8ffe83c'/%3E%3Ccircle cx='178' cy='98' r='0.54' fill='%23f0e8ff42'/%3E%3Ccircle cx='206' cy='42' r='0.42' fill='%23d8b8ff3a'/%3E%3Ccircle cx='42' cy='190' r='0.56' fill='%23a8ffe848'/%3E%3Ccircle cx='158' cy='178' r='0.46' fill='%23f8e8ff36'/%3E%3Ccircle cx='112' cy='22' r='0.38' fill='%23fff0ff38'/%3E%3Cpath stroke='%23a070e028' stroke-width='0.5' fill='none' d='M16 148 Q100 108 210 142'/%3E%3Cpath stroke='%2378f0c01c' stroke-width='0.42' fill='none' d='M24 72 Q120 38 202 58'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(170deg, transparent, transparent 40px, color-mix(in srgb, var(--net-line) 58%, transparent) 40px, color-mix(in srgb, var(--net-line) 58%, transparent) 40.5px);
+  background-size:
+    166% 166%,
+    159% 159%,
+    173% 173%,
+    153% 153%,
+    142% 92%,
+    148% 88%,
+    200% 200%,
+    268px 268px,
+    100% 100%;
+  background-position:
+    0% 0%,
+    100% 6%,
+    52% 56%,
+    32% 88%,
+    44% 18%,
+    58% 72%,
+    48% 22%,
+    8% 14%,
+    0 0;
 }
 
 html[data-workshop-bg="aurora"] body::after {
-  opacity: 0.5;
+  mix-blend-mode: screen;
+  opacity: 0.42;
+  animation: aurora-veil-shift 44s ease-in-out infinite alternate;
+  background:
+    radial-gradient(
+      ellipse 100% 48% at 22% -6%,
+      color-mix(in srgb, #60ffd0 14%, transparent),
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 88% 52% at 86% 10%,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 60%
+    ),
+    linear-gradient(
+      105deg,
+      transparent 38%,
+      color-mix(in srgb, #80ffa8 9%, transparent) 52%,
+      transparent 66%
+    ),
+    conic-gradient(
+      from 138deg at 54% 36%,
+      transparent 0deg,
+      color-mix(in srgb, #c090ff 11%, transparent) 44deg,
+      transparent 96deg
+    );
 }
 
 /* ---- Old parchment: aged cream warm light ---- */
@@ -1180,27 +1702,104 @@ html[data-workshop-bg="parchment"] {
   --selection-bg: color-mix(in srgb, var(--accent) 16%, #e8d8b8);
   --selection-fg: var(--text);
   --danger: #9a1c10;
-  --net-line: rgba(80, 55, 25, 0.055);
-  --ambient-a: rgba(180, 130, 70, 0.07);
-  --ambient-b: rgba(140, 100, 50, 0.055);
-  --ambient-c: rgba(200, 160, 90, 0.065);
-  --ambient-d: rgba(120, 90, 45, 0.045);
-  --shine-top: rgba(255, 250, 225, 0.5);
-  --shine-mid: rgba(200, 165, 100, 0.055);
+  --net-line: rgba(80, 55, 25, 0.058);
+  --ambient-a: rgba(185, 132, 72, 0.075);
+  --ambient-b: rgba(145, 102, 52, 0.06);
+  --ambient-c: rgba(205, 162, 92, 0.07);
+  --ambient-d: rgba(125, 92, 48, 0.048);
+  --shine-top: rgba(255, 250, 225, 0.52);
+  --shine-mid: rgba(200, 165, 100, 0.058);
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 18%, transparent);
 }
 
 html[data-workshop-bg="parchment"] body::before {
-  animation: none;
+  animation: parchment-backdrop-drift 210s ease-in-out infinite alternate;
   background-image:
-    radial-gradient(ellipse 130% 110% at 12% 22%, var(--ambient-a), transparent 72%),
-    radial-gradient(ellipse 110% 95% at 88% 18%, var(--ambient-b), transparent 70%),
-    radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
-    radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Crect width='1' height='1' x='1' y='1' fill='%237a502814' rx='0.5'/%3E%3C/svg%3E"),
-    repeating-linear-gradient(0deg, transparent, transparent 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 29px);
-  background-size: 160% 160%, 155% 155%, 170% 170%, 150% 150%, 4px 4px, 100% 100%;
-  background-position: 0% 0%, 100% 0%, 50% 100%, 70% 55%, 0 0, 0 0;
+    radial-gradient(ellipse 132% 112% at 12% 22%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 112% 96% at 88% 18%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 142% 122% at 50% 88%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 102% 90% at 70% 58%, var(--ambient-d), transparent 68%),
+    radial-gradient(
+      ellipse 54% 36% at 20% 82%,
+      color-mix(in srgb, var(--accent) 11%, transparent),
+      transparent 68%
+    ),
+    radial-gradient(
+      circle at 88% 68%,
+      color-mix(in srgb, #3a2818 15%, transparent),
+      transparent 40%
+    ),
+    conic-gradient(
+      from 100deg at 50% 108%,
+      transparent 0deg,
+      color-mix(in srgb, var(--ambient-c) 38%, transparent) 42deg,
+      transparent 88deg
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5'%3E%3Crect width='1.2' height='1.2' x='1.9' y='1.9' fill='%237a50281a' rx='0.55'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Ccircle cx='20' cy='26' r='0.58' fill='%236030100e'/%3E%3Ccircle cx='66' cy='18' r='0.44' fill='%236030100b'/%3E%3Ccircle cx='98' cy='58' r='0.72' fill='%238050200e'/%3E%3Ccircle cx='40' cy='90' r='0.5' fill='%236028100c'/%3E%3Cellipse cx='72' cy='38' rx='5' ry='2.6' fill='%237a50280a' transform='rotate(-22 72 38)'/%3E%3Cpath stroke='%237a502814' stroke-width='0.36' fill='none' d='M6 94c22-6 42-4 62 4'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='110'%3E%3Cpath stroke='%237a50280b' stroke-width='0.26' fill='none' d='M0 28c24 8 46 4 70-4M10 56c30-6 50 2 80 8M4 82c20-10 44-12 66-6'/%3E%3Cpath stroke='%2358281009' stroke-width='0.22' fill='none' d='M16 6c-4 20 10 36 6 58M76 10c8 24-4 42 4 62'/%3E%3C/svg%3E"),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 28px,
+      color-mix(in srgb, var(--net-line) 50%, transparent) 28px,
+      color-mix(in srgb, var(--net-line) 50%, transparent) 29px
+    ),
+    repeating-linear-gradient(
+      92deg,
+      transparent,
+      transparent 140px,
+      color-mix(in srgb, var(--net-line) 34%, transparent) 140px,
+      color-mix(in srgb, var(--net-line) 34%, transparent) 140.5px
+    );
+  background-size:
+    165% 165%,
+    158% 158%,
+    172% 172%,
+    152% 152%,
+    132% 97%,
+    52% 52%,
+    224% 224%,
+    5px 5px,
+    208px 208px,
+    118px 118px,
+    100% 100%,
+    100% 100%;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    70% 55%,
+    6% 94%,
+    94% 72%,
+    50% 100%,
+    0 0,
+    64% 28%,
+    38% 62%,
+    0 0,
+    38% 0%;
+}
+
+html[data-workshop-bg="parchment"] body::after {
+  mix-blend-mode: multiply;
+  opacity: 0.38;
+  animation: parchment-candlelight 48s ease-in-out infinite alternate;
+  background:
+    radial-gradient(
+      ellipse 78% 52% at 12% 8%,
+      color-mix(in srgb, #fff 48%, transparent),
+      transparent 52%
+    ),
+    radial-gradient(
+      ellipse 58% 48% at 94% 92%,
+      color-mix(in srgb, var(--ambient-a) 88%, transparent),
+      transparent 56%
+    ),
+    radial-gradient(
+      ellipse 40% 35% at 48% 12%,
+      color-mix(in srgb, #f8f0d8 55%, transparent),
+      transparent 58%
+    );
 }

@@ -10,6 +10,7 @@ export type ToolTab =
   | "lines"
   | "meter"
   | "rhyme"
+  | "repeat"
   | "spell"
   | "snapshots";
 
@@ -24,7 +25,7 @@ export const TOOL_BUCKET_LABEL: Record<ToolBucket, string> = {
 };
 
 export function toolTabBucket(tab: ToolTab): ToolBucket {
-  if (tab === "meter" || tab === "rhyme") return "sound";
+  if (tab === "meter" || tab === "rhyme" || tab === "repeat") return "sound";
   return "overview";
 }
 
@@ -41,7 +42,7 @@ export function tabsForBucket(bucket: ToolBucket): ToolTab[] {
         "snapshots",
       ];
     case "sound":
-      return ["meter", "rhyme"];
+      return ["meter", "rhyme", "repeat"];
   }
 }
 

@@ -49,6 +49,15 @@ function meterStressSourceHint(s: LineStressSource): string {
   return "Heuristic stress (word not in CMU list or invented)";
 }
 
+function NoLinesYetHint() {
+  return (
+    <p className="tool-no-lines-hint muted small" role="status">
+      Add a line with text in the poem body to see live stats and pattern tools
+      here. Blank-only lines don&apos;t count.
+    </p>
+  );
+}
+
 function EmptyState({
   title,
   children,
@@ -490,6 +499,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-totals"
         >
           <LiveSectionTitle>Totals</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"
@@ -804,9 +814,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <button
               type="button"
               className="small-btn"
-              onClick={() => onOpenToolTab("rhyme")}
+              onClick={() => onOpenToolTab("repeat")}
             >
-              Rhyme &amp; repeats
+              Repeats
             </button>{" "}
             <button
               type="button"
@@ -878,6 +888,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-lines"
         >
           <LiveSectionTitle>Line table</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"
@@ -991,6 +1002,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-meter"
         >
           <LiveSectionTitle>Stress &amp; meter (approx.)</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"
@@ -1165,7 +1177,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-rhyme"
         >
-          <LiveSectionTitle>Rhyme, sound &amp; repeats</LiveSectionTitle>
+          <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           <RhymeFinder />
           {rhymeScheme.some((l) => l) ? (
             <details className="rhyme-scheme-fold tool-hint-details">
@@ -1190,8 +1203,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               role="status"
               aria-live="polite"
             >
-              Tools updating… (rhyme clusters and repeats match your text in a
-              moment)
+              Tools updating… (rhyme matches your text in a moment)
             </p>
           ) : null}
           <details className="tool-hint-details">
@@ -1305,8 +1317,27 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               </button>
             </p>
           ) : null}
+        </div>
+      ) : null}
 
-          <h4 className="tool-subheading tool-subheading-divider">Repeated words</h4>
+      {toolTab === "repeat" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-repeat"
+          role="tabpanel"
+          aria-labelledby="tool-tab-repeat"
+        >
+          <LiveSectionTitle>Repeated words</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Tools updating… (repeats match your text in a moment)
+            </p>
+          ) : null}
           <p className="muted small">
             Non‑stopwords, 4+ letters, appearing twice or more (top 40). Tap a line
             number to jump.
@@ -1350,6 +1381,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           aria-labelledby="tool-tab-spell"
         >
           <LiveSectionTitle>Spelling</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"

@@ -3,8 +3,10 @@ import { FIRST_VISIT_HINT_STORAGE_KEY, readFirstVisitHintDismissed } from "./fir
 
 export function FirstVisitHint({
   onDismissed,
+  onOpenGuide,
 }: {
   onDismissed?: () => void;
+  onOpenGuide?: () => void;
 }) {
   const [visible, setVisible] = useState(() => !readFirstVisitHintDismissed());
 
@@ -34,28 +36,34 @@ export function FirstVisitHint({
 
   return (
     <div className="first-visit-hint" role="status">
-      <ul className="first-visit-hint-list">
-        <li>
-          <strong>Saves automatically</strong> in this browser — nothing leaves your device until you export or copy.
-        </li>
-        <li>
-          <strong>Library</strong> button (next to Draft) manages all your drafts — create, switch, or archive.
-        </li>
-        <li>
-          Press <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
-          <kbd className="kbd-hint">K</kbd> for the command palette (export, focus mode, and more).
-        </li>
-        <li>
-          Press <kbd className="kbd-hint">Esc</kbd> to close any open panel.
-        </li>
-      </ul>
-      <button
-        type="button"
-        className="small-btn first-visit-hint-dismiss"
-        onClick={dismiss}
-      >
-        Got it
-      </button>
+      <div className="first-visit-hint-body">
+        <p className="first-visit-hint-lead">
+          <strong>Saves automatically</strong> here in your browser. Lots of buttons are
+          optional — open the <strong>quick guide</strong> for a simple map of the screen, or
+          press <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
+          <kbd className="kbd-hint">K</kbd> and search for any action by name.
+        </p>
+      </div>
+      <div className="first-visit-hint-actions">
+        {onOpenGuide ? (
+          <button
+            type="button"
+            className="small-btn small-btn-primary first-visit-hint-guide"
+            onClick={() => {
+              onOpenGuide();
+            }}
+          >
+            Quick guide
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="small-btn first-visit-hint-dismiss"
+          onClick={dismiss}
+        >
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 }

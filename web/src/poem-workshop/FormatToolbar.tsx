@@ -3,6 +3,7 @@ import type { MutableRefObject } from "react";
 import { toggleBold, toggleUnderline } from "@/poem-editor/format-marks";
 import { POEM_SIZE_OPTIONS, type PoemSizeId } from "./appearance";
 import { ReadAloudButton } from "./ReadAloudButton";
+import { useHoverHintBinder } from "./HoverHintsContext";
 
 function tidyDoubleSpaces(view: EditorView) {
   const text = view.state.doc.toString();
@@ -80,6 +81,7 @@ export function FormatToolbar({
   showLineSyllables: boolean;
   onShowLineSyllablesChange: (next: boolean) => void;
 }) {
+  const hint = useHoverHintBinder();
   const apply = (fn: (v: EditorView) => void) => {
     const view = editorViewRef.current;
     if (view) fn(view);
@@ -90,7 +92,7 @@ export function FormatToolbar({
       <button
         type="button"
         className="fmt-btn"
-        title="Bold selected text  (**text**)"
+        {...hint("Bold selected text (**text**)")}
         aria-label="Bold"
         onMouseDown={(e) => {
           e.preventDefault();
@@ -102,7 +104,7 @@ export function FormatToolbar({
       <button
         type="button"
         className="fmt-btn fmt-btn-underline"
-        title="Underline selected text  (__text__)"
+        {...hint("Underline selected text (__text__)")}
         aria-label="Underline"
         onMouseDown={(e) => {
           e.preventDefault();
@@ -129,11 +131,11 @@ export function FormatToolbar({
       <button
         type="button"
         className={`fmt-btn fmt-syllable-toggle ${showLineSyllables ? "is-on" : ""}`}
-        title={
+        {...hint(
           showLineSyllables
             ? "Hide estimated syllable count at the end of each line"
-            : "Show estimated syllable count at the end of each line"
-        }
+            : "Show estimated syllable count at the end of each line",
+        )}
         aria-pressed={showLineSyllables}
         aria-label={
           showLineSyllables
@@ -153,7 +155,7 @@ export function FormatToolbar({
       <button
         type="button"
         className="fmt-btn fmt-tidy-btn"
-        title="Remove double spaces"
+        {...hint("Remove double spaces in the poem")}
         aria-label="Remove double spaces"
         onMouseDown={(e) => { e.preventDefault(); apply(tidyDoubleSpaces); }}
       >
@@ -162,7 +164,7 @@ export function FormatToolbar({
       <button
         type="button"
         className="fmt-btn fmt-tidy-btn"
-        title="Capitalise first letter of each line"
+        {...hint("Capitalise first letter of each line")}
         aria-label="Capitalise first letter of each line"
         onMouseDown={(e) => { e.preventDefault(); apply(tidyCapLines); }}
       >
@@ -171,7 +173,7 @@ export function FormatToolbar({
       <button
         type="button"
         className="fmt-btn fmt-tidy-btn"
-        title="Lowercase first letter of each line"
+        {...hint("Lowercase first letter of each line")}
         aria-label="Lowercase first letter of each line"
         onMouseDown={(e) => { e.preventDefault(); apply(tidyLowerLines); }}
       >
@@ -180,7 +182,9 @@ export function FormatToolbar({
       <button
         type="button"
         className="fmt-btn fmt-tidy-btn"
-        title="Even stanza spacing (collapse extra blank lines, trim trailing spaces)"
+        {...hint(
+          "Even stanza spacing — collapse extra blank lines, trim trailing spaces",
+        )}
         aria-label="Even stanza spacing"
         onMouseDown={(e) => { e.preventDefault(); apply(tidyStanzaSpacing); }}
       >
@@ -192,7 +196,7 @@ export function FormatToolbar({
         <button
           type="button"
           className="fmt-btn fmt-tidy-btn"
-          title="Reading view — clean display of finished poem"
+          {...hint("Reading view — clean display of finished poem")}
           aria-label="Reading view"
           onMouseDown={(e) => { e.preventDefault(); onReadingMode(); }}
         >

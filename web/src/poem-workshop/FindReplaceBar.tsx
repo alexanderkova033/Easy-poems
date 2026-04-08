@@ -8,6 +8,7 @@ import {
   setSearchQuery,
 } from "@codemirror/search";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useHoverHintBinder } from "./HoverHintsContext";
 
 export interface FindReplaceBarProps {
   editorView: EditorView | null;
@@ -17,6 +18,7 @@ export interface FindReplaceBarProps {
 }
 
 export function FindReplaceBar(props: FindReplaceBarProps) {
+  const hint = useHoverHintBinder();
   const { editorView, open, mode, onClose } = props;
   const [find, setFind] = useState("");
   const [replace, setReplace] = useState("");
@@ -118,7 +120,7 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
             className="small-btn"
             onClick={() => editorView && findPrevious(editorView)}
             disabled={!editorView || !find.trim()}
-            title="Previous match"
+            {...hint("Previous match")}
           >
             Prev
           </button>
@@ -127,7 +129,7 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
             className="small-btn small-btn-primary"
             onClick={() => editorView && findNext(editorView)}
             disabled={!editorView || !find.trim()}
-            title="Next match"
+            {...hint("Next match")}
           >
             Next
           </button>
@@ -138,7 +140,7 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
                 className="small-btn"
                 onClick={() => editorView && replaceNext(editorView)}
                 disabled={!editorView || !find.trim()}
-                title="Replace current and move"
+                {...hint("Replace current match and move to the next")}
               >
                 Replace
               </button>
@@ -147,7 +149,7 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
                 className="small-btn"
                 onClick={() => editorView && replaceAll(editorView)}
                 disabled={!editorView || !find.trim()}
-                title="Replace all matches"
+                {...hint("Replace all matches in the poem")}
               >
                 All
               </button>

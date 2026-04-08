@@ -5,6 +5,16 @@ node_modules/
 server/dist/
 web/dist/
 
+# E2E / test artifacts
+web/playwright-report/
+web/test-results/
+
+# Vite caches
+web/node_modules/.vite/
+
+# Editor / misc
+.claude/settings.local.json
+
 # Secrets
 .env
 .env.local

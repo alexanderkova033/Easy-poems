@@ -7,7 +7,7 @@ Stakeholder choices that still apply: **website**, **English only**, **local poe
 ## Core user flow (current)
 
 1. Pick or create a **draft** in the browser → **local autosave** (poem library + per-poem snapshots).
-2. Use **tools** while writing: syllables, line table, approximate **stress/meter**, rhyme/sound/repeat hints (one tools tab with meter separate), spelling, goals, publication checklist.
+2. Use **tools** while writing: syllables, line table, approximate **stress/meter**, rhyme/sound hints, repeats (separate tab under Sound), spelling, goals, publication checklist.
 3. **Export** single poem (.txt / .md / .docx) or **backup** all drafts + snapshots as JSON; **import** backups to merge poems in.
 4. For human or third-party AI feedback: **copy/export** and paste where you choose (e.g. linked ChatGPT).
 
@@ -45,7 +45,7 @@ Stakeholder choices that still apply: **website**, **English only**, **local poe
 
 | Phase | Focus |
 |-------|--------|
-| **Done (tools)** | Editor + multi-draft library + autosave + syllables + lines + meter (heuristic) + rhyme/sound + repeated words (combined tab) + spell + goals + checklist + snapshots + export + backup |
+| **Done (tools)** | Editor + multi-draft library + autosave + syllables + lines + meter (heuristic) + rhyme + repeats + spell + goals + checklist + snapshots + export + backup |
 | **Next** | Tool polish, optional AI via server when desired |
 | **Later** | Streaming AI, advanced meter data |
 | **Future (community)** | Accounts, optional publish/share, **comments or critiques on poems**, moderation—see [REQUIREMENTS.md](./REQUIREMENTS.md) §7.6 |

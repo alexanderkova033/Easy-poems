@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useHoverHintBinder } from "./HoverHintsContext";
 
 interface ReadAloudButtonProps {
   getText: () => string;
 }
 
 export function ReadAloudButton({ getText }: ReadAloudButtonProps) {
+  const hint = useHoverHintBinder();
   const [speaking, setSpeaking] = useState(false);
   const [supported] = useState(() => "speechSynthesis" in window);
   const uttRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -41,7 +43,7 @@ export function ReadAloudButton({ getText }: ReadAloudButtonProps) {
     <button
       type="button"
       className={`fmt-btn fmt-tidy-btn read-aloud-btn${speaking ? " is-active" : ""}`}
-      title={speaking ? "Stop reading aloud" : "Read poem aloud"}
+      {...hint(speaking ? "Stop reading aloud" : "Read poem aloud with the browser voice")}
       aria-label={speaking ? "Stop reading aloud" : "Read poem aloud"}
       onClick={speaking ? stop : play}
     >

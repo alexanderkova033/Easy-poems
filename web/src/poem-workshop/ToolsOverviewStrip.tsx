@@ -2,6 +2,7 @@ import type { QuickDocumentStats } from "@/writing-tools/line-stats";
 import type { GoalEvaluation } from "@/writing-tools/goal-metrics";
 import type { MeterCoverageSummary } from "@/writing-tools/meter-hints";
 import type { ToolTab } from "./workshop-helpers";
+import { useHoverHintBinder } from "./HoverHintsContext";
 
 export interface ToolsOverviewStripProps {
   /** Open checklist rows + goal warnings + spelling flags (Issues tab). */
@@ -22,6 +23,7 @@ export interface ToolsOverviewStripProps {
 }
 
 export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
+  const hint = useHoverHintBinder();
   const {
     issuesQueueCount,
     quickDocStats: docStats,
@@ -56,6 +58,10 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
 
   const issuesIssue = issuesQueueCount > 0;
 
+  const issuesPillHint = issuesIssue
+    ? `${issuesQueueCount} item(s) in revision queue (checklist, goals, spelling)`
+    : "Revision queue clear — open Issues tab";
+
   return (
     <div className="tools-overview-wrap">
     <div
@@ -67,11 +73,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "issues" ? "is-current" : ""} ${issuesIssue ? "has-attn" : ""}`}
         onClick={() => onOpenTab("issues")}
-        title={
-          issuesIssue
-            ? `${issuesQueueCount} item(s) in revision queue (checklist, goals, spelling)`
-            : "Revision queue clear"
-        }
+        {...hint(issuesPillHint)}
       >
         <span className="tools-overview-pill-k">
           {issuesIssue ? issuesQueueCount : "✓"}
@@ -82,7 +84,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "totals" ? "is-current" : ""}`}
         onClick={() => onOpenTab("totals")}
-        title="Open Totals"
+        {...hint("Open Totals — word, line, and character counts")}
       >
         <span className="tools-overview-pill-k">{docStats.totalWords}</span>
         <span className="tools-overview-pill-l">words</span>
@@ -91,7 +93,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "lines" ? "is-current" : ""}`}
         onClick={() => onOpenTab("lines")}
-        title={linesTitle}
+        {...hint(`${linesTitle} — jump to line tools`)}
       >
         <span className="tools-overview-pill-k">{docStats.nonEmptyLines}</span>
         <span className="tools-overview-pill-l">lines</span>
@@ -100,13 +102,13 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "spell" ? "is-current" : ""} ${spellIssue ? "has-attn" : ""}`}
         onClick={() => onOpenTab("spell")}
-        title={
+        {...hint(
           !wordlistReady
-            ? "Dictionary loading"
+            ? "Dictionary loading…"
             : spellHitCount > 0
-              ? `${spellHitCount} spelling flags`
-              : "No spelling flags"
-        }
+              ? `${spellHitCount} spelling flags — open Spell tab`
+              : "No spelling flags — open Spell tab",
+        )}
       >
         <span className="tools-overview-pill-k">
           {!wordlistReady ? "…" : spellHitCount}
@@ -117,13 +119,13 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "meter" ? "is-current" : ""} ${meterIssue ? "has-attn is-muted-attn" : ""}`}
         onClick={() => onOpenTab("meter")}
-        title={
+        {...hint(
           heavyToolsStale
             ? "Meter updating…"
             : meterIssue
-              ? "Many lines use heuristic stress — see Meter for detail"
-              : "Stress / meter hints"
-        }
+              ? "Many lines use heuristic stress — see Meter tab for detail"
+              : "Stress and meter hints — open Meter tab",
+        )}
       >
         <span className="tools-overview-pill-k">
           {heavyToolsStale
@@ -136,33 +138,39 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
       </button>
       <button
         type="button"
-        className={`tools-overview-pill ${activeTab === "rhyme" ? "is-current" : ""} ${repeatCount > 0 ? "has-attn is-muted-attn" : ""}`}
+        className={`tools-overview-pill ${activeTab === "rhyme" ? "is-current" : ""}`}
         onClick={() => onOpenTab("rhyme")}
-        title={
-          rhymeClusterCount > 0 || repeatCount > 0
-            ? `${rhymeClusterCount} ending-pattern cluster(s); ${repeatCount} repeated word(s) on the Rhyme & repeats tab`
-            : "Rhyme, sound-pattern hints, and repeated-word list"
-        }
+        {...hint(
+          rhymeClusterCount > 0
+            ? `${rhymeClusterCount} shared ending pattern(s) — open Rhyme tab`
+            : "Rhyme and sound-pattern hints — open Rhyme tab",
+        )}
       >
-        <span className="tools-overview-pill-k tools-overview-pill-k-dual">
-          <span className="tools-overview-pill-k-main">{rhymeClusterCount}</span>
-          {repeatCount > 0 ? (
-            <span className="tools-overview-pill-k-sub" aria-hidden>
-              ·{repeatCount}
-            </span>
-          ) : null}
-        </span>
+        <span className="tools-overview-pill-k">{rhymeClusterCount}</span>
         <span className="tools-overview-pill-l">rhyme</span>
+      </button>
+      <button
+        type="button"
+        className={`tools-overview-pill ${activeTab === "repeat" ? "is-current" : ""} ${repeatCount > 0 ? "has-attn is-muted-attn" : ""}`}
+        onClick={() => onOpenTab("repeat")}
+        {...hint(
+          repeatCount > 0
+            ? `${repeatCount} repeated words (top list) — open Repeats tab`
+            : "No repeats flagged — open Repeats tab",
+        )}
+      >
+        <span className="tools-overview-pill-k">{repeatCount}</span>
+        <span className="tools-overview-pill-l">repeats</span>
       </button>
       <button
         type="button"
         className={`tools-overview-pill ${activeTab === "goals" ? "is-current" : ""} ${goalIssue ? "has-attn" : ""}`}
         onClick={() => onOpenTab("goals")}
-        title={
+        {...hint(
           goalIssue
-            ? `${goalEvaluation.warnings.length} goal warning(s)`
-            : "Goals on target"
-        }
+            ? `${goalEvaluation.warnings.length} goal warning(s) — open Goals tab`
+            : "Goals on target — open Goals tab",
+        )}
       >
         <span className="tools-overview-pill-k">
           {goalIssue ? goalEvaluation.warnings.length : "OK"}
@@ -173,11 +181,11 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
         type="button"
         className={`tools-overview-pill ${activeTab === "checklist" ? "is-current" : ""} ${checklistIssue ? "has-attn" : ""}`}
         onClick={() => onOpenTab("checklist")}
-        title={
+        {...hint(
           checklistIssue
-            ? `${checklistOpenCount} checklist item(s) still open`
-            : "Publication checklist"
-        }
+            ? `${checklistOpenCount} checklist item(s) still open — open Ready tab`
+            : "Publication checklist — open Ready tab",
+        )}
       >
         <span className="tools-overview-pill-k">
           {checklistIssue ? checklistOpenCount : "✓"}
