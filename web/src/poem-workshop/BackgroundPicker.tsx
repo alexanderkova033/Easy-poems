@@ -16,7 +16,8 @@ const SWATCH_STYLE: Record<BackgroundId, CSSProperties> = {
   },
   night: {
     background:
-      "radial-gradient(ellipse 95% 55% at 50% -12%, rgba(165, 225, 195, 0.08), transparent 68%), radial-gradient(circle at 14% 24%, rgba(52, 135, 108, 0.2), transparent 48%), radial-gradient(circle at 84% 18%, rgba(200, 224, 255, 0.08), transparent 52%), linear-gradient(182deg, #0b1311 0%, #040806 100%)",
+      // Make the “Night garden” vibe readable at 2.6rem: star specks + moon glow + green haze.
+      "radial-gradient(ellipse 90% 55% at 50% -18%, rgba(200, 224, 255, 0.16), transparent 62%), radial-gradient(ellipse 120% 70% at 50% 120%, rgba(95, 185, 145, 0.28), transparent 55%), radial-gradient(circle at 14% 24%, rgba(52, 135, 108, 0.26), transparent 48%), url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg fill='%23ffffff'%3E%3Ccircle cx='10' cy='14' r='0.8' fill-opacity='0.45'/%3E%3Ccircle cx='34' cy='8' r='0.6' fill-opacity='0.35'/%3E%3Ccircle cx='58' cy='18' r='0.7' fill-opacity='0.38'/%3E%3Ccircle cx='70' cy='44' r='0.55' fill-opacity='0.32'/%3E%3Ccircle cx='18' cy='54' r='0.6' fill-opacity='0.34'/%3E%3Ccircle cx='44' cy='60' r='0.75' fill-opacity='0.4'/%3E%3Ccircle cx='62' cy='68' r='0.65' fill-opacity='0.36'/%3E%3Ccircle cx='8' cy='74' r='0.5' fill-opacity='0.3'/%3E%3C/g%3E%3C/svg%3E\") 0 0 / 80px 80px, linear-gradient(182deg, #0b1311 0%, #040806 100%)",
   },
   forest: {
     background:

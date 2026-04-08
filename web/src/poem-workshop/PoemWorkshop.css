@@ -967,6 +967,8 @@
   background: color-mix(in srgb, #000 55%, transparent);
   display: flex;
   justify-content: flex-end;
+  /* Allow scrolling when dialogs exceed viewport height. */
+  overflow: auto;
   padding: max(0.75rem, env(safe-area-inset-top, 0px))
     max(0.75rem, env(safe-area-inset-right, 0px))
     max(0.75rem, env(safe-area-inset-bottom, 0px))
@@ -1134,6 +1136,12 @@
   flex-direction: column;
   backdrop-filter: blur(10px) saturate(1.05);
   -webkit-backdrop-filter: blur(10px) saturate(1.05);
+}
+
+.drawer-scroll {
+  flex: 1 1 auto;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .drawer.library-modal {
@@ -1431,6 +1439,8 @@
   background: color-mix(in srgb, var(--surface) 88%, var(--bg));
   box-shadow: var(--shadow-3);
   padding: 0.95rem 1rem 1rem;
+  max-height: min(92vh, 46rem);
+  overflow: auto;
 }
 
 .modal-head {
@@ -1553,6 +1563,8 @@
 }
 
 .bg-picker-swatch {
+  position: relative;
+  overflow: hidden;
   grid-row: 1 / span 2;
   width: 2.6rem;
   height: 2.6rem;
@@ -1561,6 +1573,19 @@
   flex-shrink: 0;
   background-size: cover;
   box-shadow: inset 0 1px 3px color-mix(in srgb, #000 18%, transparent);
+}
+
+.bg-picker-swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.12), transparent 58%),
+    radial-gradient(circle at 80% 85%, rgba(0, 0, 0, 0.2), transparent 60%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");
+  opacity: 0.9;
+  mix-blend-mode: overlay;
 }
 
 .bg-picker-swatch--default {
@@ -6030,8 +6055,9 @@ button.primary:disabled {
   color-scheme: light;
   --reading-paper: color-mix(in srgb, #f3e7cc 72%, var(--surface) 28%);
   --reading-paper-2: color-mix(in srgb, #e7d2aa 72%, var(--bg) 28%);
-  --reading-ink: color-mix(in srgb, #221a12 78%, var(--text) 22%);
-  --reading-muted: color-mix(in srgb, rgba(34, 26, 18, 0.62) 70%, var(--muted) 30%);
+  /* Keep ink contrast stable across all backdrops (even dark themes). */
+  --reading-ink: #221a12;
+  --reading-muted: rgba(34, 26, 18, 0.66);
   /* Ensure the paper itself stays crisp even if other UI uses blur effects. */
   filter: none;
   background:
@@ -6082,13 +6108,19 @@ button.primary:disabled {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
+  z-index: 0;
   background:
     radial-gradient(ellipse 100% 60% at 50% 0%, rgba(255, 255, 255, 0.18), transparent 60%),
     radial-gradient(ellipse 120% 80% at 50% 110%, rgba(60, 40, 10, 0.14), transparent 60%),
     radial-gradient(circle at 0% 40%, rgba(60, 40, 10, 0.12), transparent 55%),
     radial-gradient(circle at 100% 60%, rgba(60, 40, 10, 0.12), transparent 55%);
-  mix-blend-mode: multiply;
-  opacity: 0.55;
+  mix-blend-mode: normal;
+  opacity: 0.42;
+}
+
+.reading-mode-poem {
+  position: relative;
+  z-index: 1;
 }
 
 .reading-mode-close {

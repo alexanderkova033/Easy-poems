@@ -779,14 +779,9 @@ export function PoemWorkshop() {
               className="topbar-quick-btn topbar-quick-cmd"
               onClick={() => setIsCmdkOpen(true)}
               aria-label="Open command palette"
-              {...hint("Commands — search export, focus mode, templates, and more (⌘/Ctrl+K)")}
+              {...hint("Commands — search export, focus mode, templates, and more")}
             >
               <span className="topbar-quick-label">Commands</span>
-              <span className="topbar-quick-keys">
-                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-                <span className="topbar-quick-plus">+</span>
-                <kbd className="kbd-hint">K</kbd>
-              </span>
             </button>
             <button
               type="button"
@@ -935,6 +930,7 @@ export function PoemWorkshop() {
               </button>
             </div>
 
+            <div className="drawer-scroll">
             <details className="drawer-accordion" open>
               <summary className="drawer-accordion-summary">Drafts</summary>
               <div className="drawer-accordion-body">
@@ -1218,6 +1214,7 @@ export function PoemWorkshop() {
                 </div>
               </div>
             </details>
+            </div>
           </section>
         </div>
       ) : null}
@@ -2041,8 +2038,7 @@ export function PoemWorkshop() {
             Open the quick guide
           </button>
           {" "}
-          any time — or press <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
-          <kbd className="kbd-hint">K</kbd> and choose <strong>Quick guide</strong>.
+          any time.
         </p>
       </footer>
     </div>

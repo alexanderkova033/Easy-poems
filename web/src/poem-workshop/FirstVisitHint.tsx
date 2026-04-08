@@ -39,9 +39,7 @@ export function FirstVisitHint({
       <div className="first-visit-hint-body">
         <p className="first-visit-hint-lead">
           <strong>Saves automatically</strong> here in your browser. Lots of buttons are
-          optional — open the <strong>quick guide</strong> for a simple map of the screen, or
-          press <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>+
-          <kbd className="kbd-hint">K</kbd> and search for any action by name.
+          optional — open the <strong>quick guide</strong> for a simple map of the screen.
         </p>
       </div>
       <div className="first-visit-hint-actions">
