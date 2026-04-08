@@ -804,9 +804,9 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <button
               type="button"
               className="small-btn"
-              onClick={() => onOpenToolTab("repeat")}
+              onClick={() => onOpenToolTab("rhyme")}
             >
-              Repeats
+              Rhyme &amp; repeats
             </button>{" "}
             <button
               type="button"
@@ -1165,30 +1165,33 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-rhyme"
         >
-          <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
+          <LiveSectionTitle>Rhyme, sound &amp; repeats</LiveSectionTitle>
           <RhymeFinder />
-          {rhymeScheme.some((l) => l) && (
-            <div className="rhyme-scheme-block">
-              <h4 className="tool-subheading">End-rhyme scheme</h4>
-              <div className="rhyme-scheme-lines">
-                {rhymeScheme.map((label, i) =>
-                  label ? (
-                    <div key={i} className="rhyme-scheme-row">
-                      <span className="rhyme-scheme-linenum muted small">{i + 1}</span>
-                      <span className={`rhyme-scheme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
-                    </div>
-                  ) : null,
-                )}
+          {rhymeScheme.some((l) => l) ? (
+            <details className="rhyme-scheme-fold tool-hint-details">
+              <summary className="tool-hint-summary">End-rhyme scheme (show / hide)</summary>
+              <div className="rhyme-scheme-block rhyme-scheme-block-folded">
+                <div className="rhyme-scheme-lines">
+                  {rhymeScheme.map((label, i) =>
+                    label ? (
+                      <div key={i} className="rhyme-scheme-row">
+                        <span className="rhyme-scheme-linenum muted small">{i + 1}</span>
+                        <span className={`rhyme-scheme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
+                      </div>
+                    ) : null,
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            </details>
+          ) : null}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"
               role="status"
               aria-live="polite"
             >
-              Tools updating… (rhyme matches your text in a moment)
+              Tools updating… (rhyme clusters and repeats match your text in a
+              moment)
             </p>
           ) : null}
           <details className="tool-hint-details">
@@ -1302,26 +1305,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
               </button>
             </p>
           ) : null}
-        </div>
-      ) : null}
 
-      {toolTab === "repeat" ? (
-        <div
-          className="tool-block tool-block-live"
-          id="tool-panel-repeat"
-          role="tabpanel"
-          aria-labelledby="tool-tab-repeat"
-        >
-          <LiveSectionTitle>Repeated words</LiveSectionTitle>
-          {heavyToolsStale ? (
-            <p
-              className="tools-stale-hint muted small"
-              role="status"
-              aria-live="polite"
-            >
-              Tools updating… (repeats match your text in a moment)
-            </p>
-          ) : null}
+          <h4 className="tool-subheading tool-subheading-divider">Repeated words</h4>
           <p className="muted small">
             Non‑stopwords, 4+ letters, appearing twice or more (top 40). Tap a line
             number to jump.
@@ -1678,50 +1663,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
         </div>
       ) : null}
 
-      {toolTab === "shortcuts" ? (
-        <div
-          className="tool-block tool-block-shortcuts"
-          id="tool-panel-shortcuts"
-          role="tabpanel"
-          aria-labelledby="tool-tab-shortcuts"
-        >
-          <h3 className="tool-heading-static">Shortcuts &amp; notes</h3>
-          <p className="tools-shortcuts-lead">
-            Keyboard commands work globally unless your cursor is in the poem or
-            another text field.
-          </p>
-          <ul className="tools-shortcuts-list">
-            <li>
-              <kbd className="kbd-hint">Ctrl</kbd> + <kbd className="kbd-hint">Alt</kbd>{" "}
-              + <kbd className="kbd-hint">[</kbd> / <kbd className="kbd-hint">]</kbd> —{" "}
-              cycle tools in the current group (Overview, Sound, …).
-            </li>
-            <li>
-              <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
-              + <kbd className="kbd-hint">K</kbd> — command palette.
-            </li>
-            <li>
-              <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
-              + <kbd className="kbd-hint">F</kbd> — find in poem.
-            </li>
-            <li>
-              <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd>{" "}
-              + <kbd className="kbd-hint">H</kbd> — replace in poem.
-            </li>
-            <li>
-              When spelling flags exist:{" "}
-              <kbd className="kbd-hint">Ctrl</kbd> + <kbd className="kbd-hint">Alt</kbd>{" "}
-              + <kbd className="kbd-hint">,</kbd> / <kbd className="kbd-hint">.</kbd>{" "}
-              — previous / next flag (skipped while the cursor is in the poem or a
-              field).
-            </li>
-          </ul>
-          <p className="tools-shortcuts-note muted small">
-            Syllable, meter, and rhyme hints are <strong>rough</strong> English
-            heuristics—helpful signals, not a grade.
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }

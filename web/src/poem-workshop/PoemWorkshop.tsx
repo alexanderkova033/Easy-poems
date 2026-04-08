@@ -34,6 +34,7 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES } from "@/shared/storage-keys";
 import "./PoemWorkshop.css";
 
 function RailIcon({
@@ -77,6 +78,15 @@ export function PoemWorkshop() {
   const [issueHighlight, setIssueHighlight] = useState<[number, number] | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isReadingMode, setIsReadingMode] = useState(false);
+  const [showLineSyllables, setShowLineSyllables] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_SHOW_LINE_SYLLABLES);
+      if (raw === "0" || raw === "false") return false;
+    } catch {
+      /* ignore */
+    }
+    return true;
+  });
   const workshopGridRef = useRef<HTMLDivElement | null>(null);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
@@ -175,6 +185,17 @@ export function PoemWorkshop() {
   useEffect(() => {
     void saveAppearance(appearance);
   }, [appearance]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY_SHOW_LINE_SYLLABLES,
+        showLineSyllables ? "1" : "0",
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [showLineSyllables]);
 
   useEffect(() => {
     const lockScroll =
@@ -386,7 +407,7 @@ export function PoemWorkshop() {
         id: "revision-pass",
         title: "Revision pass (open checklist)",
         keywords: "revision pass polish review spelling repeats",
-        hint: "Shortcuts to spelling, repeats, lines, meter",
+        hint: "Shortcuts to spelling, rhyme & repeats, lines, meter",
         run: () => m.setToolTab("checklist"),
       },
       ...toolTabActions({ openToolTab: m.setToolTab }),
@@ -1487,6 +1508,8 @@ export function PoemWorkshop() {
                     }
                     getBody={() => m.body}
                     onReadingMode={() => setIsReadingMode(true)}
+                    showLineSyllables={showLineSyllables}
+                    onShowLineSyllablesChange={setShowLineSyllables}
                   />
                 </div>
                 <div className="poem-editor-shell">
@@ -1503,6 +1526,7 @@ export function PoemWorkshop() {
                     jumpLine={m.jumpLine}
                     jumpBump={m.jumpBump}
                     issueHighlight={issueHighlight}
+                    showLineSyllables={showLineSyllables}
                   />
                   <WordLookupPopup editorViewRef={m.editorViewRef} />
                   <div
@@ -1644,6 +1668,52 @@ export function PoemWorkshop() {
                 ),
               )}
             </nav>
+            <details className="workshop-head-shortcuts">
+              <summary className="workshop-head-shortcuts-summary">
+                Keyboard shortcuts
+              </summary>
+              <div className="workshop-head-shortcuts-body">
+                <p className="workshop-head-shortcuts-lead muted small">
+                  These work globally unless your cursor is in the poem or another
+                  text field.
+                </p>
+                <ul className="workshop-head-shortcuts-list">
+                  <li>
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">Alt</kbd> +{" "}
+                    <kbd className="kbd-hint">[</kbd> /{" "}
+                    <kbd className="kbd-hint">]</kbd> — cycle tools in the current
+                    group (Overview or Sound).
+                  </li>
+                  <li>
+                    <kbd className="kbd-hint">⌘</kbd> /{" "}
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">K</kbd> — command palette.
+                  </li>
+                  <li>
+                    <kbd className="kbd-hint">⌘</kbd> /{" "}
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">F</kbd> — find in poem.
+                  </li>
+                  <li>
+                    <kbd className="kbd-hint">⌘</kbd> /{" "}
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">H</kbd> — replace in poem.
+                  </li>
+                  <li>
+                    When spelling flags exist:{" "}
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">Alt</kbd> +{" "}
+                    <kbd className="kbd-hint">,</kbd> /{" "}
+                    <kbd className="kbd-hint">.</kbd> — previous / next flag.
+                  </li>
+                </ul>
+                <p className="workshop-head-shortcuts-note muted small">
+                  Syllable, meter, and rhyme hints are rough English heuristics—signals,
+                  not a grade.
+                </p>
+              </div>
+            </details>
           </div>
 
           <WorkshopToolPanels

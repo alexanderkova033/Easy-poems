@@ -96,21 +96,6 @@ function IconTabRhyme() {
   );
 }
 
-function IconTabRepeat() {
-  return (
-    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M16 5.5h3v3M8 18.5H5v-3m0-5.5a7.5 7.5 0 0112.85-5.3M19 12a7.5 7.5 0 01-12.85 5.3"
-      />
-    </svg>
-  );
-}
-
 function IconTabSpell() {
   return (
     <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
@@ -142,21 +127,6 @@ function IconTabSnapshots() {
   );
 }
 
-function IconTabShortcuts() {
-  return (
-    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.65"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M7.5 8.5h9M7.5 12h6M7.5 15.5h8M5 8.5h.01M5 12h.01M5 15.5h.01"
-      />
-    </svg>
-  );
-}
-
 /** Order tuned for flow: triage → counts → spelling → line work → polish → versions → external help */
 export const TOOL_TABS: {
   id: ToolTab;
@@ -168,12 +138,10 @@ export const TOOL_TABS: {
   { id: "spell", label: "Spell", Icon: IconTabSpell },
   { id: "lines", label: "Lines", Icon: IconTabLines },
   { id: "meter", label: "Meter", Icon: IconTabMeter },
-  { id: "rhyme", label: "Sound", Icon: IconTabRhyme },
-  { id: "repeat", label: "Repeats", Icon: IconTabRepeat },
+  { id: "rhyme", label: "Rhyme & repeats", Icon: IconTabRhyme },
   { id: "goals", label: "Goals", Icon: IconTabGoals },
   { id: "checklist", label: "Ready", Icon: IconTabChecklist },
   { id: "snapshots", label: "Snapshots", Icon: IconTabSnapshots },
-  { id: "shortcuts", label: "Shortcuts", Icon: IconTabShortcuts },
 ];
 
 export function LiveSectionTitle({ children }: { children: ReactNode }) {

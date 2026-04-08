@@ -107,6 +107,8 @@ export interface PoemBodyEditorProps {
   jumpLine?: number | null;
   jumpBump?: number;
   issueHighlight?: [number, number] | null;
+  /** Per-line syllable counts at end of each line (CodeMirror widgets). */
+  showLineSyllables?: boolean;
   id?: string;
   "aria-describedby"?: string;
 }
@@ -180,6 +182,8 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     } catch { /* line out of range */ }
   }, [props.editorViewRef, props.issueHighlight]);
 
+  const showSyllables = props.showLineSyllables !== false;
+
   const extensions = useMemo(
     () => [
       EditorView.contentAttributes.of({ spellcheck: "true" }),
@@ -188,14 +192,14 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       highlightSelectionMatches(),
       lineFlashField,
       issueHighlightField,
-      syllableCountPlugin,
+      ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,
       formatMarksExtension,
       formatMarksTheme,
       ...basicSetup(),
       poemEditorTheme,
     ],
-    [props.spellBump, props.spellMode],
+    [props.spellBump, props.spellMode, showSyllables],
   );
 
   return (

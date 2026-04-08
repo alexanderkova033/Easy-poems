@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from "react";
 import type { EditorView } from "@codemirror/view";
 
 interface DictMeaning {
@@ -13,9 +20,18 @@ interface DictEntry {
   meanings: DictMeaning[];
 }
 
+interface AnchorRect {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+  width: number;
+  height: number;
+}
+
 interface PopupPos {
-  x: number;
-  y: number;
+  left: number;
+  top: number;
 }
 
 function allSynonyms(entry: DictEntry): string[] {
@@ -56,7 +72,8 @@ export function WordLookupPopup({
   const [word, setWord] = useState<string | null>(null);
   const [entry, setEntry] = useState<DictEntry | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "notfound">("idle");
-  const [pos, setPos] = useState<PopupPos | null>(null);
+  const [anchor, setAnchor] = useState<AnchorRect | null>(null);
+  const [popupPos, setPopupPos] = useState<PopupPos | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,7 +106,8 @@ export function WordLookupPopup({
   const close = useCallback(() => {
     setWord(null);
     setEntry(null);
-    setPos(null);
+    setAnchor(null);
+    setPopupPos(null);
     setStatus("idle");
     abortRef.current?.abort();
   }, []);
@@ -113,18 +131,25 @@ export function WordLookupPopup({
         let node: Node | null = sel.anchorNode;
         let inside = false;
         while (node) {
-          if (node === editorEl) { inside = true; break; }
+          if (node === editorEl) {
+            inside = true;
+            break;
+          }
           node = node.parentNode;
         }
         if (!inside) return;
 
-        // Viewport-relative position (works with position: fixed)
         const range = sel.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        if (rect.width === 0 && rect.height === 0) return; // not yet painted
-        setPos({
-          x: rect.left + rect.width / 2,
-          y: rect.top - 8,
+        if (rect.width === 0 && rect.height === 0) return;
+
+        setAnchor({
+          left: rect.left,
+          top: rect.top,
+          right: rect.right,
+          bottom: rect.bottom,
+          width: rect.width,
+          height: rect.height,
         });
 
         const clean = raw.replace(/[^a-zA-Z'-]/g, "").toLowerCase();
@@ -140,6 +165,32 @@ export function WordLookupPopup({
       if (lookupTimer.current) clearTimeout(lookupTimer.current);
     };
   }, [editorViewRef, lookup]);
+
+  const def = entry ? firstDef(entry) : null;
+  const syns = entry ? allSynonyms(entry) : [];
+  const ants = entry ? allAntonyms(entry) : [];
+
+  useLayoutEffect(() => {
+    if (!word || !anchor || !popupRef.current) {
+      setPopupPos(null);
+      return;
+    }
+    const el = popupRef.current;
+    const br = el.getBoundingClientRect();
+    const margin = 8;
+    const gap = 6;
+    let left = anchor.left;
+    let top = anchor.bottom + gap;
+    if (top + br.height > window.innerHeight - margin) {
+      top = anchor.top - gap - br.height;
+    }
+    if (top < margin) top = margin;
+    if (left + br.width > window.innerWidth - margin) {
+      left = window.innerWidth - margin - br.width;
+    }
+    if (left < margin) left = margin;
+    setPopupPos({ left, top });
+  }, [word, anchor, status, entry]);
 
   // Close on Escape or click outside
   useEffect(() => {
@@ -160,21 +211,22 @@ export function WordLookupPopup({
     };
   }, [word, close]);
 
-  if (!word || !pos) return null;
-
-  const def = entry ? firstDef(entry) : null;
-  const syns = entry ? allSynonyms(entry) : [];
-  const ants = entry ? allAntonyms(entry) : [];
+  if (!word || !anchor) return null;
 
   return (
     <div
       ref={popupRef}
       className="word-lookup-popup"
-      style={{
-        left: pos.x,
-        top: pos.y,
-        transform: "translate(-50%, -100%)",
-      }}
+      style={
+        popupPos
+          ? { left: popupPos.left, top: popupPos.top, transform: "none" }
+          : {
+              left: anchor.left,
+              top: anchor.bottom + 6,
+              transform: "none",
+              visibility: "hidden" as const,
+            }
+      }
       role="dialog"
       aria-label={`Definition of ${word}`}
     >
@@ -192,14 +244,14 @@ export function WordLookupPopup({
       )}
 
       {def && (
-        <div className="word-lookup-def">
+        <div className="word-lookup-def word-lookup-def-tight">
           <span className="word-lookup-pos">{def.pos}</span>
           <span className="word-lookup-text">{def.text}</span>
         </div>
       )}
 
       {syns.length > 0 && (
-        <div className="word-lookup-group">
+        <div className="word-lookup-group word-lookup-group-tight">
           <span className="word-lookup-group-label">Synonyms</span>
           <div className="word-lookup-chips">
             {syns.map((s) => <span key={s} className="word-lookup-chip">{s}</span>)}
@@ -208,7 +260,7 @@ export function WordLookupPopup({
       )}
 
       {ants.length > 0 && (
-        <div className="word-lookup-group">
+        <div className="word-lookup-group word-lookup-group-tight">
           <span className="word-lookup-group-label">Antonyms</span>
           <div className="word-lookup-chips word-lookup-chips-ant">
             {ants.map((a) => <span key={a} className="word-lookup-chip word-lookup-chip-ant">{a}</span>)}

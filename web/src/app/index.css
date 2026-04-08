@@ -117,6 +117,11 @@ body::after {
 body::before {
   background-image:
     radial-gradient(
+      ellipse 70% 55% at 50% 48%,
+      color-mix(in srgb, var(--ambient-c) 55%, transparent),
+      transparent 62%
+    ),
+    radial-gradient(
       ellipse 120% 100% at 14% 28%,
       var(--ambient-a),
       transparent 72%
@@ -136,20 +141,37 @@ body::before {
       var(--ambient-d),
       transparent 68%
     ),
+    radial-gradient(
+      circle at 22% 78%,
+      color-mix(in srgb, var(--shine-mid) 45%, transparent),
+      transparent 42%
+    ),
+    conic-gradient(
+      from 210deg at 78% 35%,
+      transparent 0deg,
+      color-mix(in srgb, var(--ambient-a) 35%, transparent) 52deg,
+      transparent 110deg
+    ),
     linear-gradient(var(--net-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--net-line) 1px, transparent 1px);
   background-size:
+    140% 140%,
     160% 160%,
     155% 155%,
     170% 170%,
     150% 150%,
+    120% 120%,
+    180% 180%,
     40px 40px,
     40px 40px;
   background-position:
+    48% 52%,
     0% 0%,
     100% 0%,
     50% 100%,
     75% 55%,
+    0% 100%,
+    100% 0%,
     center -1px,
     center -1px;
   animation: ambient-drift 140s ease-in-out infinite alternate;
@@ -163,10 +185,15 @@ body::after {
       var(--shine-top),
       var(--shine-mid) 38%,
       transparent 68%
+    ),
+    radial-gradient(
+      80% 70% at 100% 100%,
+      color-mix(in srgb, var(--ambient-b) 40%, transparent),
+      transparent 55%
     );
   animation: studio-light 48s ease-in-out infinite alternate;
   mix-blend-mode: screen;
-  opacity: 0.26;
+  opacity: 0.3;
 }
 
 @media (prefers-color-scheme: light) {
@@ -180,28 +207,37 @@ body::after {
 @keyframes ambient-drift {
   0% {
     background-position:
+      46% 50%,
       0% 0%,
       100% 6%,
       48% 100%,
       72% 58%,
+      4% 96%,
+      96% 8%,
       center -1px,
       center -1px;
   }
   50% {
     background-position:
+      52% 54%,
       8% 6%,
       92% 2%,
       52% 94%,
       68% 52%,
+      8% 92%,
+      88% 4%,
       center -1px,
       center -1px;
   }
   100% {
     background-position:
+      48% 52%,
       4% 4%,
       96% 10%,
       46% 96%,
       78% 60%,
+      2% 98%,
+      100% 0%,
       center -1px,
       center -1px;
   }
@@ -248,10 +284,13 @@ html[data-writing-focus-v2] body::after {
 
   body::before {
     background-position:
+      48% 52%,
       0% 0%,
       100% 0%,
       50% 100%,
       75% 55%,
+      0% 100%,
+      100% 0%,
       center -1px,
       center -1px;
   }

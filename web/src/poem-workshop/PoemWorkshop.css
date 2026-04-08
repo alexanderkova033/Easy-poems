@@ -2150,6 +2150,53 @@
   }
 }
 
+.workshop-head-shortcuts {
+  margin: 0.15rem 0 0;
+  padding: 0.2rem 0 0.15rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.workshop-head-shortcuts-summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 0.76rem;
+  font-weight: 650;
+  color: var(--muted);
+  user-select: none;
+  padding: 0.25rem 0;
+}
+
+.workshop-head-shortcuts-summary::-webkit-details-marker {
+  display: none;
+}
+
+.workshop-head-shortcuts-body {
+  padding: 0.15rem 0 0.35rem;
+}
+
+.workshop-head-shortcuts-lead {
+  margin: 0 0 0.45rem;
+}
+
+.workshop-head-shortcuts-list {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.42rem;
+  font-size: 0.82rem;
+  line-height: 1.42;
+  color: color-mix(in srgb, var(--muted) 25%, var(--text));
+}
+
+.workshop-head-shortcuts-list .kbd-hint {
+  font-size: 0.8em;
+}
+
+.workshop-head-shortcuts-note {
+  margin: 0.55rem 0 0;
+}
+
 .tool-tab {
   display: flex;
   flex-direction: column;
@@ -2304,6 +2351,18 @@
   font-family: var(--font-metric);
   font-variant-numeric: tabular-nums;
   font-size: 0.92em;
+}
+
+.tools-overview-pill-k-dual {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.06em;
+}
+
+.tools-overview-pill-k-sub {
+  font-size: 0.78em;
+  font-weight: 600;
+  opacity: 0.72;
 }
 
 .tools-overview-pill-l {
@@ -3115,6 +3174,12 @@
   margin-top: 0.55rem;
 }
 
+.tool-subheading-divider {
+  margin-top: 1.15rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
 /* Collapsible hint pattern used in meter / rhyme panels */
 .tool-hint-details {
   margin: 0.2rem 0 0.5rem;
@@ -3323,6 +3388,23 @@
 .fmt-size-select:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
+}
+
+.fmt-syllable-toggle {
+  width: auto;
+  min-width: 2.35rem;
+  padding: 0 0.28rem;
+  margin-left: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--muted) 70%, var(--text));
+}
+
+.fmt-syllable-toggle.is-on {
+  color: color-mix(in srgb, var(--accent) 82%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
 }
 
 .fmt-hint {
@@ -5336,9 +5418,9 @@ button.primary:disabled {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-3);
-  padding: 0.75rem 0.9rem 0.8rem;
-  min-width: 220px;
-  max-width: 340px;
+  padding: 0.55rem 0.65rem 0.62rem;
+  min-width: 200px;
+  max-width: min(300px, calc(100vw - 1.25rem));
   pointer-events: all;
 }
 
@@ -5347,7 +5429,7 @@ button.primary:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.35rem;
 }
 
 .word-lookup-word {
@@ -5387,6 +5469,11 @@ button.primary:disabled {
   margin-bottom: 0.6rem;
 }
 
+.word-lookup-def-tight {
+  gap: 0.12rem;
+  margin-bottom: 0.35rem;
+}
+
 .word-lookup-pos {
   font-size: 0.72rem;
   font-weight: 700;
@@ -5401,8 +5488,17 @@ button.primary:disabled {
   color: var(--text);
 }
 
+.word-lookup-def-tight .word-lookup-text {
+  font-size: 0.8rem;
+  line-height: 1.38;
+}
+
 .word-lookup-group {
   margin-top: 0.5rem;
+}
+
+.word-lookup-group-tight {
+  margin-top: 0.32rem;
 }
 
 .word-lookup-group-label {
@@ -5653,6 +5749,14 @@ button.primary:disabled {
 }
 
 /* ── Rhyme scheme block (inside tool panel) ──────────────────── */
+.rhyme-scheme-fold {
+  margin: 0.35rem 0 0.5rem;
+}
+
+.rhyme-scheme-block-folded {
+  margin: 0.35rem 0 0;
+}
+
 .rhyme-scheme-block {
   margin: 0.75rem 0;
 }

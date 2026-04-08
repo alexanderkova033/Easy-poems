@@ -69,12 +69,16 @@ export function FormatToolbar({
   onSizeChange,
   getBody,
   onReadingMode,
+  showLineSyllables,
+  onShowLineSyllablesChange,
 }: {
   editorViewRef: MutableRefObject<EditorView | null>;
   poemSize: PoemSizeId;
   onSizeChange: (size: PoemSizeId) => void;
   getBody?: () => string;
   onReadingMode?: () => void;
+  showLineSyllables: boolean;
+  onShowLineSyllablesChange: (next: boolean) => void;
 }) {
   const apply = (fn: (v: EditorView) => void) => {
     const view = editorViewRef.current;
@@ -121,6 +125,28 @@ export function FormatToolbar({
           ))}
         </select>
       </label>
+
+      <button
+        type="button"
+        className={`fmt-btn fmt-syllable-toggle ${showLineSyllables ? "is-on" : ""}`}
+        title={
+          showLineSyllables
+            ? "Hide estimated syllable count at the end of each line"
+            : "Show estimated syllable count at the end of each line"
+        }
+        aria-pressed={showLineSyllables}
+        aria-label={
+          showLineSyllables
+            ? "Syllable counts on lines: on. Click to hide."
+            : "Syllable counts on lines: off. Click to show."
+        }
+        onMouseDown={(e) => {
+          e.preventDefault();
+          onShowLineSyllablesChange(!showLineSyllables);
+        }}
+      >
+        ˈsyll
+      </button>
 
       <span className="fmt-sep" aria-hidden />
 

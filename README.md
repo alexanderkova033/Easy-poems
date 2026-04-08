@@ -21,7 +21,9 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to `localStorage`**. Use the **Writing tools** sidebar for stats, meter, rhyme, spelling (`web/public/wordlist-en.txt` plus your personal dictionary in this browser), goals, checklist, and export. **Export backup** downloads all drafts and snapshots; **Import backup** merges poems from a file.
+Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to `localStorage`**. Use the **Writing tools** sidebar for stats, meter, **rhyme & sound-pattern hints with repeated-word list** (one tab), spelling (`web/public/wordlist-en.txt` plus your personal dictionary in this browser), goals, checklist, and export. **Export backup** downloads all drafts and snapshots; **Import backup** merges poems from a file.
+
+**Workshop UI (high level):** Tool groups are **Overview** (issues, totals, spell, lines, goals, ready, snapshots) and **Sound** (meter, rhyme & repeats). The **end-rhyme scheme** folds open or closed. **Per-line syllable estimates** in the editor can be toggled with the **`ˈsyll`** control next to font size (preference saved in this browser). **Keyboard shortcuts** live in a collapsible block under the tool tabs. Selecting a single word in the poem opens a **dictionary popup** (definitions, synonyms, antonyms) anchored near the selection. The default page backdrop uses layered, slowly drifting color washes; other backdrops are available from the header.
 
 **`localStorage` keys used by the app:**
 
@@ -31,6 +33,7 @@ Open the URL Vite prints (default `http://localhost:5173`). Drafts **autosave to
 | `easy-poems:revisions:v2` | Per-poem revision snapshots |
 | `easy-poems:libraryMeta:v1` | Draft labels, pins, tags, archive state |
 | `easy-poems:appearance:v1` | Font, theme, and background preferences |
+| `easy-poems:showLineSyllables` | Whether per-line syllable counts show in the poem editor (`1` / `0`) |
 | `easy-poems:goals:v1` | Writing goals |
 | `easy-poems:spell:personal:v1` | Personal spell-check dictionary |
 | `easy-poems:spell:ignore-session:v1` | Session-only spell-check ignores (sessionStorage) |

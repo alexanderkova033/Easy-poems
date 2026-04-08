@@ -115,15 +115,6 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
       </button>
       <button
         type="button"
-        className={`tools-overview-pill ${activeTab === "repeat" ? "is-current" : ""} ${repeatCount > 0 ? "has-attn is-muted-attn" : ""}`}
-        onClick={() => onOpenTab("repeat")}
-        title={repeatCount > 0 ? `${repeatCount} repeated words (top list)` : "No repeats flagged"}
-      >
-        <span className="tools-overview-pill-k">{repeatCount}</span>
-        <span className="tools-overview-pill-l">repeats</span>
-      </button>
-      <button
-        type="button"
         className={`tools-overview-pill ${activeTab === "meter" ? "is-current" : ""} ${meterIssue ? "has-attn is-muted-attn" : ""}`}
         onClick={() => onOpenTab("meter")}
         title={
@@ -145,16 +136,23 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
       </button>
       <button
         type="button"
-        className={`tools-overview-pill ${activeTab === "rhyme" ? "is-current" : ""}`}
+        className={`tools-overview-pill ${activeTab === "rhyme" ? "is-current" : ""} ${repeatCount > 0 ? "has-attn is-muted-attn" : ""}`}
         onClick={() => onOpenTab("rhyme")}
         title={
-          rhymeClusterCount > 0
-            ? `${rhymeClusterCount} shared ending pattern(s) — open Sound for letter-based hints`
-            : "Sound: rhyme and letter-pattern hints"
+          rhymeClusterCount > 0 || repeatCount > 0
+            ? `${rhymeClusterCount} ending-pattern cluster(s); ${repeatCount} repeated word(s) on the Rhyme & repeats tab`
+            : "Rhyme, sound-pattern hints, and repeated-word list"
         }
       >
-        <span className="tools-overview-pill-k">{rhymeClusterCount}</span>
-        <span className="tools-overview-pill-l">sound</span>
+        <span className="tools-overview-pill-k tools-overview-pill-k-dual">
+          <span className="tools-overview-pill-k-main">{rhymeClusterCount}</span>
+          {repeatCount > 0 ? (
+            <span className="tools-overview-pill-k-sub" aria-hidden>
+              ·{repeatCount}
+            </span>
+          ) : null}
+        </span>
+        <span className="tools-overview-pill-l">rhyme</span>
       </button>
       <button
         type="button"
