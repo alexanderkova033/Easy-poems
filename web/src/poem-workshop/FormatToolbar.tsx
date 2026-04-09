@@ -72,6 +72,8 @@ export function FormatToolbar({
   onReadingMode,
   showLineSyllables,
   onShowLineSyllablesChange,
+  showRhymeScheme,
+  onShowRhymeSchemeChange,
 }: {
   editorViewRef: MutableRefObject<EditorView | null>;
   poemSize: PoemSizeId;
@@ -80,6 +82,8 @@ export function FormatToolbar({
   onReadingMode?: () => void;
   showLineSyllables: boolean;
   onShowLineSyllablesChange: (next: boolean) => void;
+  showRhymeScheme: boolean;
+  onShowRhymeSchemeChange: (next: boolean) => void;
 }) {
   const hint = useHoverHintBinder();
   const apply = (fn: (v: EditorView) => void) => {
@@ -148,6 +152,28 @@ export function FormatToolbar({
         }}
       >
         ˈsyll
+      </button>
+
+      <button
+        type="button"
+        className={`fmt-btn fmt-syllable-toggle ${showRhymeScheme ? "is-on" : ""}`}
+        {...hint(
+          showRhymeScheme
+            ? "Hide end-rhyme scheme panel"
+            : "Show end-rhyme scheme panel",
+        )}
+        aria-pressed={showRhymeScheme}
+        aria-label={
+          showRhymeScheme
+            ? "Rhyme scheme: on. Click to hide."
+            : "Rhyme scheme: off. Click to show."
+        }
+        onMouseDown={(e) => {
+          e.preventDefault();
+          onShowRhymeSchemeChange(!showRhymeScheme);
+        }}
+      >
+        A B
       </button>
 
       <span className="fmt-sep" aria-hidden />

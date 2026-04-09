@@ -5,7 +5,13 @@
       "Bash(npx tsc:*)",
       "Bash(node -e ':*)",
       "Bash(node -e \"const fs = require\\('fs'\\); const c = fs.readFileSync\\('src/poem-workshop/BackgroundPicker.tsx'\\); console.log\\('bytes:', [...c.slice\\(0,20\\)].map\\(b => b.toString\\(16\\)\\).join\\(' '\\)\\)\")",
-      "Bash(node -e \"const fs = require\\('fs'\\); const c = fs.readFileSync\\('src/poem-workshop/BackgroundPicker.tsx'\\); const s = c.toString\\('utf8'\\); const lines = s.split\\('\\\\n'\\); lines.slice\\(0,10\\).forEach\\(\\(l,i\\) => { console.log\\(i+1, JSON.stringify\\(l\\)\\); }\\);\")"
+      "Bash(node -e \"const fs = require\\('fs'\\); const c = fs.readFileSync\\('src/poem-workshop/BackgroundPicker.tsx'\\); const s = c.toString\\('utf8'\\); const lines = s.split\\('\\\\n'\\); lines.slice\\(0,10\\).forEach\\(\\(l,i\\) => { console.log\\(i+1, JSON.stringify\\(l\\)\\); }\\);\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit && echo OK\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit && echo TYPECHECK_OK\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit 2>&1 && echo DONE\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit 2>&1 & echo EXIT:%ERRORLEVEL%\")",
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && node node_modules/.bin/tsc --noEmit 2>&1 & echo ERROR:%ERRORLEVEL%\")"
     ]
   }
 }

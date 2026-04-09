@@ -27,6 +27,7 @@ export const STORAGE_KEY_FIRST_HINT_DISMISSED = "easy-poems:first-hint-dismissed
 export const STORAGE_KEY_LAST_TOOL_TAB = "easy-poems:lastToolTab";
 export const STORAGE_KEY_LAST_EXPORT_AT = "easy-poems:lastExportAt";
 export const STORAGE_KEY_SHOW_LINE_SYLLABLES = "easy-poems:showLineSyllables";
+export const STORAGE_KEY_SHOW_RHYME_SCHEME = "easy-poems:showRhymeScheme";
 /** Delayed “what does this do?” bubbles on buttons (fine-pointer / hover devices). */
 export const STORAGE_KEY_UI_HOVER_HINTS = "easy-poems:uiHoverHints";
 

@@ -1745,11 +1745,11 @@
 
 .bg-picker-swatch--paper {
   background:
-    radial-gradient(circle at 85% 12%, rgba(96, 72, 48, 0.08), transparent 55%),
+    radial-gradient(circle at 85% 12%, rgba(96, 72, 48, 0.12), transparent 55%),
     repeating-linear-gradient(
-      transparent 0 26px,
-      rgba(88, 72, 52, 0.06) 26px,
-      rgba(88, 72, 52, 0.06) 27px
+      transparent 0 8px,
+      rgba(88, 72, 52, 0.18) 8px,
+      rgba(88, 72, 52, 0.18) 9px
     ),
     linear-gradient(98deg, #f5efe4 0%, #ebe0d2 100%);
 }
@@ -1769,12 +1769,12 @@
 .bg-picker-swatch--forest {
   background:
     /* Canopy glow */
-    radial-gradient(ellipse 130% 80% at 50% 108%, rgba(55, 200, 130, 0.46), transparent 54%),
-    /* Fireflies — warm specks */
-    radial-gradient(circle 4% at 28% 72%, rgba(188, 255, 64, 0.72), transparent 50%),
-    radial-gradient(circle 3% at 64% 66%, rgba(200, 255, 80, 0.60), transparent 50%),
-    radial-gradient(circle 3% at 82% 78%, rgba(176, 240, 56, 0.68), transparent 50%),
-    radial-gradient(circle 2% at 48% 80%, rgba(210, 255, 96, 0.55), transparent 50%),
+    radial-gradient(ellipse 130% 80% at 50% 108%, rgba(55, 200, 130, 0.5), transparent 54%),
+    /* Fireflies — larger at swatch scale */
+    radial-gradient(circle 10% at 28% 68%, rgba(188, 255, 64, 0.85), transparent 50%),
+    radial-gradient(circle 8% at 66% 62%, rgba(200, 255, 80, 0.78), transparent 50%),
+    radial-gradient(circle 7% at 82% 76%, rgba(176, 240, 56, 0.80), transparent 50%),
+    radial-gradient(circle 6% at 48% 78%, rgba(210, 255, 96, 0.72), transparent 50%),
     radial-gradient(circle at 18% 12%, rgba(70, 210, 150, 0.14), transparent 48%),
     linear-gradient(168deg, #05100a 0%, #0c1814 50%, #07120d 100%);
 }
@@ -1844,14 +1844,14 @@
 
 .bg-picker-swatch--parchment {
   background:
-    radial-gradient(circle at 24% 32%, rgba(150, 105, 55, 0.18), transparent 58%),
-    radial-gradient(circle at 76% 68%, rgba(210, 170, 95, 0.16), transparent 60%),
+    radial-gradient(circle at 24% 32%, rgba(150, 105, 55, 0.22), transparent 58%),
+    radial-gradient(circle at 76% 68%, rgba(210, 170, 95, 0.20), transparent 60%),
     repeating-linear-gradient(
       0deg,
-      rgba(85, 58, 28, 0.035),
-      rgba(85, 58, 28, 0.035) 1px,
+      rgba(85, 58, 28, 0.14),
+      rgba(85, 58, 28, 0.14) 1px,
       transparent 1px,
-      transparent 9px
+      transparent 7px
     ),
     linear-gradient(180deg, #f2e8d4 0%, #e4d4b4 100%);
 }
@@ -2172,6 +2172,8 @@
     overscroll-behavior-x: none;
     /* Establish independent scroll context */
     -webkit-overflow-scrolling: touch;
+    /* Isolate paint for each slide panel */
+    contain: paint;
   }
 
   /* Both slides fill the grid area and can scroll independently */
@@ -6955,43 +6957,64 @@ button.primary:disabled {
   max-width: 14rem;
 }
 
-/* ── Editor-body rhyme scheme strip ──────────────────────────── */
+/* ── Editor + right-side rhyme scheme wrapper ─────────────────── */
+.poem-editor-with-scheme {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.poem-editor-with-scheme .poem-editor-shell {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Right-column rhyme scheme ────────────────────────────────── */
 .editor-rhyme-scheme {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.3rem 0.45rem;
-  margin-top: 0.55rem;
-  padding: 0.45rem 0.6rem;
+  flex-direction: column;
+  gap: 0;
+  flex-shrink: 0;
+  width: 2.6rem;
+  padding: 0.3rem 0.25rem;
   border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface) 60%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+  align-self: stretch;
+  contain: style;
 }
 
 .editor-rhyme-row {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.25rem;
-  font-size: 0.78rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  line-height: 1;
 }
 
 .editor-rhyme-linenum {
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
-  min-width: 1.4ch;
-  text-align: right;
+  text-align: center;
+  line-height: 1.1;
+  margin-top: 0.2rem;
 }
 
 .editor-rhyme-label {
-  display: inline-block;
-  min-width: 1.4em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.55rem;
+  height: 1.55rem;
   font-weight: 700;
-  font-size: 0.78rem;
-  padding: 0.05em 0.3em;
-  border-radius: 4px;
+  font-size: 0.72rem;
+  border-radius: 5px;
   background: color-mix(in srgb, var(--accent) 16%, var(--bg));
   color: var(--accent);
-  text-align: center;
+  margin-top: 0.08rem;
+  margin-bottom: 0.15rem;
 }
 
 /* ── Cliché list ─────────────────────────────────────────────── */

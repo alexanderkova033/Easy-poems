@@ -35,7 +35,7 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME } from "@/shared/storage-keys";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { WorkshopGuideContent } from "./WorkshopGuideContent";
 import {
@@ -86,6 +86,15 @@ export function PoemWorkshop() {
   const [showLineSyllables, setShowLineSyllables] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_SHOW_LINE_SYLLABLES);
+      if (raw === "0" || raw === "false") return false;
+    } catch {
+      /* ignore */
+    }
+    return true;
+  });
+  const [showRhymeScheme, setShowRhymeScheme] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_SHOW_RHYME_SCHEME);
       if (raw === "0" || raw === "false") return false;
     } catch {
       /* ignore */
@@ -216,6 +225,17 @@ export function PoemWorkshop() {
       /* ignore */
     }
   }, [showLineSyllables]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        STORAGE_KEY_SHOW_RHYME_SCHEME,
+        showRhymeScheme ? "1" : "0",
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [showRhymeScheme]);
 
   useEffect(() => {
     const lockScroll =
@@ -1704,79 +1724,83 @@ export function PoemWorkshop() {
                     onReadingMode={() => setIsReadingMode(true)}
                     showLineSyllables={showLineSyllables}
                     onShowLineSyllablesChange={setShowLineSyllables}
+                    showRhymeScheme={showRhymeScheme}
+                    onShowRhymeSchemeChange={setShowRhymeScheme}
                   />
                 </div>
-                <div className="poem-editor-shell">
-                  <PoemBodyEditor
-                    id="poem-body"
-                    aria-describedby="poem-body-hint"
-                    value={m.body}
-                    bodySyncNonce={m.bodySyncNonce}
-                    onLiveBody={m.onEditorBody}
-                    editorViewRef={m.editorViewRef}
-                    wordlist={m.wordlist}
-                    spellMode={m.spellMode}
-                    spellBump={m.spellBump}
-                    jumpLine={m.jumpLine}
-                    jumpBump={m.jumpBump}
-                    issueHighlight={issueHighlight}
-                    showLineSyllables={showLineSyllables}
-                  />
-                  <WordLookupPopup editorViewRef={m.editorViewRef} />
-                  <div
-                    className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
-                  >
-                    <div className="poem-editor-copy-slot-inner">
-                      <button
-                        type="button"
-                        className="quick-copy-face quick-copy-face-icon"
-                        onClick={() => void m.onQuickCopyPlain()}
-                        {...hint("Copy poem body as plain text (no title or form)")}
-                        aria-label="Copy poem body as plain text"
-                        tabIndex={m.quickCopyFlash ? -1 : 0}
-                        aria-hidden={m.quickCopyFlash}
-                      >
-                        <svg
-                          className="quick-copy-svg"
-                          viewBox="0 0 24 24"
-                          aria-hidden
+                <div className="poem-editor-with-scheme">
+                  <div className="poem-editor-shell">
+                    <PoemBodyEditor
+                      id="poem-body"
+                      aria-describedby="poem-body-hint"
+                      value={m.body}
+                      bodySyncNonce={m.bodySyncNonce}
+                      onLiveBody={m.onEditorBody}
+                      editorViewRef={m.editorViewRef}
+                      wordlist={m.wordlist}
+                      spellMode={m.spellMode}
+                      spellBump={m.spellBump}
+                      jumpLine={m.jumpLine}
+                      jumpBump={m.jumpBump}
+                      issueHighlight={issueHighlight}
+                      showLineSyllables={showLineSyllables}
+                    />
+                    <WordLookupPopup editorViewRef={m.editorViewRef} />
+                    <div
+                      className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
+                    >
+                      <div className="poem-editor-copy-slot-inner">
+                        <button
+                          type="button"
+                          className="quick-copy-face quick-copy-face-icon"
+                          onClick={() => void m.onQuickCopyPlain()}
+                          {...hint("Copy poem body as plain text (no title or form)")}
+                          aria-label="Copy poem body as plain text"
+                          tabIndex={m.quickCopyFlash ? -1 : 0}
+                          aria-hidden={m.quickCopyFlash}
                         >
-                          <path
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.75"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                          />
-                        </svg>
-                      </button>
-                      <span
-                        className="quick-copy-face quick-copy-face-done"
-                        aria-live="polite"
-                        aria-hidden={!m.quickCopyFlash}
-                      >
-                        Copied
-                      </span>
+                          <svg
+                            className="quick-copy-svg"
+                            viewBox="0 0 24 24"
+                            aria-hidden
+                          >
+                            <path
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.75"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                            />
+                          </svg>
+                        </button>
+                        <span
+                          className="quick-copy-face quick-copy-face-done"
+                          aria-live="polite"
+                          aria-hidden={!m.quickCopyFlash}
+                        >
+                          Copied
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  {showRhymeScheme && m.rhymeScheme.some((l) => l) ? (
+                    <div className="editor-rhyme-scheme" aria-label="End-rhyme scheme">
+                      {m.rhymeScheme.map((label, i) =>
+                        label ? (
+                          <span key={i} className="editor-rhyme-row">
+                            <span className="editor-rhyme-linenum">{i + 1}</span>
+                            <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
+                          </span>
+                        ) : null,
+                      )}
+                    </div>
+                  ) : null}
                 </div>
                 <p id="poem-body-hint" className="field-hint">
                   Browser underlines off—only the workshop wavy mark for unknown
                   words.
                 </p>
-                {m.rhymeScheme.some((l) => l) ? (
-                  <div className="editor-rhyme-scheme" aria-label="End-rhyme scheme">
-                    {m.rhymeScheme.map((label, i) =>
-                      label ? (
-                        <span key={i} className="editor-rhyme-row">
-                          <span className="editor-rhyme-linenum">{i + 1}</span>
-                          <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
-                        </span>
-                      ) : null,
-                    )}
-                  </div>
-                ) : null}
               </div>
               <div className="toolbar toolbar-saved">
                 <span className="save-hint" aria-hidden />
