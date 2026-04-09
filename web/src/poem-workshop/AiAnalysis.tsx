@@ -19,11 +19,19 @@ function loadStoredModel(): string {
   catch { return DEFAULT_MODEL; }
 }
 
-// ---- shared utils ---- //
+// ---- utils ---- //
 function scoreColor(score: number): string {
   if (score >= 80) return "var(--ai-score-high, #5fba7d)";
   if (score >= 55) return "var(--ai-score-mid, #e6a817)";
   return "var(--ai-score-low, #d95f5f)";
+}
+
+function scoreLabel(score: number): string {
+  if (score >= 88) return "Excellent";
+  if (score >= 75) return "Strong";
+  if (score >= 60) return "Solid";
+  if (score >= 45) return "Developing";
+  return "Needs work";
 }
 
 function deltaLabel(d: number): string {
@@ -38,38 +46,43 @@ function deltaClass(d: number): string {
   return "ai-delta ai-delta-flat";
 }
 
+// ---- dimension descriptions ---- //
+const DIM_META: Record<keyof AnalysisDimensions, { label: string; desc: string }> = {
+  imagery:     { label: "Imagery",     desc: "Vividness and specificity of sensory language" },
+  musicality:  { label: "Musicality",  desc: "Rhythm, sound patterns, and how it reads aloud" },
+  originality: { label: "Originality", desc: "Freshness of language, images, and perspective" },
+  clarity:     { label: "Clarity",     desc: "Coherence and ease of following the poem's meaning" },
+};
+
 // ---- sub-components ---- //
 function ScoreRing({ score }: { score: number }) {
-  const r = 28;
+  const r = 30;
   const circ = 2 * Math.PI * r;
   const color = scoreColor(score);
   return (
-    <svg className="ai-score-ring" viewBox="0 0 72 72" aria-hidden>
-      <circle cx="36" cy="36" r={r} fill="none"
-        stroke="color-mix(in srgb, currentColor 12%, transparent)" strokeWidth="6" />
-      <circle cx="36" cy="36" r={r} fill="none"
+    <svg className="ai-score-ring" viewBox="0 0 76 76" aria-hidden>
+      <circle cx="38" cy="38" r={r} fill="none"
+        stroke="color-mix(in srgb, currentColor 10%, transparent)" strokeWidth="6" />
+      <circle cx="38" cy="38" r={r} fill="none"
         stroke={color} strokeWidth="6" strokeLinecap="round"
         strokeDasharray={`${(score / 100) * circ} ${circ}`}
-        transform="rotate(-90 36 36)" />
+        transform="rotate(-90 38 38)"
+        style={{ transition: "stroke-dasharray 0.6s cubic-bezier(0.22,1,0.36,1)" }}
+      />
     </svg>
   );
 }
 
-const DIM_LABELS: Record<keyof AnalysisDimensions, string> = {
-  imagery: "Imagery", musicality: "Musicality",
-  originality: "Originality", clarity: "Clarity",
-};
-
 function DimensionBar({
-  label, value, delta,
-}: { label: string; value: number; delta?: number }) {
+  label, desc, value, delta,
+}: { label: string; desc: string; value: number; delta?: number }) {
   return (
-    <div className="ai-dim-row">
+    <div className="ai-dim-row" title={desc}>
       <span className="ai-dim-label">{label}</span>
-      <div className="ai-dim-track" title={`${value}/100`}>
+      <div className="ai-dim-track">
         <div className="ai-dim-fill" style={{ width: `${value}%`, background: scoreColor(value) }} />
       </div>
-      <span className="ai-dim-val">{value}</span>
+      <span className="ai-dim-val" style={{ color: scoreColor(value) }}>{value}</span>
       {delta !== undefined ? (
         <span className={deltaClass(delta)} title={`Changed by ${deltaLabel(delta)}`}>
           {deltaLabel(delta)}
@@ -80,25 +93,24 @@ function DimensionBar({
 }
 
 function IssueCard({
-  issue,
-  onJump,
-  onHighlight,
-  onClearHighlight,
+  issue, index, onJump, onHighlight, onClearHighlight,
 }: {
   issue: AnalysisIssue;
+  index: number;
   onJump?: (line: number) => void;
   onHighlight?: (start: number, end: number) => void;
   onClearHighlight?: () => void;
 }) {
   const rangeLabel = issue.line_start === issue.line_end
-    ? `Line ${issue.line_start}` : `Lines ${issue.line_start}–${issue.line_end}`;
+    ? `Line ${issue.line_start}`
+    : `Lines ${issue.line_start}–${issue.line_end}`;
+
   return (
     <details
       className="ai-issue"
       onMouseEnter={() => onHighlight?.(issue.line_start, issue.line_end)}
       onMouseLeave={() => onClearHighlight?.()}
       onToggle={(e) => {
-        // Mobile: highlight on expand, clear on collapse
         if ((e.currentTarget as HTMLDetailsElement).open) {
           onHighlight?.(issue.line_start, issue.line_end);
         } else {
@@ -107,6 +119,7 @@ function IssueCard({
       }}
     >
       <summary className="ai-issue-head">
+        <span className="ai-issue-num">{index + 1}</span>
         <span className="ai-issue-head-inner">
           {onJump ? (
             <button type="button" className="ai-issue-line linkish"
@@ -115,7 +128,9 @@ function IssueCard({
               {rangeLabel}
             </button>
           ) : <span className="ai-issue-line">{rangeLabel}</span>}
-          {issue.excerpt ? <span className="ai-issue-excerpt">&ldquo;{issue.excerpt}&rdquo;</span> : null}
+          {issue.excerpt
+            ? <span className="ai-issue-excerpt">&ldquo;{issue.excerpt}&rdquo;</span>
+            : null}
         </span>
         <span className="ai-issue-chevron" aria-hidden>›</span>
       </summary>
@@ -158,11 +173,7 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 }
 
 function AnalysisResults({
-  result,
-  previous,
-  onJump,
-  onHighlight,
-  onClearHighlight,
+  result, previous, onJump, onHighlight, onClearHighlight,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -183,6 +194,7 @@ function AnalysisResults({
 
   return (
     <div className="ai-results">
+      {/* Score + dimensions */}
       <div className="ai-results-top">
         <div className="ai-overall">
           <div className="ai-score-wrap">
@@ -192,7 +204,9 @@ function AnalysisResults({
             </span>
           </div>
           <div className="ai-overall-label">
-            <span className="ai-overall-title">Overall</span>
+            <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+              {scoreLabel(result.overall_score)}
+            </span>
             <span className="ai-overall-sub">out of 100</span>
             {deltas && (
               <span className={deltaClass(deltas.overall) + " ai-overall-delta"}>
@@ -203,10 +217,11 @@ function AnalysisResults({
         </div>
 
         <div className="ai-dimensions">
-          {(Object.keys(DIM_LABELS) as (keyof AnalysisDimensions)[]).map((k) => (
+          {(Object.keys(DIM_META) as (keyof AnalysisDimensions)[]).map((k) => (
             <DimensionBar
               key={k}
-              label={DIM_LABELS[k]}
+              label={DIM_META[k].label}
+              desc={DIM_META[k].desc}
               value={result.dimensions[k]}
               delta={deltas ? deltas[k] : undefined}
             />
@@ -214,18 +229,25 @@ function AnalysisResults({
         </div>
       </div>
 
+      {/* Comparison panel */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
+      {/* Issues / feedback */}
       {result.issues.length > 0 ? (
         <div className="ai-issues-section">
           <h4 className="ai-issues-heading">
-            Feedback <span className="ai-issues-count">{result.issues.length}</span>
+            Line-level feedback
+            <span className="ai-issues-count">{result.issues.length}</span>
           </h4>
+          <p className="ai-issues-intro muted small">
+            Hover an issue to highlight the lines in the editor. Click to expand the suggestion.
+          </p>
           <div className="ai-issues-list">
-            {result.issues.map((iss) => (
+            {result.issues.map((iss, i) => (
               <IssueCard
                 key={iss.id}
                 issue={iss}
+                index={i}
                 onJump={onJump}
                 onHighlight={onHighlight}
                 onClearHighlight={onClearHighlight}
@@ -234,11 +256,14 @@ function AnalysisResults({
           </div>
         </div>
       ) : (
-        <p className="ai-no-issues muted small">No specific issues — looking strong.</p>
+        <div className="ai-no-issues-wrap">
+          <span className="ai-no-issues-check" aria-hidden>✓</span>
+          <p className="ai-no-issues muted small">No specific line-level issues — the poem reads well.</p>
+        </div>
       )}
 
       <p className="ai-meta muted small">
-        Model: {result.meta.model} ·{" "}
+        {result.meta.model} ·{" "}
         {new Date(result.meta.analyzedAt).toLocaleString(undefined, {
           dateStyle: "medium", timeStyle: "short",
         })}
@@ -265,6 +290,7 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
   const [savedLines, setSavedLines] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [isUnconfigured, setIsUnconfigured] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
@@ -276,6 +302,8 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
 
   const canCompare = savedResult !== null && savedLines.length > 0;
   const hasPoem = lines.some((l) => l.trim().length > 0);
+  const wordCount = lines.join(" ").split(/\s+/).filter(Boolean).length;
+  const effectiveMode = mode === "compare" && canCompare ? "compare" : "fresh";
 
   const handleAnalyze = useCallback(async () => {
     if (!hasPoem) return;
@@ -284,24 +312,16 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
     abortRef.current = ctrl;
     setStatus("loading");
     setErrorMsg("");
+    setIsUnconfigured(false);
 
     try {
       if (mode === "compare" && canCompare) {
         const res = await comparePoem(
-          {
-            title,
-            lines,
-            previousLines: savedLines,
-            previousScores: {
-              overall_score: savedResult!.overall_score,
-              dimensions: savedResult!.dimensions,
-            },
-          },
-          model,
-          ctrl.signal,
+          { title, lines, previousLines: savedLines,
+            previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions } },
+          model, ctrl.signal,
         );
         setResult(res);
-        // Update the saved baseline to the new version
         setSavedResult(res);
         setSavedLines(lines);
       } else {
@@ -324,116 +344,152 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
     }
   }, [canCompare, hasPoem, lines, mode, model, savedLines, savedResult, title]);
 
-  const effectiveMode = mode === "compare" && canCompare ? "compare" : "fresh";
-
   return (
     <section className="ai-analysis-section" aria-label="AI poem analysis">
-      <div className="ai-analysis-header">
-        <div className="ai-analysis-title-cluster">
-          <h2 className="ai-analysis-title">AI Analysis</h2>
-          <span className="ai-analysis-badge">OpenAI</span>
-        </div>
+      {/* Collapsible header */}
+      <button
+        type="button"
+        className="ai-analysis-toggle"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+      >
+        <span className="ai-analysis-toggle-left">
+          <span className="ai-analysis-toggle-icon" aria-hidden>✦</span>
+          <span className="ai-analysis-toggle-title">AI Analysis</span>
+          <span className="ai-analysis-badge">optional · needs server</span>
+        </span>
+        <span className="ai-analysis-toggle-chevron" aria-hidden>
+          {isOpen ? "▴" : "▾"}
+        </span>
+      </button>
 
-        <div className="ai-analysis-header-actions">
-          {/* Mode toggle */}
-          <div className="ai-mode-toggle" role="group" aria-label="Analysis mode">
-            <button
-              type="button"
-              className={`ai-mode-btn ${effectiveMode === "fresh" ? "is-active" : ""}`}
-              onClick={() => setMode("fresh")}
-              title="Analyze from scratch"
-            >
-              Fresh
-            </button>
-            <button
-              type="button"
-              className={`ai-mode-btn ${effectiveMode === "compare" ? "is-active" : ""}`}
-              onClick={() => setMode("compare")}
-              disabled={!canCompare}
-              title={
-                canCompare
-                  ? "Compare current version to previous analysis"
-                  : "Run a Fresh analysis first to enable comparison"
-              }
-            >
-              Compare
+      {isOpen && (
+        <div className="ai-analysis-body">
+          {/* Controls row */}
+          <div className="ai-controls-row">
+            <div className="ai-controls-left">
+              {/* Mode toggle */}
+              <div className="ai-mode-toggle" role="group" aria-label="Analysis mode">
+                <button type="button"
+                  className={`ai-mode-btn ${effectiveMode === "fresh" ? "is-active" : ""}`}
+                  onClick={() => setMode("fresh")}>
+                  Fresh
+                </button>
+                <button type="button"
+                  className={`ai-mode-btn ${effectiveMode === "compare" ? "is-active" : ""}`}
+                  onClick={() => setMode("compare")}
+                  disabled={!canCompare}
+                  title={canCompare
+                    ? "Compare to your previous analysis"
+                    : "Run a Fresh analysis first to unlock comparison"}>
+                  Compare
+                </button>
+              </div>
+
+              <label className="ai-model-label">
+                <select className="ai-model-select" value={model}
+                  onChange={(e) => saveModel(e.target.value)}>
+                  <option value="gpt-4o-mini">gpt-4o-mini — fast &amp; affordable</option>
+                  <option value="gpt-4o">gpt-4o — deeper, for final drafts</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="button"
+              className="small-btn small-btn-primary ai-analyze-btn"
+              onClick={() => void handleAnalyze()}
+              disabled={!hasPoem || status === "loading"}
+              title={!hasPoem ? "Write some lines first" : undefined}>
+              {status === "loading"
+                ? "Analyzing…"
+                : effectiveMode === "compare"
+                  ? "Compare versions"
+                  : "Analyze poem"}
             </button>
           </div>
 
-          <label className="ai-model-label">
-            <span className="ai-model-label-text">Model</span>
-            <select className="ai-model-select" value={model}
-              onChange={(e) => saveModel(e.target.value)}>
-              <option value="gpt-4o-mini">gpt-4o-mini (recommended)</option>
-              <option value="gpt-4o">gpt-4o (for final-draft deep dives)</option>
-            </select>
-          </label>
+          {/* Word count hint */}
+          {hasPoem && status !== "loading" && (
+            <p className="ai-word-hint muted small">
+              {wordCount} word{wordCount !== 1 ? "s" : ""} ·{" "}
+              {effectiveMode === "compare" && canCompare
+                ? "will compare to your saved baseline"
+                : "fresh analysis against four dimensions"}
+            </p>
+          )}
 
-          <button
-            type="button"
-            className="small-btn small-btn-primary ai-analyze-btn"
-            onClick={() => void handleAnalyze()}
-            disabled={!hasPoem || status === "loading"}
-            title={!hasPoem ? "Write some lines first" : undefined}
-          >
-            {status === "loading"
-              ? "Analyzing…"
-              : effectiveMode === "compare"
-                ? "Compare versions"
-                : "Analyze poem"}
-          </button>
+          {/* Compare mode hint */}
+          {effectiveMode === "compare" && canCompare && (
+            <p className="ai-compare-hint muted small">
+              Baseline saved from previous run — the model will score the current
+              version and show what changed.
+            </p>
+          )}
+
+          {/* States */}
+          {isUnconfigured && (
+            <div className="ai-unconfigured" role="status">
+              <p className="ai-unconfigured-title">Server not configured</p>
+              <p className="ai-unconfigured-text">
+                AI analysis requires the companion server running with an OpenAI API
+                key. See the <code>server/</code> directory in the repository —
+                set <code>OPENAI_API_KEY</code> and start the proxy, then reload.
+              </p>
+            </div>
+          )}
+
+          {!isUnconfigured && status === "idle" && !result && (
+            <div className="ai-idle-hint">
+              <p className="muted small">
+                Scores your poem on <strong>Imagery</strong>,{" "}
+                <strong>Musicality</strong>, <strong>Originality</strong>, and{" "}
+                <strong>Clarity</strong> — then gives line-level feedback with
+                specific suggestions. After the first run, <strong>Compare</strong>{" "}
+                shows exactly what improved between drafts.
+              </p>
+            </div>
+          )}
+
+          {status === "loading" && (
+            <div className="ai-loading" role="status" aria-live="polite">
+              <span className="ai-loading-dot" aria-hidden />
+              <span className="ai-loading-dot" aria-hidden />
+              <span className="ai-loading-dot" aria-hidden />
+              <span className="ai-loading-label">
+                {effectiveMode === "compare"
+                  ? "Comparing versions…"
+                  : "Reading the poem…"}
+              </span>
+            </div>
+          )}
+
+          {status === "error" && (
+            <div className="ai-error" role="alert">
+              <p className="ai-error-text">{errorMsg}</p>
+              <button type="button" className="small-btn"
+                onClick={() => { setStatus("idle"); setErrorMsg(""); }}>
+                Dismiss
+              </button>
+            </div>
+          )}
+
+          {status === "done" && result && (
+            <>
+              <AnalysisResults
+                result={result}
+                previous={effectiveMode === "compare" ? savedResult : null}
+                onJump={onJumpToLine}
+                onHighlight={onHighlightLines}
+                onClearHighlight={onClearHighlight}
+              />
+              <button type="button"
+                className="small-btn ai-rerun-btn"
+                onClick={() => void handleAnalyze()}>
+                Analyze again
+              </button>
+            </>
+          )}
         </div>
-      </div>
-
-      {effectiveMode === "compare" && canCompare && (
-        <p className="ai-compare-hint muted small">
-          Comparing to your previous submission — the model will score the current
-          version and highlight what changed.
-        </p>
-      )}
-
-      {isUnconfigured && (
-        <div className="ai-unconfigured" role="status">
-          <p className="ai-unconfigured-text">
-            AI analysis is not available — the server is not configured with an OpenAI API key.
-          </p>
-        </div>
-      )}
-
-      {!isUnconfigured && status === "idle" && !result && (
-        <p className="ai-idle-hint muted small">
-          Click &ldquo;Analyze poem&rdquo; to get scores and line-level feedback from AI.
-          After the first run, &ldquo;Compare&rdquo; shows what improved between drafts.
-        </p>
-      )}
-
-      {status === "loading" && (
-        <div className="ai-loading" role="status" aria-live="polite">
-          <span className="ai-loading-dot" aria-hidden />
-          <span className="ai-loading-dot" aria-hidden />
-          <span className="ai-loading-dot" aria-hidden />
-          <span className="ai-loading-label">Analyzing…</span>
-        </div>
-      )}
-
-      {status === "error" && (
-        <div className="ai-error" role="alert">
-          <p className="ai-error-text">{errorMsg}</p>
-          <button type="button" className="small-btn"
-            onClick={() => { setStatus("idle"); setErrorMsg(""); }}>
-            Dismiss
-          </button>
-        </div>
-      )}
-
-      {status === "done" && result && (
-        <AnalysisResults
-          result={result}
-          previous={effectiveMode === "compare" ? savedResult : null}
-          onJump={onJumpToLine}
-          onHighlight={onHighlightLines}
-          onClearHighlight={onClearHighlight}
-        />
       )}
     </section>
   );

@@ -23,13 +23,6 @@ export function BackdropFormFields(props: {
 }) {
   const { appearance, onChange } = props;
 
-  const onIntensity = (e: ChangeEvent<HTMLInputElement>) => {
-    onChange({
-      ...appearance,
-      backdropIntensity: Number.parseInt(e.target.value, 10),
-    });
-  };
-
   const onMotion = (e: ChangeEvent<HTMLSelectElement>) => {
     onChange({
       ...appearance,
@@ -39,19 +32,6 @@ export function BackdropFormFields(props: {
 
   return (
     <div className="appearance-fields" aria-label="Backdrop options">
-      <label className="appearance-field">
-        Backdrop intensity
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={1}
-          value={appearance.backdropIntensity}
-          onChange={onIntensity}
-        />
-        <span className="muted small">{appearance.backdropIntensity}%</span>
-      </label>
-
       <label className="appearance-field">
         Backdrop motion
         <select value={appearance.backdropMotion} onChange={onMotion}>

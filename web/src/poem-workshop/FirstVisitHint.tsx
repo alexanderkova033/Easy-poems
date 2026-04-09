@@ -51,7 +51,7 @@ export function FirstVisitHint({
               onOpenGuide();
             }}
           >
-            Quick guide
+            Open guide
           </button>
         ) : null}
         <button

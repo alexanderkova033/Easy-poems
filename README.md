@@ -1,46 +1,91 @@
-# Easy Poems — Poetry Workshop
+# easywriting-poem
 
-**Easy Poems** is a browser-based poetry workshop for drafting, revising, and reading poems with helpful (optional) tools. It **autosaves locally in your browser**, so you can write without an account.
+**For poets who want real analysis tools — private, local, no account.**
 
-- **Live site**: [easywritingpoem.org](https://www.easywritingpoem.org/)
-- **Storage**: local-only by default (export/backup when you want)
+A poem writing workshop that runs entirely in your browser. Write a draft on the left; meter, rhyme, syllables, and spelling analysis update live on the right. Nothing is uploaded, nothing is tracked, nothing requires a sign-up.
 
-### What the app is
+**Live site:** [easywritingpoem.org](https://www.easywritingpoem.org/)
 
-- **A clean poem editor**: title + optional form note + poem body (one line per line break).
-- **A “workshop” side panel**: syllables, meter hints, rhyme / repeats signals, spelling flags, line stats, checklists, goals, and revision comparisons.
-- **Library**: multiple drafts, pinning, search, sorting, tags, and archive/unarchive.
-- **Reading view**: a distraction-free “paper” view for proofreading.
-- **Export + backup**: download your poem as `.txt`, `.md`, or `.docx`, and export/import a JSON workshop backup (drafts + snapshots).
-- **Appearance**: poem/UI fonts and backdrop themes (saved per-browser).
+---
 
-### AI analysis (optional)
+## Who it is for
 
-The workshop includes an optional **AI Analysis** panel that can call OpenAI models when configured. If you don’t use AI analysis, the core workshop still works as a local-first writing tool.
+- **Hobbyist and serious poets** who want structured feedback without sending their drafts to a cloud service
+- **Writers who value privacy** — every keystroke stays in your browser's local storage until you choose to export
+- **People tired of paying for or signing up to writing tools** — the workshop is free to use with no account
+- **Students and educators** working with poetry who need syllable counts, meter patterns, and rhyme schemes on demand
 
-### Repository layout
+---
 
-| Path | Role |
-|------|------|
-| `web/` | Vite + React SPA (the workshop UI). |
-| `server/` | Small Node service (currently minimal / optional). |
-| `docs/` | Product / architecture notes. |
+## What it does
 
-### Run locally
+| Tool | What it shows |
+|------|---------------|
+| **Overview** | Word count, line count, syllables, stanzas, read-aloud time |
+| **Lines** | Per-line syllable counts, meter pattern, iambic fit percentage |
+| **Meter** | Stress pattern from a CMU pronouncing dictionary + heuristic fallback |
+| **Rhyme** | End-rhyme scheme labels (A, B, C…) shown beside the editor as you write |
+| **Repeats** | Repeated and near-repeated words flagged with line numbers |
+| **Spell** | Poetry-aware spelling with a personal dictionary and ignore list |
+| **Goals** | Word count targets and custom writing goals |
+| **Ready** | Publication checklist — title set, no open spelling flags, etc. |
+| **Snapshots** | Save named revision points and compare any two side-by-side |
+| **AI Analysis** | Optional: scores imagery, musicality, originality, and clarity via OpenAI (requires the companion server) |
 
-```bash
-cd web
-npm install
-npm run dev
+---
+
+## Why choose it
+
+**Everything is local.** Drafts, snapshots, goals, and your personal spelling dictionary are stored in `localStorage` in your browser. No server sees them during normal editing. If you close the tab and return a week later, your work is still there.
+
+**The tools are built for poetry specifically.** Syllable counts use a CMU pronouncing dictionary. The spell checker understands that made-up words and neologisms are normal. The rhyme panel groups end sounds rather than checking for perfect rhyme. These are not generic writing tools bolted onto an editor.
+
+**Nothing demands your attention.** Analysis runs silently in the background. You are never interrupted by suggestions while writing — the panel is there when you want it and invisible when you don't.
+
+**One URL, works offline.** After the first load the app runs without a network connection. No installs, no app store, no updates to manage.
+
+---
+
+## Tech stack
+
+| Layer | Technology |
+|-------|-----------|
+| UI framework | React 18 + TypeScript |
+| Build | Vite |
+| Editor | CodeMirror 6 (`@uiw/react-codemirror`) |
+| Stress dictionary | CMU Pronouncing Dictionary (bundled subset) |
+| Spell checking | Custom engine + word-list |
+| Export | `docx` library for Word files |
+| Storage | Browser `localStorage` only |
+| Server (optional) | Node/Express proxy for AI analysis via OpenAI |
+
+---
+
+## Project layout
+
+```
+easywriting-poem/
+├── web/                    # Frontend (Vite + React)
+│   ├── src/
+│   │   ├── app/            # Root component, global CSS, entry point
+│   │   ├── poem-workshop/  # Main workshop UI (editor, tools, modals)
+│   │   ├── poem-editor/    # CodeMirror extensions
+│   │   ├── writing-tools/  # Pure analysis functions (meter, rhyme, syllables…)
+│   │   ├── spellcheck/     # Spell engine + personal dictionary
+│   │   └── draft-library/  # Local storage, snapshots, export
+│   └── public/
+├── server/                 # Optional Express proxy for AI analysis
+└── docs/                   # Product requirements and priority docs
 ```
 
-### Production build
+---
 
-```bash
-cd web
-npm run build
-```
+## Privacy
 
-### Notes on local data
+All poem data lives in `localStorage` in the browser that created it. No analytics, no telemetry, no external requests are made by the app itself. Exporting a file or using AI analysis sends data only where you explicitly direct it.
 
-Drafts, settings, and tools state are stored in this browser’s storage unless you export. See `web/src/shared/storage-keys.ts` for the exact keys used.
+---
+
+## License
+
+See [LICENSE](LICENSE) if present, or contact the maintainers.

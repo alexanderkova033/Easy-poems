@@ -3,7 +3,9 @@
     "allow": [
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(node -e ':*)"
+      "Bash(node -e ':*)",
+      "Bash(node -e \"const fs = require\\('fs'\\); const c = fs.readFileSync\\('src/poem-workshop/BackgroundPicker.tsx'\\); console.log\\('bytes:', [...c.slice\\(0,20\\)].map\\(b => b.toString\\(16\\)\\).join\\(' '\\)\\)\")",
+      "Bash(node -e \"const fs = require\\('fs'\\); const c = fs.readFileSync\\('src/poem-workshop/BackgroundPicker.tsx'\\); const s = c.toString\\('utf8'\\); const lines = s.split\\('\\\\n'\\); lines.slice\\(0,10\\).forEach\\(\\(l,i\\) => { console.log\\(i+1, JSON.stringify\\(l\\)\\); }\\);\")"
     ]
   }
 }

@@ -123,7 +123,6 @@ export interface WorkshopToolPanelsProps {
   vowelTailClusters: RhymeCluster[];
   assonanceClusters: RhymeCluster[];
   consonanceClusters: RhymeCluster[];
-  rhymeScheme: string[];
   clicheHits: ClicheHit[];
   repeated: RepeatedWord[];
   spellHits: SpellHit[];
@@ -179,7 +178,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     vowelTailClusters,
     assonanceClusters,
     consonanceClusters,
-    rhymeScheme,
     clicheHits,
     repeated,
     spellHits,
@@ -1172,23 +1170,6 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           <RhymeFinder />
-          {rhymeScheme.some((l) => l) ? (
-            <details className="rhyme-scheme-fold tool-hint-details">
-              <summary className="tool-hint-summary">End-rhyme scheme (show / hide)</summary>
-              <div className="rhyme-scheme-block rhyme-scheme-block-folded">
-                <div className="rhyme-scheme-lines">
-                  {rhymeScheme.map((label, i) =>
-                    label ? (
-                      <div key={i} className="rhyme-scheme-row">
-                        <span className="rhyme-scheme-linenum muted small">{i + 1}</span>
-                        <span className={`rhyme-scheme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
-                      </div>
-                    ) : null,
-                  )}
-                </div>
-              </div>
-            </details>
-          ) : null}
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"

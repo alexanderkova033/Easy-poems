@@ -79,7 +79,7 @@ export function PoemWorkshop() {
   const [libraryShowArchived, setLibraryShowArchived] = useState(false);
   const librarySearchRef = useRef<HTMLInputElement | null>(null);
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
-  const [mobileToolsExpanded, setMobileToolsExpanded] = useState(true);
+  const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
   const [issueHighlight, setIssueHighlight] = useState<[number, number] | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isReadingMode, setIsReadingMode] = useState(false);
@@ -171,7 +171,9 @@ export function PoemWorkshop() {
     return () => document.documentElement.removeAttribute("data-backdrop-simplify");
   }, [appearance.backdropPower, isFocusMode]);
 
-  // Mobile swipe: horizontal swipe on workshop grid toggles tools panel
+  // Mobile swipe: horizontal swipe on workshop grid slides between editor and tools.
+  // Swipe LEFT  → show tools (editor slides out to the left)
+  // Swipe RIGHT → show editor (tools slides out to the right)
   useEffect(() => {
     const el = workshopGridRef.current;
     if (!el) return;
@@ -184,8 +186,9 @@ export function PoemWorkshop() {
     const onTouchEnd = (e: TouchEvent) => {
       const dx = (e.changedTouches[0]?.clientX ?? 0) - startX;
       const dy = (e.changedTouches[0]?.clientY ?? 0) - startY;
-      if (Math.abs(dx) < 48 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
-      setMobileToolsExpanded(dx > 0);
+      if (Math.abs(dx) < 52 || Math.abs(dy) > Math.abs(dx) * 0.65) return;
+      // dx < 0 = left swipe → show tools; dx > 0 = right swipe → show editor
+      setMobileToolsExpanded(dx < 0);
     };
     el.addEventListener("touchstart", onTouchStart, { passive: true });
     el.addEventListener("touchend", onTouchEnd, { passive: true });
@@ -418,8 +421,8 @@ export function PoemWorkshop() {
     return [
       {
         id: "workshop-guide",
-        title: "Quick guide",
-        keywords: "help guide tour new introduction overview",
+        title: "Guide",
+        keywords: "help guide tour new introduction overview walkthrough",
         run: () => setIsGuideOpen(true),
       },
       {
@@ -594,7 +597,7 @@ export function PoemWorkshop() {
                     fill="none"
                   />
                 </svg>
-                Easy Poems
+                easywriting-poem
               </h1>
               <div className="topbar-draft-inline">
                 <label className="draft-library-label" htmlFor="draft-poem-select">
@@ -626,8 +629,7 @@ export function PoemWorkshop() {
               </div>
             </div>
             <p className="brand-sub">
-              Local poem desk: write on the left, line tools on the right. Nothing
-              leaves your browser until you export or copy.
+              For poets who want real analysis tools — private, local, no account.
             </p>
           </div>
 
@@ -1362,7 +1364,7 @@ export function PoemWorkshop() {
           >
             <div className="modal-head">
               <h2 id="guide-modal-title" className="modal-title">
-                Quick guide
+                Guide
               </h2>
               <button
                 type="button"
@@ -1373,7 +1375,7 @@ export function PoemWorkshop() {
               </button>
             </div>
             <div className="guide-modal-body">
-              <WorkshopGuideContent />
+              <WorkshopGuideContent onClose={() => setIsGuideOpen(false)} />
             </div>
           </section>
         </div>
@@ -1481,7 +1483,11 @@ export function PoemWorkshop() {
         onChange={m.onImportBackupFile}
       />
 
-      <div className="workshop-grid" ref={workshopGridRef}>
+      <div
+        className="workshop-grid"
+        ref={workshopGridRef}
+        data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
+      >
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           <button
             type="button"
@@ -1759,6 +1765,18 @@ export function PoemWorkshop() {
                   Browser underlines off—only the workshop wavy mark for unknown
                   words.
                 </p>
+                {m.rhymeScheme.some((l) => l) ? (
+                  <div className="editor-rhyme-scheme" aria-label="End-rhyme scheme">
+                    {m.rhymeScheme.map((label, i) =>
+                      label ? (
+                        <span key={i} className="editor-rhyme-row">
+                          <span className="editor-rhyme-linenum">{i + 1}</span>
+                          <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
+                        </span>
+                      ) : null,
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="toolbar toolbar-saved">
                 <span className="save-hint" aria-hidden />
@@ -1785,11 +1803,10 @@ export function PoemWorkshop() {
               <button
                 type="button"
                 className="mobile-tools-panel-toggle"
-                onClick={() => setMobileToolsExpanded((v) => !v)}
-                aria-expanded={mobileToolsExpanded}
-                aria-controls="writing-tools"
+                onClick={() => setMobileToolsExpanded(false)}
+                aria-label="Back to editor"
               >
-                {mobileToolsExpanded ? "Hide tools" : "Show tools"}
+                Editor
               </button>
             </div>
             <div
@@ -1856,25 +1873,6 @@ export function PoemWorkshop() {
                 ),
               )}
             </nav>
-            <p className="tools-shortcuts-inline muted small">
-              <button
-                type="button"
-                className="linkish"
-                onClick={() => setIsGuideOpen(true)}
-              >
-                Quick guide
-              </button>
-              {" · "}
-              <button
-                type="button"
-                className="linkish"
-                onClick={() => setIsShortcutsOpen(true)}
-              >
-                Keyboard shortcuts
-              </button>
-              {" "}— <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>{" "}
-              <kbd className="kbd-hint">K</kbd> for Commands
-            </p>
           </div>
 
           <WorkshopToolPanels
@@ -1926,16 +1924,31 @@ export function PoemWorkshop() {
             stressLexiconErr={m.stressLexiconErr}
             heavyToolsStale={m.heavyToolsStale}
             meterCoverageSummary={m.meterCoverageSummary}
-            rhymeScheme={m.rhymeScheme}
             clicheHits={m.clicheHits}
           />
         </aside>
       </div>
 
       <nav
-        className={`mobile-actionbar mobile-actionbar-5 ${isFocusMode ? "is-hidden" : ""}`}
+        className={`mobile-actionbar mobile-actionbar-4 ${isFocusMode ? "is-hidden" : ""}`}
         aria-label="Workshop actions"
       >
+        <button
+          type="button"
+          className={`mobile-action-btn mobile-action-btn-view ${mobileToolsExpanded ? "" : "mobile-action-btn-view-active"}`}
+          onClick={() => setMobileToolsExpanded(false)}
+          aria-pressed={!mobileToolsExpanded}
+        >
+          Write
+        </button>
+        <button
+          type="button"
+          className={`mobile-action-btn mobile-action-btn-view ${mobileToolsExpanded ? "mobile-action-btn-view-active" : ""}`}
+          onClick={() => setMobileToolsExpanded(true)}
+          aria-pressed={mobileToolsExpanded}
+        >
+          Tools
+        </button>
         <button
           type="button"
           className="mobile-action-btn"
@@ -1953,32 +1966,6 @@ export function PoemWorkshop() {
           aria-expanded={isExportOpen}
         >
           Export
-        </button>
-        <button
-          type="button"
-          className="mobile-action-btn mobile-action-btn-fonts"
-          onClick={() => setIsAppearanceOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={isAppearanceOpen}
-        >
-          Fonts
-        </button>
-        <button
-          type="button"
-          className="mobile-action-btn mobile-action-btn-scene"
-          onClick={() => setIsBackgroundOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={isBackgroundOpen}
-        >
-          Backdrop
-        </button>
-        <button
-          type="button"
-          className="mobile-action-btn"
-          onClick={() => setIsFocusMode((v) => !v)}
-          aria-pressed={isFocusMode}
-        >
-          {isFocusMode ? "Unfocus" : "Focus"}
         </button>
       </nav>
 
@@ -2012,34 +1999,34 @@ export function PoemWorkshop() {
       <FeedbackWidget />
 
       <footer className="privacy">
-        <h2 className="privacy-title">Privacy</h2>
-        <p>
-          This workshop does not use analytics, advertising, or third-party tracking.
-          By default, your drafts, snapshots, goals, and personal spelling list are stored
-          locally in this browser and are not transmitted to our servers.
-        </p>
-        <p>
-          Any export, copy, paste, or share action sends text only to destinations you
-          explicitly choose. If you paste content into another site or tool, please review
-          that service&apos;s terms and privacy policy.
-        </p>
-        <p>
-          If you enable optional network features (for example, AI analysis or online word
-          lookup), the relevant text may be sent to the selected provider for that request.
-          Please use the workshop only for content you may lawfully create and publish.
-        </p>
-        <p>
-          New to the layout?{" "}
-          <button
-            type="button"
-            className="privacy-inline-link"
-            onClick={() => setIsGuideOpen(true)}
-          >
-            Open the quick guide
-          </button>
-          {" "}
-          any time.
-        </p>
+        <details className="privacy-details">
+          <summary className="privacy-summary">
+            Privacy — your drafts stay in this browser
+          </summary>
+          <div className="privacy-body">
+            <p>
+              No analytics, no accounts, no tracking. Drafts, snapshots, and settings
+              are stored only in this browser's <code>localStorage</code> and are never
+              sent to a server during normal editing.
+            </p>
+            <p>
+              If you use the optional AI analysis feature, the poem text is sent to the
+              configured AI provider for that request only. Exporting or copying sends
+              text wherever you direct it — check that destination's terms.
+            </p>
+            <p>
+              New to the layout?{" "}
+              <button
+                type="button"
+                className="privacy-inline-link"
+                onClick={() => setIsGuideOpen(true)}
+              >
+                Open the guide
+              </button>
+              {" "}any time.
+            </p>
+          </div>
+        </details>
       </footer>
     </div>
   );
