@@ -1792,7 +1792,9 @@ export function PoemWorkshop() {
                             <span className="editor-rhyme-linenum">{i + 1}</span>
                             <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
                           </span>
-                        ) : null,
+                        ) : (
+                          <span key={i} className="editor-rhyme-spacer" aria-hidden="true" />
+                        ),
                       )}
                     </div>
                   ) : null}

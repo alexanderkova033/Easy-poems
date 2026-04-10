@@ -129,8 +129,6 @@ export interface AppearanceSettings {
   poemSize: PoemSizeId;
   poemWeight: PoemWeightId;
   poemDecoration: PoemDecorationId;
-  /** 0–100, scales backdrop opacity/strength. */
-  backdropIntensity: number;
   /** Overrides animation preference. */
   backdropMotion: BackdropMotionSetting;
   /** Reduce paint complexity (fewer layers / less blend). */
@@ -138,16 +136,14 @@ export interface AppearanceSettings {
 }
 
 const DEFAULTS: AppearanceSettings = {
-  poemFont: "literata",
-  uiFont: "dm-sans",
-  background: "default",
-  poemSize: "md",
-  poemWeight: "normal",
-  poemDecoration: "none",
-  // Start near “middle” so the slider feels neutral by default.
-  backdropIntensity: 50,
-  backdropMotion: "system",
-  backdropPower: "off",
+  poemFont: “literata”,
+  uiFont: “dm-sans”,
+  background: “default”,
+  poemSize: “md”,
+  poemWeight: “normal”,
+  poemDecoration: “none”,
+  backdropMotion: “system”,
+  backdropPower: “off”,
 };
 
 export function defaultAppearance(): AppearanceSettings {
@@ -186,17 +182,6 @@ function isBackdropPowerSetting(x: string): x is BackdropPowerSetting {
   return x === "off" || x === "low" || x === "very-low";
 }
 
-function clampBackdropIntensity(x: unknown): number {
-  const n =
-    typeof x === "number"
-      ? x
-      : typeof x === "string"
-        ? Number.parseFloat(x)
-        : Number.NaN;
-  if (!Number.isFinite(n)) return DEFAULTS.backdropIntensity;
-  return Math.max(0, Math.min(100, Math.round(n)));
-}
-
 const APPEARANCE_SCHEMA_VERSION = 3;
 
 export function loadAppearance(): AppearanceSettings {
@@ -231,7 +216,6 @@ export function loadAppearance(): AppearanceSettings {
         typeof o.poemDecoration === "string" && isPoemDecorationId(o.poemDecoration)
           ? o.poemDecoration
           : DEFAULTS.poemDecoration,
-      backdropIntensity: clampBackdropIntensity(o.backdropIntensity),
       backdropMotion:
         typeof o.backdropMotion === "string" && isBackdropMotionSetting(o.backdropMotion)
           ? o.backdropMotion
@@ -274,8 +258,6 @@ export function applyAppearance(s: AppearanceSettings): void {
   el.dataset.uiFont = s.uiFont;
   if (s.background === "default") delete el.dataset.workshopBg;
   else el.dataset.workshopBg = s.background;
-  // Backdrop tuning
-  el.style.setProperty("--backdrop-intensity", String(s.backdropIntensity / 100));
   if (s.backdropMotion === "system") delete el.dataset.backdropMotion;
   else el.dataset.backdropMotion = s.backdropMotion;
   if (s.backdropPower === "off") {

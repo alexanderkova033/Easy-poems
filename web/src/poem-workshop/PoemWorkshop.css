@@ -1756,21 +1756,44 @@
 
 .bg-picker-swatch--night {
   background:
+    /* Stars */
+    radial-gradient(circle 1.5px at 22% 20%, rgba(255, 255, 255, 0.95), transparent),
+    radial-gradient(circle 1px at 55% 14%, rgba(200, 255, 220, 0.9), transparent),
+    radial-gradient(circle 1.5px at 78% 38%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 38% 52%, rgba(220, 240, 255, 0.75), transparent),
+    radial-gradient(circle 1px at 12% 60%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(circle 1px at 65% 65%, rgba(180, 255, 210, 0.7), transparent),
+    radial-gradient(circle 1px at 90% 24%, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(circle 1px at 46% 30%, rgba(220, 255, 240, 0.55), transparent),
     /* Moon glow */
     radial-gradient(circle 18% at 72% 18%, rgba(220, 240, 255, 0.52), transparent 50%),
     radial-gradient(circle 30% at 72% 18%, rgba(180, 210, 255, 0.14), transparent 62%),
     /* Horizon bioluminescence */
     radial-gradient(ellipse 120% 28% at 50% 108%, rgba(88, 175, 135, 0.38), transparent 52%),
-    /* Ambient teal depth */
     radial-gradient(ellipse 80% 55% at 22% 14%, rgba(100, 195, 165, 0.1), transparent 58%),
     linear-gradient(182deg, #040806 0%, #0b1411 52%, #060a08 100%);
 }
 
 .bg-picker-swatch--forest {
   background:
+    /* Frond / needle diagonal lines */
+    repeating-linear-gradient(
+      145deg,
+      transparent,
+      transparent 4px,
+      rgba(55, 180, 100, 0.14) 4px,
+      rgba(55, 180, 100, 0.14) 5px
+    ),
+    repeating-linear-gradient(
+      -145deg,
+      transparent,
+      transparent 8px,
+      rgba(40, 150, 80, 0.09) 8px,
+      rgba(40, 150, 80, 0.09) 9px
+    ),
     /* Canopy glow */
     radial-gradient(ellipse 130% 80% at 50% 108%, rgba(55, 200, 130, 0.5), transparent 54%),
-    /* Fireflies — larger at swatch scale */
+    /* Fireflies */
     radial-gradient(circle 10% at 28% 68%, rgba(188, 255, 64, 0.85), transparent 50%),
     radial-gradient(circle 8% at 66% 62%, rgba(200, 255, 80, 0.78), transparent 50%),
     radial-gradient(circle 7% at 82% 76%, rgba(176, 240, 56, 0.80), transparent 50%),
@@ -1781,6 +1804,12 @@
 
 .bg-picker-swatch--dawn {
   background:
+    /* Sunbeam conic rays */
+    repeating-conic-gradient(
+      from 0deg at 12% -10%,
+      transparent 0 1.8deg,
+      rgba(255, 195, 140, 0.14) 1.8deg 2.4deg
+    ),
     /* Sun haze upper left */
     radial-gradient(ellipse 80% 60% at 12% -5%, rgba(255, 215, 180, 0.55), transparent 56%),
     /* Pink bloom right */
@@ -1792,36 +1821,87 @@
 
 .bg-picker-swatch--slate {
   background:
+    /* Hex / diagonal grid */
+    repeating-linear-gradient(
+      60deg,
+      transparent,
+      transparent 5px,
+      rgba(140, 185, 255, 0.12) 5px,
+      rgba(140, 185, 255, 0.12) 5.5px
+    ),
+    repeating-linear-gradient(
+      -60deg,
+      transparent,
+      transparent 5px,
+      rgba(140, 185, 255, 0.09) 5px,
+      rgba(140, 185, 255, 0.09) 5.5px
+    ),
     /* City lights at base */
     radial-gradient(ellipse 120% 22% at 50% 108%, rgba(140, 185, 255, 0.32), transparent 52%),
     /* Moon top-left */
     radial-gradient(circle 12% at 18% 16%, rgba(210, 230, 255, 0.38), transparent 50%),
-    /* Deep blue midnight tonal shift */
     radial-gradient(ellipse 80% 60% at 82% 82%, rgba(38, 72, 140, 0.28), transparent 58%),
     linear-gradient(162deg, #080b10 0%, #101828 55%, #0c1420 100%);
 }
 
 .bg-picker-swatch--stone {
   background:
+    /* Diamond lattice cross-hatch */
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 4px,
+      rgba(176, 168, 152, 0.18) 4px,
+      rgba(176, 168, 152, 0.18) 4.5px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 4px,
+      rgba(176, 168, 152, 0.13) 4px,
+      rgba(176, 168, 152, 0.13) 4.5px
+    ),
     /* Candlelight from bottom-right */
     radial-gradient(ellipse 80% 45% at 92% 106%, rgba(195, 162, 108, 0.28), transparent 54%),
     /* Cool highlight top-left */
     radial-gradient(circle at 12% 14%, rgba(210, 208, 200, 0.18), transparent 50%),
-    /* Faint rain-light sheen mid */
     radial-gradient(ellipse 60% 40% at 50% 50%, rgba(180, 175, 165, 0.07), transparent 58%),
     linear-gradient(158deg, #272724 0%, #1c1c1a 55%, #161614 100%);
 }
 
 .bg-picker-swatch--crimson {
   background:
+    /* Ember particles */
+    radial-gradient(circle 2px at 34% 64%, rgba(255, 130, 60, 0.95), transparent),
+    radial-gradient(circle 1.5px at 62% 52%, rgba(255, 190, 110, 0.9), transparent),
+    radial-gradient(circle 2.5px at 22% 80%, rgba(255, 90, 40, 0.9), transparent),
+    radial-gradient(circle 1.5px at 75% 72%, rgba(255, 160, 80, 0.85), transparent),
+    radial-gradient(circle 2px at 50% 90%, rgba(255, 110, 50, 0.9), transparent),
+    radial-gradient(circle 1px at 88% 58%, rgba(255, 200, 120, 0.75), transparent),
+    radial-gradient(circle 1px at 40% 40%, rgba(255, 120, 70, 0.65), transparent),
+    /* Horizon glow */
+    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(160, 30, 45, 0.55), transparent 50%),
     radial-gradient(circle at 28% 26%, rgba(255, 110, 95, 0.26), transparent 56%),
     radial-gradient(circle at 72% 72%, rgba(180, 55, 70, 0.2), transparent 54%),
-    radial-gradient(ellipse 90% 40% at 50% 100%, rgba(100, 20, 35, 0.45), transparent 50%),
     linear-gradient(156deg, #190b0d 40%, #0d0507 100%);
 }
 
 .bg-picker-swatch--ocean {
   background:
+    /* Wave lines */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 5px,
+      rgba(74, 184, 216, 0.14) 5px,
+      rgba(74, 184, 216, 0.14) 5.5px
+    ),
+    /* Bubble rings */
+    radial-gradient(circle 2px at 30% 78%, rgba(120, 220, 255, 0), rgba(120, 220, 255, 0) 30%, rgba(120, 220, 255, 0.55) 40%, transparent 55%),
+    radial-gradient(circle 1.5px at 60% 68%, rgba(100, 200, 240, 0), rgba(100, 200, 240, 0) 25%, rgba(100, 200, 240, 0.5) 35%, transparent 50%),
+    radial-gradient(circle 2.5px at 80% 84%, rgba(130, 230, 255, 0), rgba(130, 230, 255, 0) 28%, rgba(130, 230, 255, 0.5) 38%, transparent 55%),
+    /* Light shaft from surface */
+    radial-gradient(ellipse 40% 60% at 50% 0%, rgba(100, 210, 245, 0.22), transparent 55%),
     radial-gradient(circle at 22% 22%, rgba(110, 235, 255, 0.26), transparent 56%),
     radial-gradient(circle at 78% 68%, rgba(30, 130, 185, 0.22), transparent 56%),
     radial-gradient(ellipse 100% 50% at 50% 100%, rgba(0, 15, 25, 0.65), transparent 48%),
@@ -1830,15 +1910,18 @@
 
 .bg-picker-swatch--aurora {
   background:
-    /* central star nebula */
-    radial-gradient(circle 30% at 42% 44%, rgba(152, 96, 240, 0.42), transparent 56%),
-    /* planet — teal */
-    radial-gradient(circle 13% at 76% 28%, rgba(64, 218, 192, 0.62), transparent 52%),
-    /* planet — deep violet */
-    radial-gradient(circle 10% at 24% 68%, rgba(110, 72, 220, 0.55), transparent 52%),
-    /* planet — small aqua */
-    radial-gradient(circle 7% at 84% 72%, rgba(56, 204, 168, 0.5), transparent 50%),
-    /* deep space base */
+    /* Stars */
+    radial-gradient(circle 1px at 28% 12%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(circle 1px at 55% 8%, rgba(210, 230, 255, 0.7), transparent),
+    radial-gradient(circle 1px at 80% 20%, rgba(255, 255, 255, 0.65), transparent),
+    radial-gradient(circle 1px at 14% 30%, rgba(200, 255, 240, 0.6), transparent),
+    radial-gradient(circle 1px at 68% 32%, rgba(255, 255, 255, 0.55), transparent),
+    /* Vertical light curtain bands */
+    radial-gradient(ellipse 10% 85% at 18% 48%, rgba(130, 50, 220, 0.6), transparent 65%),
+    radial-gradient(ellipse 10% 85% at 42% 44%, rgba(45, 195, 145, 0.55), transparent 65%),
+    radial-gradient(ellipse 10% 85% at 65% 50%, rgba(110, 40, 210, 0.52), transparent 65%),
+    radial-gradient(ellipse 10% 85% at 85% 46%, rgba(50, 200, 155, 0.48), transparent 65%),
+    /* Deep space base */
     linear-gradient(158deg, #020610 0%, #08082a 55%, #040318 100%);
 }
 
@@ -6652,11 +6735,51 @@ button.primary:disabled {
   min-height: 2.4rem;
 }
 
-@media (pointer: coarse) {
-  .fmt-btn,
+/* On narrow screens shrink the whole toolbar so it fits without scrolling */
+@media (max-width: 520px) {
+  .format-toolbar {
+    gap: 0.1rem;
+    padding: 0.15rem 0.2rem;
+    flex-wrap: wrap;
+    row-gap: 0.15rem;
+  }
+
+  .fmt-btn {
+    width: 1.65rem;
+    height: 1.65rem;
+    font-size: 0.8rem;
+  }
+
+  .fmt-size-label-text {
+    display: none; /* drop the "Size" word label — select is self-explanatory */
+  }
+
+  .fmt-size-select {
+    font-size: 0.72rem;
+    padding: 0.1rem 0.25rem;
+    height: 1.65rem;
+  }
+
+  .fmt-syllable-toggle {
+    min-width: 1.9rem;
+    font-size: 0.64rem;
+    padding: 0 0.2rem;
+  }
+
   .fmt-tidy-btn {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
+    font-size: 0.64rem;
+    padding: 0.1rem 0.3rem;
+    min-width: 1.65rem;
+    min-height: 1.65rem;
+  }
+
+  .fmt-hint {
+    display: none; /* no room on small screens */
+  }
+
+  .fmt-sep {
+    height: 1.1em;
+    margin: 0 0.05rem;
   }
 }
 
@@ -7017,6 +7140,15 @@ button.primary:disabled {
   margin-bottom: 0.15rem;
 }
 
+/* Blank-line placeholder keeps stanza gaps visible in the bar */
+.editor-rhyme-spacer {
+  display: block;
+  height: 0.9rem;
+  flex-shrink: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--border) 35%, transparent);
+  margin: 0.18rem 0.2rem;
+}
+
 /* ── Cliché list ─────────────────────────────────────────────── */
 .cliche-list {
   list-style: none;
@@ -7305,15 +7437,22 @@ button.primary:disabled {
   flex-shrink: 0;
 }
 
-/* Color code first 8 scheme letters */
-.rhyme-label-a { background: color-mix(in srgb, #4c8eff 18%, var(--bg)); color: #2a6dd9; }
-.rhyme-label-b { background: color-mix(in srgb, #27ae60 18%, var(--bg)); color: #1c8048; }
-.rhyme-label-c { background: color-mix(in srgb, #e67e22 18%, var(--bg)); color: #b5620a; }
-.rhyme-label-d { background: color-mix(in srgb, #9b59b6 18%, var(--bg)); color: #7a3a9e; }
-.rhyme-label-e { background: color-mix(in srgb, #e74c3c 18%, var(--bg)); color: #c0392b; }
-.rhyme-label-f { background: color-mix(in srgb, #1abc9c 18%, var(--bg)); color: #148a72; }
-.rhyme-label-g { background: color-mix(in srgb, #f39c12 18%, var(--bg)); color: #c47d0a; }
-.rhyme-label-h { background: color-mix(in srgb, #34495e 18%, var(--bg)); color: #2c3e50; }
+/* Color-coded scheme letters A–N; text uses color-mix against var(--text) so it
+   stays legible on both light and dark backdrop themes. */
+.rhyme-label-a { background: color-mix(in srgb, #4c8eff 18%, var(--bg)); color: color-mix(in srgb, #4c8eff 72%, var(--text)); }
+.rhyme-label-b { background: color-mix(in srgb, #27ae60 18%, var(--bg)); color: color-mix(in srgb, #27ae60 72%, var(--text)); }
+.rhyme-label-c { background: color-mix(in srgb, #e67e22 18%, var(--bg)); color: color-mix(in srgb, #e67e22 72%, var(--text)); }
+.rhyme-label-d { background: color-mix(in srgb, #9b59b6 18%, var(--bg)); color: color-mix(in srgb, #9b59b6 72%, var(--text)); }
+.rhyme-label-e { background: color-mix(in srgb, #e74c3c 18%, var(--bg)); color: color-mix(in srgb, #e74c3c 72%, var(--text)); }
+.rhyme-label-f { background: color-mix(in srgb, #1abc9c 18%, var(--bg)); color: color-mix(in srgb, #1abc9c 72%, var(--text)); }
+.rhyme-label-g { background: color-mix(in srgb, #f39c12 18%, var(--bg)); color: color-mix(in srgb, #f39c12 72%, var(--text)); }
+.rhyme-label-h { background: color-mix(in srgb, #5d8ecc 18%, var(--bg)); color: color-mix(in srgb, #5d8ecc 72%, var(--text)); }
+.rhyme-label-i { background: color-mix(in srgb, #e056a0 18%, var(--bg)); color: color-mix(in srgb, #e056a0 72%, var(--text)); }
+.rhyme-label-j { background: color-mix(in srgb, #00bcd4 18%, var(--bg)); color: color-mix(in srgb, #00bcd4 72%, var(--text)); }
+.rhyme-label-k { background: color-mix(in srgb, #8bc34a 18%, var(--bg)); color: color-mix(in srgb, #8bc34a 72%, var(--text)); }
+.rhyme-label-l { background: color-mix(in srgb, #ff7043 18%, var(--bg)); color: color-mix(in srgb, #ff7043 72%, var(--text)); }
+.rhyme-label-m { background: color-mix(in srgb, #7c4dff 18%, var(--bg)); color: color-mix(in srgb, #7c4dff 72%, var(--text)); }
+.rhyme-label-n { background: color-mix(in srgb, #26c6da 18%, var(--bg)); color: color-mix(in srgb, #26c6da 72%, var(--text)); }
 
 /* cliche jump button */
 .cliche-line-btn {

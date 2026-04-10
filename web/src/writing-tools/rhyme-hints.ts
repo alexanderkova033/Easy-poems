@@ -12,7 +12,7 @@ const VOWEL_RE = /[aeiouy]/i;
  * Last vowel through end of word (e.g. dream → …eam, flight → …ight).
  * Light orthographic hint for slant / eye rhyme — not phonetic.
  */
-function vowelTailFromNormalized(normalized: string): string | null {
+export function vowelTailFromNormalized(normalized: string): string | null {
   if (normalized.length < 2) return null;
   let lastVowel = -1;
   for (let i = normalized.length - 1; i >= 0; i--) {

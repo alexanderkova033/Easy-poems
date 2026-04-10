@@ -1,4 +1,5 @@
 import { lastWordInLine, normalizeWordToken } from "./tokenize";
+import { vowelTailFromNormalized } from "./rhyme-hints";
 
 /**
  * Assigns end-rhyme scheme labels (A, B, C…) to each line.
@@ -23,7 +24,10 @@ export function detectRhymeScheme(lines: string[]): string[] {
     if (!lw) continue;
     const norm = normalizeWordToken(lw);
     if (norm.length < 2) continue;
-    const ending = norm.slice(-Math.min(3, norm.length));
+    // Vowel-tail (last vowel through end of word) gives better slant-rhyme
+    // detection than a raw 3-letter suffix: "dream/stream" share "eam",
+    // "love/dove" share "ove", "heart/art" share "art".
+    const ending = vowelTailFromNormalized(norm) ?? norm.slice(-Math.min(3, norm.length));
     if (!endingToLabel.has(ending)) {
       endingToLabel.set(ending, letterFor(nextCode++));
     }
