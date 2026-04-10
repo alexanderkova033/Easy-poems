@@ -411,7 +411,7 @@ export function usePoemWorkshopModel() {
   );
   const repeated = useMemo(() => findRepeatedWords(heavyLines), [heavyLines]);
   const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
-  const rhymeScheme = useMemo(() => detectRhymeScheme(heavyLines), [heavyLines]);
+  const rhymeScheme = useMemo(() => detectRhymeScheme(lines), [lines]);
   const heavyToolsStale = body !== heavyBody;
   const heavyDocStats = useMemo(
     () => computeDocumentStats(heavyBody),

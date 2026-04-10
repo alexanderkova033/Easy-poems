@@ -11,7 +11,14 @@
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit && echo TYPECHECK_OK\")",
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit 2>&1 && echo DONE\")",
       "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit 2>&1 & echo EXIT:%ERRORLEVEL%\")",
-      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && node node_modules/.bin/tsc --noEmit 2>&1 & echo ERROR:%ERRORLEVEL%\")"
+      "Bash(cmd /c \"cd /d C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && node node_modules/.bin/tsc --noEmit 2>&1 & echo ERROR:%ERRORLEVEL%\")",
+      "Bash(grep -rn \"--backdrop-intensity\" /c/Users/lorta/Documents/repos/Easy-poems/web/src --include=\"*.css\" --include=\"*.tsx\" --include=\"*.ts\")",
+      "Bash(find /c/Users/lorta/Documents/repos/Easy-poems/web/src -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.css\" \\\\\\) -exec grep -l \"backdrop-intensity\" {} \\\\;)",
+      "Bash(ls -1 /c/Users/lorta/Documents/repos/Easy-poems/web/src/poem-workshop/*.tsx)",
+      "Bash(node -e \"const fs=require\\('fs'\\); const buf=fs.readFileSync\\('web/src/poem-workshop/appearance.ts'\\); for\\(let i=0;i<buf.length;i++\\){if\\(buf[i]>127\\)console.log\\('offset',i,'char code',buf[i],'context',buf.slice\\(Math.max\\(0,i-20\\),i+20\\).toString\\('utf8'\\)\\);}\")",
+      "Bash(node -e \"const fs=require\\('fs'\\); const buf=fs.readFileSync\\('web/src/poem-workshop/appearance.ts'\\); let bad=0; for\\(let i=0;i<buf.length;i++\\){if\\(buf[i]===0xe2&&buf[i+1]===0x80&&\\(buf[i+2]===0x9c||buf[i+2]===0x9d\\)\\){bad++;}} console.log\\('curly quote sequences remaining:', bad\\);\")",
+      "Bash(grep -E '\\\\.\\(ts|js|json\\)$')",
+      "Bash(echo \"Exit: $?\")"
     ]
   }
 }

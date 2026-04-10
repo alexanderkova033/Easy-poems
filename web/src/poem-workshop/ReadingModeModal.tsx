@@ -36,11 +36,14 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
           onClick={onClose}
           aria-label="Close reading view"
         >
-          ×
+          close
         </button>
         <article className="reading-mode-poem">
           {title && <h1 className="reading-mode-title">{title}</h1>}
           {formNote && <p className="reading-mode-form">{formNote}</p>}
+          <div className="reading-mode-divider" aria-hidden>
+            <span className="reading-mode-divider-ornament">&#10022;</span>
+          </div>
           <div className="reading-mode-body">
             {lines.map((line, i) =>
               line.trim() === "" ? (
@@ -49,6 +52,7 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
                 <p key={i} className="reading-mode-line">{line}</p>
               ),
             )}
+            <div className="reading-mode-fin" aria-hidden>&#8258;</div>
           </div>
         </article>
       </div>

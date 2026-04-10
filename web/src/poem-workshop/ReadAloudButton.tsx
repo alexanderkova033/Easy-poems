@@ -10,16 +10,26 @@ export function ReadAloudButton({ getText }: ReadAloudButtonProps) {
   const [speaking, setSpeaking] = useState(false);
   const [supported] = useState(() => "speechSynthesis" in window);
   const uttRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearKeepAlive = () => {
+    if (keepAliveRef.current !== null) {
+      clearInterval(keepAliveRef.current);
+      keepAliveRef.current = null;
+    }
+  };
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
       window.speechSynthesis?.cancel();
+      clearKeepAlive();
     };
   }, []);
 
   const stop = useCallback(() => {
     window.speechSynthesis.cancel();
+    clearKeepAlive();
     setSpeaking(false);
   }, []);
 
@@ -27,12 +37,22 @@ export function ReadAloudButton({ getText }: ReadAloudButtonProps) {
     const text = getText().trim();
     if (!text) return;
     window.speechSynthesis.cancel();
+    clearKeepAlive();
     const utt = new SpeechSynthesisUtterance(text);
     utt.rate = 0.88;
     utt.pitch = 1.0;
-    utt.onstart = () => setSpeaking(true);
-    utt.onend = () => setSpeaking(false);
-    utt.onerror = () => setSpeaking(false);
+    utt.onstart = () => {
+      setSpeaking(true);
+      // Chrome stops speaking after ~15 s unless periodically resumed.
+      keepAliveRef.current = setInterval(() => {
+        if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+          window.speechSynthesis.pause();
+          window.speechSynthesis.resume();
+        }
+      }, 14000);
+    };
+    utt.onend = () => { clearKeepAlive(); setSpeaking(false); };
+    utt.onerror = () => { clearKeepAlive(); setSpeaking(false); };
     uttRef.current = utt;
     window.speechSynthesis.speak(utt);
   }, [getText]);

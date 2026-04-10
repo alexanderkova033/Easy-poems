@@ -111,6 +111,10 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: -1;
+  /* Promote to its own composited layer so background-position
+     changes don't trigger a full-page repaint on the main thread. */
+  will-change: background-position;
+  transform: translateZ(0);
 }
 
 /* Calm mesh: fixed anchors, very slow drift */

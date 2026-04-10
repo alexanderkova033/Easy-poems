@@ -229,7 +229,6 @@ export function FormatToolbar({
           ☰
         </button>
       )}
-      <span className="fmt-hint">Select text for B/U · Click tidy buttons anytime</span>
     </div>
   );
 }
