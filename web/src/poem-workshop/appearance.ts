@@ -136,14 +136,14 @@ export interface AppearanceSettings {
 }
 
 const DEFAULTS: AppearanceSettings = {
-  poemFont: “literata”,
-  uiFont: “dm-sans”,
-  background: “default”,
-  poemSize: “md”,
-  poemWeight: “normal”,
-  poemDecoration: “none”,
-  backdropMotion: “system”,
-  backdropPower: “off”,
+  poemFont: "literata",
+  uiFont: "dm-sans",
+  background: "default",
+  poemSize: "md",
+  poemWeight: "normal",
+  poemDecoration: "none",
+  backdropMotion: "system",
+  backdropPower: "off",
 };
 
 export function defaultAppearance(): AppearanceSettings {

@@ -29,7 +29,7 @@ export function vowelTailFromNormalized(normalized: string): string | null {
 }
 
 /**
- * Groups lines whose last word shares the same “vowel tail” (see
+ * Groups lines whose last word shares the same "vowel tail" (see
  * {@link vowelTailFromNormalized}). Complements {@link roughRhymeClusters}.
  */
 export function lightVowelTailClusters(lines: string[]): RhymeCluster[] {
@@ -60,7 +60,7 @@ export function lightVowelTailClusters(lines: string[]): RhymeCluster[] {
 }
 
 /**
- * Very rough “end-rhyme” hint: groups lines whose last word shares the same
+ * Very rough "end-rhyme" hint: groups lines whose last word shares the same
  * trailing letters (≥2). Not phonetic — labeled as approximate in UI.
  */
 export function roughRhymeClusters(lines: string[]): RhymeCluster[] {

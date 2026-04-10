@@ -1443,7 +1443,7 @@ export function PoemWorkshop() {
               />
               <span>
                 After hovering a moment, show what buttons do (hover devices
-                only). Turn off here or via Commands: “delayed hover”.
+                only). Turn off here or via Commands: "delayed hover".
               </span>
             </label>
           </section>
