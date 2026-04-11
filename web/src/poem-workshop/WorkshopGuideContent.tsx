@@ -1,10 +1,19 @@
-import { useState } from "react";
+import "./WorkshopGuide.css";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+export interface GuideActions {
+  onOpenCommandPalette?: () => void;
+  onOpenLibrary?: () => void;
+  onEnterFocusMode?: () => void;
+}
 
 const STEPS = [
   {
     id: "welcome",
     title: "Your poem desk",
     visual: "welcome",
+    tryLabel: undefined as string | undefined,
+    tryActionKey: undefined as keyof GuideActions | undefined,
     body: (
       <>
         <p className="guide-step-text">
@@ -14,9 +23,9 @@ const STEPS = [
           leaves your device unless you choose to export.
         </p>
         <p className="guide-step-text">
-          This guide takes two minutes and shows you the five things that
-          matter most. Use the arrows below to step through, or press{" "}
-          <kbd className="kbd-hint">Esc</kbd> to skip.
+          Use the arrows below or the{" "}
+          <kbd className="kbd-hint">→</kbd> key to step through. Jump to any
+          step with the dots at the top.
         </p>
       </>
     ),
@@ -25,6 +34,8 @@ const STEPS = [
     id: "layout",
     title: "Three zones",
     visual: "layout",
+    tryLabel: undefined as string | undefined,
+    tryActionKey: undefined as keyof GuideActions | undefined,
     body: (
       <>
         <p className="guide-step-text">
@@ -60,6 +71,8 @@ const STEPS = [
     id: "tools",
     title: "The tools panel",
     visual: "tools",
+    tryLabel: undefined as string | undefined,
+    tryActionKey: undefined as keyof GuideActions | undefined,
     body: (
       <>
         <p className="guide-step-text">
@@ -100,6 +113,8 @@ const STEPS = [
     id: "drafts",
     title: "Drafts & snapshots",
     visual: "drafts",
+    tryLabel: "Open Library",
+    tryActionKey: "onOpenLibrary" as keyof GuideActions,
     body: (
       <>
         <p className="guide-step-text">
@@ -138,6 +153,8 @@ const STEPS = [
     id: "commands",
     title: "Find anything fast",
     visual: "commands",
+    tryLabel: "Open Commands",
+    tryActionKey: "onOpenCommandPalette" as keyof GuideActions,
     body: (
       <>
         <p className="guide-step-text">
@@ -148,7 +165,6 @@ const STEPS = [
           <kbd className="kbd-hint">K</kbd>) to open{" "}
           <strong>Commands</strong> — a search bar that can do anything:
           switch tools, open export, enter focus mode, load templates, and more.
-          If you forget a keyboard shortcut, just type its name.
         </p>
         <div className="guide-cmd-demo" aria-hidden>
           <div className="guide-cmd-bar">
@@ -177,9 +193,40 @@ const STEPS = [
     ),
   },
   {
+    id: "focus",
+    title: "Focus mode",
+    visual: "focus",
+    tryLabel: "Enter Focus Mode",
+    tryActionKey: "onEnterFocusMode" as keyof GuideActions,
+    body: (
+      <>
+        <p className="guide-step-text">
+          Press <strong>Focus</strong> in the left rail (or via Commands) to
+          hide the tools panel and everything else — just you and the page.
+        </p>
+        <div className="guide-focus-demo" aria-hidden>
+          <div className="guide-focus-before">
+            <div className="guide-focus-before-rail" />
+            <div className="guide-focus-before-editor" />
+            <div className="guide-focus-before-tools" />
+          </div>
+          <div className="guide-focus-arrow">→</div>
+          <div className="guide-focus-after">
+            <div className="guide-focus-after-editor" />
+          </div>
+        </div>
+        <p className="guide-step-text guide-step-text-sm">
+          Press <strong>Show tools</strong> in the topbar (or <kbd className="kbd-hint">Esc</kbd>) to exit.
+        </p>
+      </>
+    ),
+  },
+  {
     id: "done",
     title: "You are ready",
     visual: "done",
+    tryLabel: undefined as string | undefined,
+    tryActionKey: undefined as keyof GuideActions | undefined,
     body: (
       <>
         <p className="guide-step-text">
@@ -190,7 +237,7 @@ const STEPS = [
         <div className="guide-tips">
           <p className="guide-tips-title">A few useful things to try first:</p>
           <ul className="guide-tips-list">
-            <li>Type a few lines and watch the rhyme scheme appear below the editor</li>
+            <li>Type a few lines and watch the rhyme scheme appear beside the editor</li>
             <li>Open <strong>Sound → Meter</strong> to see stress patterns</li>
             <li>Press <kbd className="kbd-hint">⌘</kbd><kbd className="kbd-hint">K</kbd> and search "templates" for haiku, sonnet starters</li>
             <li>When a draft feels finished, use <strong>Export → Word</strong> to save it properly</li>
@@ -201,11 +248,62 @@ const STEPS = [
   },
 ] as const;
 
-export function WorkshopGuideContent({ onClose }: { onClose?: () => void }) {
+export function WorkshopGuideContent({
+  onClose,
+  onOpenCommandPalette,
+  onOpenLibrary,
+  onEnterFocusMode,
+}: { onClose?: () => void } & GuideActions) {
   const [step, setStep] = useState(0);
+  const [dir, setDir] = useState<"next" | "prev">("next");
+  const animKeyRef = useRef(0);
   const current = STEPS[step]!;
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
+
+  const goNext = useCallback(() => {
+    if (step < STEPS.length - 1) {
+      setDir("next");
+      animKeyRef.current += 1;
+      setStep((s) => s + 1);
+    }
+  }, [step]);
+
+  const goPrev = useCallback(() => {
+    if (step > 0) {
+      setDir("prev");
+      animKeyRef.current += 1;
+      setStep((s) => s - 1);
+    }
+  }, [step]);
+
+  const goTo = useCallback((i: number) => {
+    setDir(i > step ? "next" : "prev");
+    animKeyRef.current += 1;
+    setStep(i);
+  }, [step]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select") return;
+      if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        goNext();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        goPrev();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [goNext, goPrev]);
+
+  const actions: GuideActions = { onOpenCommandPalette, onOpenLibrary, onEnterFocusMode };
+  const tryAction = current.tryActionKey ? actions[current.tryActionKey] : undefined;
+
+  const animKey = `${step}-${dir}`;
 
   return (
     <div className="guide-flow">
@@ -216,20 +314,23 @@ export function WorkshopGuideContent({ onClose }: { onClose?: () => void }) {
             key={s.id}
             type="button"
             className={`guide-progress-dot ${i === step ? "is-active" : ""} ${i < step ? "is-done" : ""}`}
-            onClick={() => setStep(i)}
+            onClick={() => goTo(i)}
             aria-label={`Go to step ${i + 1}: ${s.title}`}
             aria-current={i === step ? "step" : undefined}
           />
         ))}
+        <span className="guide-progress-label" aria-hidden>
+          {step + 1} / {STEPS.length}
+        </span>
       </div>
 
       {/* Visual illustration */}
-      <div className={`guide-visual guide-visual-${current.visual}`} aria-hidden>
+      <div key={`vis-${animKey}`} className={`guide-visual guide-visual-${current.visual} guide-anim-${dir}`} aria-hidden>
         <GuideVisual id={current.visual} />
       </div>
 
       {/* Step content */}
-      <div className="guide-step-body">
+      <div key={`body-${animKey}`} className={`guide-step-body guide-anim-${dir}`}>
         <h3 className="guide-step-title">{current.title}</h3>
         {current.body}
       </div>
@@ -240,14 +341,26 @@ export function WorkshopGuideContent({ onClose }: { onClose?: () => void }) {
           <button
             type="button"
             className="small-btn guide-nav-back"
-            onClick={() => setStep((s) => s - 1)}
+            onClick={goPrev}
           >
-            Back
+            ← Back
           </button>
         ) : (
           <span />
         )}
         <div className="guide-nav-right">
+          {tryAction && (
+            <button
+              type="button"
+              className="small-btn small-btn-accent guide-nav-try"
+              onClick={() => {
+                onClose?.();
+                tryAction();
+              }}
+            >
+              {current.tryLabel} ↗
+            </button>
+          )}
           {onClose && (
             <button
               type="button"
@@ -261,9 +374,9 @@ export function WorkshopGuideContent({ onClose }: { onClose?: () => void }) {
             <button
               type="button"
               className="small-btn small-btn-primary guide-nav-next"
-              onClick={() => setStep((s) => s + 1)}
+              onClick={goNext}
             >
-              Next
+              Next →
             </button>
           )}
         </div>
@@ -353,6 +466,32 @@ function GuideVisual({ id }: { id: string }) {
           <div className="guide-vis-cmdk-arrow">↓</div>
           <div className="guide-vis-cmdk-bar">
             <span className="guide-vis-cmdk-cursor" />
+          </div>
+        </div>
+      );
+    case "focus":
+      return (
+        <div className="guide-vis-focus">
+          <div className="guide-vis-focus-before">
+            <div className="guide-vis-focus-rail" />
+            <div className="guide-vis-focus-editor">
+              {[70, 55, 62].map((w, i) => (
+                <div key={i} className="guide-vis-focus-line" style={{ width: `${w}%` }} />
+              ))}
+            </div>
+            <div className="guide-vis-focus-tools">
+              {[80, 55, 68].map((w, i) => (
+                <div key={i} className="guide-vis-focus-tool-row" style={{ width: `${w}%` }} />
+              ))}
+            </div>
+          </div>
+          <div className="guide-vis-focus-arrow">→</div>
+          <div className="guide-vis-focus-after">
+            <div className="guide-vis-focus-editor-wide">
+              {[78, 62, 70, 55].map((w, i) => (
+                <div key={i} className="guide-vis-focus-line" style={{ width: `${w}%`, animationDelay: `${i * 0.06}s` }} />
+              ))}
+            </div>
           </div>
         </div>
       );

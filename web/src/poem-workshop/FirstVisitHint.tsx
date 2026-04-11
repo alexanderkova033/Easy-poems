@@ -1,3 +1,4 @@
+import "./FirstVisitHint.css";
 import { useCallback, useEffect, useState } from "react";
 import { FIRST_VISIT_HINT_STORAGE_KEY, readFirstVisitHintDismissed } from "./firstVisitHintStorage";
 
@@ -10,7 +11,6 @@ export function FirstVisitHint({
 }) {
   const [visible, setVisible] = useState(() => !readFirstVisitHintDismissed());
 
-  // Hide the hint if it gets dismissed in another tab.
   useEffect(() => {
     if (!visible) return;
     const onStorage = (e: StorageEvent) => {
@@ -35,31 +35,62 @@ export function FirstVisitHint({
   if (!visible) return null;
 
   return (
-    <div className="first-visit-hint" role="status">
-      <div className="first-visit-hint-body">
-        <p className="first-visit-hint-lead">
-          <strong>Saves automatically</strong> here in your browser. Lots of buttons are
-          optional — open the <strong>quick guide</strong> for a simple map of the screen.
-        </p>
+    <div className="welcome-banner" role="banner">
+      <div className="welcome-banner-inner">
+        {/* Headline */}
+        <div className="welcome-headline">
+          <span className="welcome-leaf" aria-hidden>❧</span>
+          <div>
+            <h2 className="welcome-title">A quiet space to write poetry</h2>
+            <p className="welcome-sub">
+              Write in the editor on the left. Your draft is saved automatically —
+              no account needed, nothing leaves your browser.
+            </p>
+          </div>
+        </div>
+
+        {/* Three-step journey */}
+        <div className="welcome-steps">
+          <div className="welcome-step">
+            <span className="welcome-step-num">1</span>
+            <div className="welcome-step-body">
+              <strong>Write your poem</strong>
+              <span>Type in the big text area. Title and form note are optional.</span>
+            </div>
+          </div>
+          <div className="welcome-step">
+            <span className="welcome-step-num">2</span>
+            <div className="welcome-step-body">
+              <strong>Use the tools panel</strong>
+              <span>Live word count, rhyme scheme, syllable count, and more — on the right.</span>
+            </div>
+          </div>
+          <div className="welcome-step">
+            <span className="welcome-step-num">3</span>
+            <div className="welcome-step-body">
+              <strong>Save or export</strong>
+              <span>Snapshots let you save drafts of the same poem. Export as .txt, .docx, or copy it.</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div className="first-visit-hint-actions">
-        {onOpenGuide ? (
+
+      <div className="welcome-banner-actions">
+        {onOpenGuide && (
           <button
             type="button"
-            className="small-btn small-btn-primary first-visit-hint-guide"
-            onClick={() => {
-              onOpenGuide();
-            }}
+            className="small-btn small-btn-primary welcome-guide-btn"
+            onClick={() => { onOpenGuide(); dismiss(); }}
           >
-            Open guide
+            Full guide →
           </button>
-        ) : null}
+        )}
         <button
           type="button"
-          className="small-btn first-visit-hint-dismiss"
+          className="small-btn welcome-dismiss-btn"
           onClick={dismiss}
         >
-          Dismiss
+          Got it, start writing
         </button>
       </div>
     </div>

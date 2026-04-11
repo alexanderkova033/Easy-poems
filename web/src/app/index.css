@@ -111,9 +111,20 @@ body::after {
   inset: 0;
   pointer-events: none;
   z-index: -1;
-  /* Promote to its own composited layer so background-position
-     changes don't trigger a full-page repaint on the main thread. */
-  will-change: background-position;
+}
+
+/* Animated mesh layer — promoted to compositor via will-change: transform.
+   background-position is NOT compositable (causes per-frame CPU repaints);
+   we animate transform instead so the GPU handles every frame. */
+body::before {
+  will-change: transform;
+  /* 4 % scale gives ±2 % translate headroom without revealing empty edges. */
+  transform: scale(1.04);
+}
+
+/* Zenith glow — opacity-only animation is already compositable. */
+body::after {
+  will-change: opacity;
   transform: translateZ(0);
 }
 
@@ -208,95 +219,29 @@ body::after {
   }
 }
 
+/* All drift/pulse keyframes animate transform (compositor-thread) instead of
+   background-position (CPU repaint). scale(1.04) is the baseline set in body::before;
+   translate values stay within the ±2% headroom the scale provides. */
 @keyframes ambient-drift {
-  0% {
-    background-position:
-      46% 50%,
-      0% 0%,
-      100% 6%,
-      48% 100%,
-      72% 58%,
-      4% 96%,
-      96% 8%,
-      center -1px,
-      center -1px;
-  }
-  50% {
-    background-position:
-      52% 54%,
-      8% 6%,
-      92% 2%,
-      52% 94%,
-      68% 52%,
-      8% 92%,
-      88% 4%,
-      center -1px,
-      center -1px;
-  }
-  100% {
-    background-position:
-      48% 52%,
-      4% 4%,
-      96% 10%,
-      46% 96%,
-      78% 60%,
-      2% 98%,
-      100% 0%,
-      center -1px,
-      center -1px;
-  }
+  0%   { transform: scale(1.04) translate(-1.5%, -0.8%); }
+  50%  { transform: scale(1.04) translate(1.2%,   0.7%); }
+  100% { transform: scale(1.04) translate(0.3%,   0.2%); }
 }
 
 /* Themed backdrop animations (crimson / ocean / aurora) */
 @keyframes ember-drift {
-  0%, 100% {
-    background-position:
-      0% 0%, 100% 0%, 50% 100%, 70% 55%,
-      50% 100%, 22% 88%, 72% 85%,
-      0 0, 0 0,
-      15% 85%, 68% 72%, 42% 38%;
-  }
-  50% {
-    background-position:
-      3% 5%, 96% 3%, 52% 97%, 67% 60%,
-      50% 100%, 26% 82%, 68% 90%,
-      0 0, 0 0,
-      15% 45%, 68% 32%, 42% -2%;
-  }
+  0%, 100% { transform: scale(1.04) translate(-1.5%, -0.9%); }
+  50%       { transform: scale(1.04) translate( 1.5%,  0.9%); }
 }
 
 @keyframes ocean-drift {
-  0%, 100% {
-    background-position:
-      0% 0%, 100% 0%, 50% 100%, 75% 58%,
-      50% 0%, 50% 0%, 18% 22%,
-      0 0, 0 0,
-      12% 90%, 78% 92%, 55% 45%;
-  }
-  50% {
-    background-position:
-      5% 4%, 95% 5%, 52% 96%, 72% 62%,
-      50% 0%, 50% 0%, 22% 18%,
-      30px 0, 0 0,
-      12% 58%, 78% 92%, 58% 42%;
-  }
+  0%, 100% { transform: scale(1.04) translate(-2%,  -1%); }
+  50%       { transform: scale(1.04) translate( 2%,   1%); }
 }
 
 @keyframes aurora-pulse {
-  0%, 100% {
-    background-position:
-      0% 0%, 100% 0%, 50% 55%, 30% 90%,
-      0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%,
-      0 0,
-      8% 6%, 50% 35%;
-  }
-  50% {
-    background-position:
-      4% 3%, 96% 4%, 48% 58%, 34% 86%,
-      0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%,
-      0 0,
-      5% 10%, 52% 32%;
-  }
+  0%, 100% { transform: scale(1.04) translate(-1.5%, -0.6%); }
+  50%       { transform: scale(1.04) translate( 1.5%,  0.6%); }
 }
 
 /* Manual motion-off toggle (data-backdrop-motion="off" set by JS) */
@@ -344,17 +289,10 @@ html[data-writing-focus-v2] body::after {
     animation: none !important;
   }
 
+  /* No background-position reset needed — we no longer animate that property. */
   body::before {
-    background-position:
-      48% 52%,
-      0% 0%,
-      100% 0%,
-      50% 100%,
-      75% 55%,
-      0% 100%,
-      100% 0%,
-      center -1px,
-      center -1px;
+    /* Keep the base scale so static themes look identical to animated ones. */
+    transform: scale(1.04);
   }
 
   body::after {

@@ -1,3 +1,4 @@
+import "./ReadingModeModal.css";
 import { useEffect } from "react";
 import { stripFormatMarkers } from "@/poem-editor/format-marks";
 

@@ -1,0 +1,545 @@
+/* ---- Formatting toolbar ---- */
+.format-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 0.15rem;
+  gap: 0.2rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+  max-width: 100%;
+}
+
+.fmt-btn {
+  appearance: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  user-select: none;
+}
+
+.fmt-btn:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--text);
+}
+
+.fmt-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.fmt-size-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.25rem;
+}
+
+.fmt-size-label-text {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.fmt-size-select {
+  font-size: 0.78rem;
+  padding: 0.18rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  height: 1.9rem;
+}
+
+.fmt-size-select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.fmt-syllable-toggle {
+  width: auto;
+  min-width: 2.35rem;
+  padding: 0 0.28rem;
+  margin-left: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: color-mix(in srgb, var(--muted) 70%, var(--text));
+}
+
+.fmt-syllable-toggle.is-on {
+  color: color-mix(in srgb, var(--accent) 82%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+}
+
+
+.body-row textarea {
+  resize: vertical;
+  min-height: 12rem;
+  line-height: 1.45;
+}
+
+.poem-editor-shell {
+  position: relative;
+  width: 100%;
+}
+
+/* Floating box bottom-right of editor; smooth crossfade icon → Copied */
+.poem-editor-copy-box {
+  --quick-copy-ease: cubic-bezier(0.33, 1, 0.32, 1);
+  --quick-copy-duration: 0.48s;
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  z-index: 4;
+  height: 2.65rem;
+  width: 2.65rem;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--accent));
+  background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+  box-shadow:
+    0 4px 18px color-mix(in srgb, #000 16%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
+  backdrop-filter: blur(10px) saturate(1.05);
+  -webkit-backdrop-filter: blur(10px) saturate(1.05);
+  transition:
+    width var(--quick-copy-duration) var(--quick-copy-ease),
+    box-shadow 0.4s ease;
+}
+
+.poem-editor-copy-box.is-copied {
+  width: 5.15rem;
+  box-shadow:
+    0 6px 22px color-mix(in srgb, #000 14%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.poem-editor-copy-slot-inner {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  min-height: 2.65rem;
+}
+
+.quick-copy-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+  transition:
+    opacity calc(var(--quick-copy-duration) * 0.92) var(--quick-copy-ease),
+    transform var(--quick-copy-duration) var(--quick-copy-ease);
+}
+
+.quick-copy-face-icon {
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.quick-copy-face-icon:hover:not(:disabled) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.quick-copy-face-icon:active:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.quick-copy-face-icon:disabled {
+  cursor: default;
+}
+
+/* → copied: icon out immediately, “Copied” eases in slightly after */
+.poem-editor-copy-box:not(.is-copied) .quick-copy-face-icon {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  transition-delay: 0s, 0s;
+}
+
+.poem-editor-copy-box.is-copied .quick-copy-face-icon {
+  opacity: 0;
+  transform: scale(0.86);
+  pointer-events: none;
+  transition-delay: 0s, 0s;
+}
+
+.quick-copy-face-done {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  user-select: none;
+  pointer-events: none;
+}
+
+.poem-editor-copy-box:not(.is-copied) .quick-copy-face-done {
+  opacity: 0;
+  transform: scale(0.9) translateY(0.12rem);
+  transition-delay: 0s, 0s;
+}
+
+.poem-editor-copy-box.is-copied .quick-copy-face-done {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition-delay: 0.12s, 0.12s;
+}
+
+.quick-copy-svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poem-editor-copy-box {
+    transition: none;
+  }
+
+  .quick-copy-face {
+    transition: opacity 0.18s ease;
+    will-change: auto;
+  }
+
+  .poem-editor-copy-box:not(.is-copied) .quick-copy-face-icon,
+  .poem-editor-copy-box.is-copied .quick-copy-face-icon,
+  .poem-editor-copy-box:not(.is-copied) .quick-copy-face-done,
+  .poem-editor-copy-box.is-copied .quick-copy-face-done {
+    transform: none;
+    transition-delay: 0s;
+  }
+}
+
+.poem-cm-wrap {
+  width: 100%;
+}
+
+.poem-cm-wrap .cm-editor {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-2) 28%, var(--bg)) !important;
+  outline: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  outline-offset: 0;
+}
+
+.poem-cm-wrap .cm-scroller {
+  overflow: auto;
+  background: transparent !important;
+}
+
+.cm-spell-error {
+  text-decoration: underline wavy var(--danger);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.cm-line-flash {
+  background: color-mix(in srgb, var(--accent) 16%, transparent) !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
+  border-radius: 4px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+  margin-top: 0.25rem;
+}
+
+.toolbar-saved {
+  min-height: 2.25rem;
+}
+
+button.primary {
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+}
+
+@media (prefers-color-scheme: light) {
+  button.primary {
+    color: #fff;
+  }
+}
+
+button.primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.save-hint {
+  font-size: 0.8rem;
+  color: var(--muted);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.save-hint.visible {
+  opacity: 1;
+}
+
+.last-run {
+  font-size: 0.85rem;
+}
+
+.last-run.muted {
+  color: var(--muted);
+}
+
+.error {
+  margin: 0.75rem 0 0;
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.results h2,
+.results h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.15rem;
+}
+
+.results h3 {
+  margin-top: 1.25rem;
+  font-size: 1rem;
+}
+
+.model-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.model-meta code {
+  font-size: 0.85em;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: var(--bg);
+}
+
+.score-block {
+  display: grid;
+  gap: 1rem;
+}
+
+@media (min-width: 560px) {
+  .score-block {
+    grid-template-columns: auto 1fr;
+    align-items: start;
+  }
+}
+
+.overall {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.overall .label {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.overall .score {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.overall .suffix {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.dimensions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.dimensions li {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr 2.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.dimensions meter {
+  width: 100%;
+  height: 0.55rem;
+}
+
+.dim-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.issues-details {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.issues-details details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.35rem 0.55rem;
+  background: var(--bg);
+}
+
+.issue-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.issue-summary-text {
+  display: inline;
+}
+
+.excerpt-inline {
+  font-weight: 400;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.issue-body {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.issue-jump {
+  margin-bottom: 0.45rem;
+}
+
+.rationale {
+  margin: 0.35rem 0 0.4rem;
+  font-size: 0.92rem;
+}
+
+.improvements {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+
+.privacy-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+/* ---- Tidy toolbar additions ---- */
+.fmt-sep {
+  display: inline-block;
+  width: 1px;
+  height: 1.4em;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  align-self: center;
+  margin: 0 0.1rem;
+}
+
+.fmt-tidy-btn {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.3rem 0.52rem;
+  /* Ensure comfortable touch target on mobile */
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+}
+
+/* On narrow screens shrink the whole toolbar so it fits without scrolling */
+@media (max-width: 520px) {
+  .format-toolbar {
+    gap: 0.1rem;
+    padding: 0.15rem 0.2rem;
+  }
+
+  .fmt-btn {
+    width: 1.65rem;
+    height: 1.65rem;
+    font-size: 0.8rem;
+  }
+
+  .fmt-size-label-text {
+    display: none; /* drop the "Size" word label — select is self-explanatory */
+  }
+
+  .fmt-size-select {
+    font-size: 0.72rem;
+    padding: 0.1rem 0.25rem;
+    height: 1.65rem;
+  }
+
+  .fmt-syllable-toggle {
+    min-width: 1.9rem;
+    font-size: 0.64rem;
+    padding: 0 0.2rem;
+  }
+
+  .fmt-tidy-btn {
+    font-size: 0.64rem;
+    padding: 0.1rem 0.3rem;
+    min-width: 1.65rem;
+    min-height: 1.65rem;
+  }
+
+  .fmt-sep {
+    height: 1.1em;
+    margin: 0 0.05rem;
+  }
+}
+
+/* ---- Issue highlight in editor ---- */
+.cm-line-issue-highlight {
+  background: color-mix(in srgb, var(--danger) 10%, transparent) !important;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--danger) 50%, transparent);
+  border-radius: 3px;
+  transition: background 0.15s ease;
+}
+

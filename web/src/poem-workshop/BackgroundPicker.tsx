@@ -1,3 +1,4 @@
+import "./BackgroundPicker.css";
 import {
   BACKGROUND_OPTIONS,
   type AppearanceSettings,

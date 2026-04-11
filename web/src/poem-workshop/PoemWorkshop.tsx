@@ -32,6 +32,8 @@ import {
   TOOL_BUCKET_LABEL,
   TOOL_BUCKET_ORDER,
   defaultTabForBucket,
+  formatRelativeSnapshotWhen,
+  formatSnapshotWhen,
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
@@ -468,7 +470,7 @@ export function PoemWorkshop() {
       },
       {
         id: "backdrop",
-        title: "Page backdrop",
+        title: "Page background",
         keywords: "background scene theme paper night forest dawn slate wallpaper",
         run: () => setIsBackgroundOpen(true),
       },
@@ -717,28 +719,15 @@ export function PoemWorkshop() {
                   aria-label="Fonts and typography"
                   {...hint("Fonts: poem and interface typefaces")}
                 >
+                  {/* Large A + small a = font picker icon */}
                   <svg
                     className="topbar-ghost-icon"
                     viewBox="0 0 24 24"
                     aria-hidden
                     focusable="false"
                   >
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4 20h4l2.5-10L13 20h4M7.5 14h5"
-                    />
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15.5 9.5h5M18 7v5"
-                    />
+                    <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M4 19l5-13 5 13M6 14h6" />
+                    <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M17 19v-5.5a2.5 2.5 0 0 1 5 0V19M15.5 16h4" />
                   </svg>
                 </button>
                 <button
@@ -747,31 +736,19 @@ export function PoemWorkshop() {
                   onClick={() => setIsBackgroundOpen(true)}
                   aria-haspopup="dialog"
                   aria-expanded={isBackgroundOpen}
-                  aria-label="Page backdrop"
-                  {...hint("Backdrop: scene behind the page (decorative)")}
+                  aria-label="Page background"
+                  {...hint("Background: choose a scene behind the page")}
                 >
+                  {/* Landscape/image icon — clearly "background scene" */}
                   <svg
                     className="topbar-ghost-icon"
                     viewBox="0 0 24 24"
                     aria-hidden
                     focusable="false"
                   >
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 3c4.5 4 7 8.5 7 12a7 7 0 1 1-14 0c0-3.5 2.5-8 7-12Z"
-                    />
-                    <path
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.75"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M8.5 14c1.2-2.2 3.4-3.5 5-4.8M10 17.5h5"
-                    />
+                    <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+                    <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M3 15l4.5-4.5 3 3 3-3 4.5 4.5" />
+                    <circle cx="8" cy="9.5" r="1.25" fill="currentColor" />
                   </svg>
                 </button>
               </span>
@@ -1180,12 +1157,96 @@ export function PoemWorkshop() {
               </div>
             </details>
 
+            <details className="drawer-accordion drawer-accordion-snapshots" open>
+              <summary className="drawer-accordion-summary">
+                Snapshots
+                {m.revisions.length > 0 && (
+                  <span className="drawer-accordion-badge">{m.revisions.length}</span>
+                )}
+              </summary>
+              <div className="drawer-accordion-body">
+                <div className="snapshot-save-row">
+                  <input
+                    type="text"
+                    className="snapshot-label-input"
+                    value={m.snapshotLabel}
+                    onChange={(e) => m.setSnapshotLabel(e.target.value)}
+                    placeholder="Optional label..."
+                    autoComplete="off"
+                    spellCheck={false}
+                    onKeyDown={(e) => { if (e.key === "Enter") m.saveSnapshot(); }}
+                  />
+                  <button
+                    type="button"
+                    className="small-btn small-btn-primary"
+                    onClick={m.saveSnapshot}
+                    {...hint("Save a snapshot of the current poem")}
+                  >
+                    Save now
+                  </button>
+                </div>
+                {m.revisions.length === 0 ? (
+                  <p className="drawer-note snapshot-empty-note">
+                    No snapshots yet. Save one before a big edit — you can restore it any time.
+                  </p>
+                ) : (
+                  <div className="snapshot-history-list">
+                    {m.revisions.map((snap) => (
+                      <div key={snap.id} className="snapshot-history-item">
+                        <div className="snapshot-history-meta">
+                          <span
+                            className="snapshot-history-when"
+                            title={formatSnapshotWhen(snap.createdAt)}
+                          >
+                            {formatRelativeSnapshotWhen(snap.createdAt)}
+                          </span>
+                          {snap.label && snap.label !== "Auto" && (
+                            <span className="snapshot-history-label">{snap.label}</span>
+                          )}
+                          {snap.label === "Auto" && (
+                            <span className="snapshot-history-auto">auto</span>
+                          )}
+                          {snap.title && (
+                            <span className="snapshot-history-title">{snap.title}</span>
+                          )}
+                        </div>
+                        <div className="snapshot-history-actions">
+                          <button
+                            type="button"
+                            className="small-btn"
+                            onClick={() => {
+                              if (window.confirm(`Restore to "${formatRelativeSnapshotWhen(snap.createdAt)}"${snap.label ? ` (${snap.label})` : ""}?\n\nThis will replace the current poem text.`)) {
+                                m.restoreRevision(snap);
+                                setIsLibraryOpen(false);
+                              }
+                            }}
+                            {...hint("Restore poem to this snapshot")}
+                          >
+                            Restore
+                          </button>
+                          <button
+                            type="button"
+                            className="small-btn snapshot-delete-btn"
+                            onClick={() => m.deleteRevision(snap.id)}
+                            aria-label={`Delete snapshot from ${formatRelativeSnapshotWhen(snap.createdAt)}`}
+                            {...hint("Delete this snapshot")}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </details>
+
             <details className="drawer-accordion">
               <summary className="drawer-accordion-summary">Fonts</summary>
               <div className="drawer-accordion-body">
                 <p className="drawer-note">
                   Poem and UI fonts apply in this browser only. The top bar has
-                  dedicated <strong>Fonts</strong> and <strong>Backdrop</strong>{" "}
+                  dedicated <strong>Fonts</strong> and <strong>Background</strong>{" "}
                   buttons.
                 </p>
                 <AppearanceFormFields
@@ -1195,7 +1256,7 @@ export function PoemWorkshop() {
               </div>
             </details>
             <details className="drawer-accordion">
-              <summary className="drawer-accordion-summary">Page backdrop</summary>
+              <summary className="drawer-accordion-summary">Page background</summary>
               <div className="drawer-accordion-body">
                 <p className="drawer-note">
                   Each scene layers symbols and texture behind the editor—purely
@@ -1207,7 +1268,7 @@ export function PoemWorkshop() {
                   onChange={setAppearance}
                 />
                 <div className="drawer-note">
-                  <strong>Backdrop settings</strong> (strength + motion + low‑power)
+                  <strong>Background settings</strong> (strength + motion + low‑power)
                 </div>
                 <BackdropFormFields appearance={appearance} onChange={setAppearance} />
               </div>
@@ -1395,7 +1456,12 @@ export function PoemWorkshop() {
               </button>
             </div>
             <div className="guide-modal-body">
-              <WorkshopGuideContent onClose={() => setIsGuideOpen(false)} />
+              <WorkshopGuideContent
+                onClose={() => setIsGuideOpen(false)}
+                onOpenCommandPalette={() => { setIsGuideOpen(false); setIsCmdkOpen(true); }}
+                onOpenLibrary={() => { setIsGuideOpen(false); setIsLibraryOpen(true); }}
+                onEnterFocusMode={() => { setIsGuideOpen(false); setIsFocusMode(true); }}
+              />
             </div>
           </section>
         </div>
@@ -1428,8 +1494,8 @@ export function PoemWorkshop() {
               </button>
             </div>
             <p className="modal-note appearance-modal-lead">
-              Poem and interface fonts are saved in this browser only. Backdrop lives
-              under <strong>Backdrop</strong> in the header.
+              Poem and interface fonts are saved in this browser only. Background lives
+              under <strong>Background</strong> in the header.
             </p>
             <AppearanceFormFields
               appearance={appearance}
@@ -1466,7 +1532,7 @@ export function PoemWorkshop() {
           >
             <div className="modal-head">
               <h2 id="background-modal-title" className="modal-title">
-                Page backdrop
+                Page background
               </h2>
               <button
                 type="button"
@@ -1486,7 +1552,7 @@ export function PoemWorkshop() {
               onChange={setAppearance}
             />
             <div className="modal-note">
-              <strong>Backdrop settings</strong> (strength + motion + low‑power)
+              <strong>Background settings</strong> (strength + motion + low‑power)
             </div>
             <BackdropFormFields appearance={appearance} onChange={setAppearance} />
           </section>
@@ -1551,22 +1617,8 @@ export function PoemWorkshop() {
           >
             <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 20h4l2.5-10L13 20h4M7.5 14h5"
-                />
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.5 9.5h5M18 7v5"
-                />
+                <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M4 19l5-13 5 13M6 14h6" />
+                <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M17 19v-5.5a2.5 2.5 0 0 1 5 0V19M15.5 16h4" />
               </svg>
             </RailIcon>
             <span className="rail-label">Fonts</span>
@@ -1578,29 +1630,16 @@ export function PoemWorkshop() {
             onClick={() => setIsBackgroundOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isBackgroundOpen}
-            {...hint("Page backdrop — scene and mood behind the page")}
+            {...hint("Background — choose a scene behind the page")}
           >
             <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 3c4.5 4 7 8.5 7 12a7 7 0 1 1-14 0c0-3.5 2.5-8 7-12Z"
-                />
-                <path
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.5 14c1.2-2.2 3.4-3.5 5-4.8"
-                />
+                <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+                <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M3 15l4.5-4.5 3 3 3-3 4.5 4.5" />
+                <circle cx="8" cy="9.5" r="1.25" fill="currentColor" />
               </svg>
             </RailIcon>
-            <span className="rail-label">Backdrop</span>
+            <span className="rail-label">Background</span>
           </button>
 
           <button
@@ -1666,6 +1705,24 @@ export function PoemWorkshop() {
               </svg>
             </RailIcon>
             <span className="rail-label">{isFocusMode ? "Unfocus" : "Focus"}</span>
+          </button>
+
+          <button
+            type="button"
+            className="rail-btn rail-btn-guide"
+            onClick={() => setIsGuideOpen(true)}
+            aria-haspopup="dialog"
+            aria-expanded={isGuideOpen}
+            {...hint("Guide — how to use Easy Poems")}
+          >
+            <RailIcon>
+              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+                <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="1.75" />
+                <path d="M12 17v-1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path d="M12 13.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5v1" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+              </svg>
+            </RailIcon>
+            <span className="rail-label">Guide</span>
           </button>
         </nav>
 

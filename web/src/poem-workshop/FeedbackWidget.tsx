@@ -1,3 +1,4 @@
+import "./FeedbackWidget.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // Change this to your preferred feedback destination:

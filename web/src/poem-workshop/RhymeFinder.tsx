@@ -1,3 +1,4 @@
+import "./RhymeFinder.css";
 import { useCallback, useRef, useState, type FormEvent } from "react";
 
 type RhymeStrength = "perfect" | "near" | "broad";

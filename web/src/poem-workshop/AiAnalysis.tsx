@@ -1,3 +1,4 @@
+import "./AiAnalysis.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   analyzePoem,
@@ -201,13 +202,13 @@ function AnalysisResults({
             <ScoreRing score={result.overall_score} />
             <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
               {result.overall_score}
+              <span className="ai-score-outof">/100</span>
             </span>
           </div>
           <div className="ai-overall-label">
             <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
               {scoreLabel(result.overall_score)}
             </span>
-            <span className="ai-overall-sub">out of 100</span>
             {deltas && (
               <span className={deltaClass(deltas.overall) + " ai-overall-delta"}>
                 {deltaLabel(deltas.overall)} from last
@@ -356,7 +357,6 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
         <span className="ai-analysis-toggle-left">
           <span className="ai-analysis-toggle-icon" aria-hidden>✦</span>
           <span className="ai-analysis-toggle-title">AI Analysis</span>
-          <span className="ai-analysis-badge">optional · needs server</span>
         </span>
         <span className="ai-analysis-toggle-chevron" aria-hidden>
           {isOpen ? "▴" : "▾"}
@@ -389,8 +389,8 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
               <label className="ai-model-label">
                 <select className="ai-model-select" value={model}
                   onChange={(e) => saveModel(e.target.value)}>
-                  <option value="gpt-4o-mini">gpt-4o-mini — fast &amp; affordable</option>
-                  <option value="gpt-4o">gpt-4o — deeper, for final drafts</option>
+                  <option value="gpt-4o-mini">Fast</option>
+                  <option value="gpt-4o">Thinking</option>
                 </select>
               </label>
             </div>

@@ -1,3 +1,4 @@
+import "./WordLookupPopup.css";
 import {
   useCallback,
   useEffect,

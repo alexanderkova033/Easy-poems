@@ -1,0 +1,128 @@
+/* ── Welcome banner (first-visit) ───────────────────────────────────────── */
+@keyframes welcome-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-banner {
+  animation: welcome-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--bg) 80%, var(--accent) 20%);
+  padding: 1.5rem 1.6rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.welcome-banner-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Headline row */
+.welcome-headline {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+.welcome-leaf {
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.welcome-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.welcome-sub {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Three steps */
+.welcome-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding-left: 0.15rem;
+}
+
+.welcome-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.welcome-step-num {
+  flex-shrink: 0;
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.05rem;
+}
+
+.welcome-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.welcome-step-body strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.welcome-step-body span {
+  color: var(--muted);
+}
+
+/* Action buttons row */
+.welcome-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.welcome-guide-btn {
+  /* inherits .small-btn .small-btn-primary */
+}
+
+.welcome-dismiss-btn {
+  /* inherits .small-btn */
+}
+
+@media (max-width: 540px) {
+  .welcome-banner {
+    padding: 1.1rem 1rem 1rem;
+  }
+  .welcome-banner-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .welcome-banner-actions .small-btn {
+    text-align: center;
+    justify-content: center;
+  }
+}

@@ -1,3 +1,4 @@
+import "./FormatToolbar.css";
 import type { EditorView } from "@codemirror/view";
 import type { MutableRefObject } from "react";
 import { toggleBold, toggleUnderline } from "@/poem-editor/format-marks";

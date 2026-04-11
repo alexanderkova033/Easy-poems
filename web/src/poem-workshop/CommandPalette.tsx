@@ -1,3 +1,4 @@
+import "./CommandPalette.css";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ToolTab } from "./workshop-helpers";
 import { TOOL_TABS } from "./ToolTabBar";
