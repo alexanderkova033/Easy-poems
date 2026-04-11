@@ -1846,7 +1846,6 @@ export function PoemWorkshop() {
                       {m.rhymeScheme.map((label, i) =>
                         label ? (
                           <span key={i} className="editor-rhyme-row">
-                            <span className="editor-rhyme-linenum">{i + 1}</span>
                             <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
                           </span>
                         ) : (

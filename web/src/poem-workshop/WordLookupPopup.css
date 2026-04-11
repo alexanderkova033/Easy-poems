@@ -216,51 +216,47 @@
   flex-direction: column;
   gap: 0;
   width: 2.6rem;
-  padding: 0.3rem 0.25rem;
+  padding: 4px 0.2rem 0;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   background: color-mix(in srgb, var(--surface) 55%, var(--bg));
 }
 
-.editor-rhyme-row {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  line-height: 1;
+/* Every row — labeled or blank — gets the same height as one editor line so the
+   bar stays in sync regardless of how many rhyming lines there are.
+   --poem-line-height defaults to 1.65 (matches CodeMirror's line-height setting). */
+.editor-rhyme-row,
+.editor-rhyme-spacer {
+  height: calc(1rem * var(--poem-line-height, 1.65));
+  flex-shrink: 0;
 }
 
+.editor-rhyme-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Line numbers removed from the bar — the editor gutter already shows them */
 .editor-rhyme-linenum {
-  color: var(--muted);
-  font-size: 0.62rem;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-  line-height: 1.1;
-  margin-top: 0.2rem;
+  display: none;
 }
 
 .editor-rhyme-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.55rem;
-  height: 1.55rem;
+  width: 1.6rem;
+  height: 1.4rem;
   font-weight: 700;
-  font-size: 0.72rem;
-  border-radius: 5px;
+  font-size: 0.68rem;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--accent) 16%, var(--bg));
   color: var(--accent);
-  margin-top: 0.08rem;
-  margin-bottom: 0.15rem;
 }
 
-/* Blank-line placeholder keeps stanza gaps visible in the bar */
 .editor-rhyme-spacer {
   display: block;
-  height: 0.9rem;
-  flex-shrink: 0;
-  border-top: 1px dashed color-mix(in srgb, var(--border) 35%, transparent);
-  margin: 0.18rem 0.2rem;
 }
 
 /* ── Cliché list ─────────────────────────────────────────────── */

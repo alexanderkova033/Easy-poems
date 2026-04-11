@@ -100,101 +100,54 @@
 
 .bg-picker-swatch--night {
   background:
-    /* Stars */
-    radial-gradient(circle 2px  at 20% 18%, rgba(255, 255, 255, 0.98), transparent),
-    radial-gradient(circle 1.5px at 52% 12%, rgba(210, 255, 235, 0.95), transparent),
-    radial-gradient(circle 1.5px at 76% 32%, rgba(255, 255, 255, 0.88), transparent),
-    radial-gradient(circle 1px  at 36% 48%, rgba(220, 240, 255, 0.8),  transparent),
-    radial-gradient(circle 1px  at 11% 55%, rgba(255, 255, 255, 0.7),  transparent),
-    radial-gradient(circle 1px  at 63% 62%, rgba(180, 255, 210, 0.75), transparent),
-    radial-gradient(circle 1px  at 88% 22%, rgba(255, 255, 255, 0.65), transparent),
-    /* Moon — large and vivid */
-    radial-gradient(circle 28% at 74% 20%, rgba(235, 248, 255, 0.98), transparent 45%),
-    radial-gradient(circle 48% at 74% 20%, rgba(190, 220, 255, 0.35), transparent 65%),
-    /* Strong bioluminescence glow at horizon */
-    radial-gradient(ellipse 140% 55% at 50% 92%, rgba(70, 200, 150, 0.75), transparent 52%),
-    radial-gradient(ellipse 90% 40% at 50% 88%, rgba(50, 160, 120, 0.45), transparent 55%),
-    linear-gradient(182deg, #020504 0%, #070d0b 52%, #040806 100%);
+    /* Large vivid moon — 38% radius is ~16px at swatch size */
+    radial-gradient(circle 38% at 72% 22%, rgba(240, 252, 255, 1.0),   transparent 42%),
+    radial-gradient(circle 60% at 72% 22%, rgba(180, 225, 255, 0.40),  transparent 62%),
+    /* Bold teal-green bioluminescence glow from bottom */
+    radial-gradient(ellipse 140% 65% at 50% 100%, rgba(55, 195, 140, 0.90), transparent 48%),
+    radial-gradient(ellipse  90% 45% at 50%  95%, rgba(30, 150, 105, 0.55), transparent 55%),
+    /* Two visible star dots (larger than 2px for swatch scale) */
+    radial-gradient(circle 3px at 22% 20%, rgba(255, 255, 255, 0.95), transparent 5px),
+    radial-gradient(circle 2px at 48% 14%, rgba(200, 255, 230, 0.90), transparent 4px),
+    linear-gradient(180deg, #010403 0%, #030a07 55%, #020705 100%);
 }
 
 .bg-picker-swatch--forest {
   background:
-    /* Needle diagonal lines */
-    repeating-linear-gradient(
-      145deg,
-      transparent,
-      transparent 4px,
-      rgba(55, 180, 100, 0.28) 4px,
-      rgba(55, 180, 100, 0.28) 5px
-    ),
-    repeating-linear-gradient(
-      -145deg,
-      transparent,
-      transparent 8px,
-      rgba(40, 150, 80, 0.18) 8px,
-      rgba(40, 150, 80, 0.18) 9px
-    ),
-    /* Fireflies — bright yellow-green dots */
-    radial-gradient(circle 18% at 28% 55%, rgba(200, 255, 60, 0.98), transparent 45%),
-    radial-gradient(circle 15% at 66% 48%, rgba(215, 255, 75, 0.95), transparent 45%),
-    radial-gradient(circle 12% at 82% 68%, rgba(190, 248, 52, 0.92), transparent 45%),
-    radial-gradient(circle 13% at 46% 70%, rgba(220, 255, 90, 0.88), transparent 45%),
-    radial-gradient(circle 10% at 14% 72%, rgba(200, 255, 68, 0.85), transparent 45%),
-    /* Strong emerald canopy glow from below */
-    radial-gradient(ellipse 150% 65% at 50% 96%, rgba(45, 210, 120, 0.85), transparent 50%),
-    radial-gradient(ellipse 100% 45% at 50% 90%, rgba(30, 170, 95, 0.55), transparent 55%),
-    /* Faint canopy top */
-    radial-gradient(circle 50% at 22% 10%, rgba(60, 180, 110, 0.2), transparent 55%),
-    linear-gradient(168deg, #020a05 0%, #081409 50%, #030d06 100%);
+    /* Fireflies — 3 bigger blobs, visible at swatch size */
+    radial-gradient(circle 14% at 30% 52%, rgba(195, 255, 55, 1.0),  transparent 28%),
+    radial-gradient(circle 11% at 68% 44%, rgba(210, 255, 70, 0.95), transparent 26%),
+    radial-gradient(circle  9% at 18% 70%, rgba(185, 248, 50, 0.90), transparent 24%),
+    /* Bold emerald canopy glow from bottom */
+    radial-gradient(ellipse 150% 70% at 50% 100%, rgba(40, 210, 115, 0.92), transparent 48%),
+    radial-gradient(ellipse  90% 45% at 50%  95%, rgba(25, 160,  88, 0.60), transparent 55%),
+    linear-gradient(168deg, #010803 0%, #060f07 50%, #020b04 100%);
 }
 
 .bg-picker-swatch--dawn {
   background:
-    /* Sunbeam conic rays from sun inside swatch */
-    repeating-conic-gradient(
-      from 0deg at 20% 22%,
-      transparent 0 2.2deg,
-      rgba(255, 195, 120, 0.18) 2.2deg 3deg
-    ),
-    /* Sun disk — vivid gold/orange */
-    radial-gradient(circle 22% at 20% 22%, rgba(255, 220, 120, 1.0), transparent 40%),
-    radial-gradient(circle 42% at 20% 22%, rgba(255, 190, 90, 0.72), transparent 58%),
-    radial-gradient(ellipse 80% 65% at 20% 22%, rgba(255, 160, 80, 0.38), transparent 65%),
-    /* Pink bloom upper right */
-    radial-gradient(ellipse 75% 70% at 96% 20%, rgba(255, 160, 195, 0.62), transparent 55%),
-    /* Warm peach horizon glow */
-    radial-gradient(ellipse 130% 50% at 50% 92%, rgba(255, 190, 150, 0.55), transparent 52%),
-    /* Lavender base wash */
-    radial-gradient(ellipse 120% 80% at 60% 60%, rgba(210, 185, 220, 0.28), transparent 65%),
-    linear-gradient(186deg, #fef9fb 0%, #f5e8ef 55%, #ece0ea 100%);
+    /* Bold sun — large enough to read at swatch size */
+    radial-gradient(circle 32% at 18% 20%, rgba(255, 225, 100, 1.0),  transparent 38%),
+    radial-gradient(circle 55% at 18% 20%, rgba(255, 180,  80, 0.70), transparent 62%),
+    /* Vivid pink-rose bloom upper right */
+    radial-gradient(ellipse 80% 75% at 100% 0%, rgba(255, 140, 185, 0.75), transparent 55%),
+    /* Warm gold horizon band */
+    radial-gradient(ellipse 140% 55% at 50% 100%, rgba(255, 185, 120, 0.65), transparent 50%),
+    /* Soft lavender-peach sky base */
+    linear-gradient(190deg, #fdf0f6 0%, #f6e0ec 45%, #ede5f5 100%);
 }
 
 .bg-picker-swatch--slate {
   background:
-    /* Diagonal grid */
-    repeating-linear-gradient(
-      60deg,
-      transparent,
-      transparent 5px,
-      rgba(140, 185, 255, 0.25) 5px,
-      rgba(140, 185, 255, 0.25) 5.5px
-    ),
-    repeating-linear-gradient(
-      -60deg,
-      transparent,
-      transparent 5px,
-      rgba(140, 185, 255, 0.18) 5px,
-      rgba(140, 185, 255, 0.18) 5.5px
-    ),
-    /* Moon — large and crisp */
-    radial-gradient(circle 26% at 22% 20%, rgba(230, 242, 255, 1.0), transparent 42%),
-    radial-gradient(circle 48% at 22% 20%, rgba(180, 215, 255, 0.45), transparent 62%),
-    /* City lights horizon glow */
-    radial-gradient(ellipse 150% 60% at 50% 96%, rgba(120, 175, 255, 0.82), transparent 50%),
-    radial-gradient(ellipse 100% 40% at 50% 90%, rgba(80, 140, 235, 0.50), transparent 55%),
-    /* Mid blue atmosphere */
-    radial-gradient(ellipse 80% 60% at 75% 60%, rgba(50, 95, 175, 0.30), transparent 58%),
-    linear-gradient(162deg, #040609 0%, #090e1a 55%, #060c16 100%);
+    /* Large crisp moon */
+    radial-gradient(circle 36% at 22% 22%, rgba(225, 242, 255, 1.0),  transparent 40%),
+    radial-gradient(circle 58% at 22% 22%, rgba(165, 210, 255, 0.45), transparent 60%),
+    /* Vivid blue city-lights glow from bottom */
+    radial-gradient(ellipse 150% 65% at 50% 100%, rgba(100, 170, 255, 0.90), transparent 48%),
+    radial-gradient(ellipse  90% 45% at 50%  95%, rgba( 60, 130, 240, 0.55), transparent 55%),
+    /* Cool blue mid-sky wash */
+    radial-gradient(ellipse 100% 70% at 80% 50%, rgba(40, 80, 170, 0.28), transparent 60%),
+    linear-gradient(165deg, #030508 0%, #060c18 55%, #040a14 100%);
 }
 
 .bg-picker-swatch--stone {
