@@ -30,32 +30,36 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="reading-mode-modal" role="dialog" aria-modal="true" aria-label="Reading view">
-        <button
-          type="button"
-          className="reading-mode-close"
-          onClick={onClose}
-          aria-label="Close reading view"
-        >
-          close
-        </button>
-        <article className="reading-mode-poem">
-          {title && <h1 className="reading-mode-title">{title}</h1>}
-          {formNote && <p className="reading-mode-form">{formNote}</p>}
-          <div className="reading-mode-divider" aria-hidden>
-            <span className="reading-mode-divider-ornament">&#10022;</span>
-          </div>
-          <div className="reading-mode-body">
-            {lines.map((line, i) =>
-              line.trim() === "" ? (
-                <div key={i} className="reading-mode-stanza-break" aria-hidden />
-              ) : (
-                <p key={i} className="reading-mode-line">{line}</p>
-              ),
-            )}
-            <div className="reading-mode-fin" aria-hidden>&#8258;</div>
-          </div>
-        </article>
+      <div className="reading-mode-frame">
+        <div className="reading-mode-tear reading-mode-tear--top" aria-hidden="true" />
+        <div className="reading-mode-modal" role="dialog" aria-modal="true" aria-label="Reading view">
+          <button
+            type="button"
+            className="reading-mode-close"
+            onClick={onClose}
+            aria-label="Close reading view"
+          >
+            ×
+          </button>
+          <article className="reading-mode-poem">
+            {title && <h1 className="reading-mode-title">{title}</h1>}
+            {formNote && <p className="reading-mode-form">{formNote}</p>}
+            <div className="reading-mode-divider" aria-hidden>
+              <span className="reading-mode-divider-ornament">&#10022;</span>
+            </div>
+            <div className="reading-mode-body">
+              {lines.map((line, i) =>
+                line.trim() === "" ? (
+                  <div key={i} className="reading-mode-stanza-break" aria-hidden />
+                ) : (
+                  <p key={i} className="reading-mode-line">{line}</p>
+                ),
+              )}
+              <div className="reading-mode-fin" aria-hidden>&#8258;</div>
+            </div>
+          </article>
+        </div>
+        <div className="reading-mode-tear reading-mode-tear--bottom" aria-hidden="true" />
       </div>
     </div>
   );

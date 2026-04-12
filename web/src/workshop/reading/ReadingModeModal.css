@@ -3,14 +3,47 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 110% 80% at 50% 18%, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.82) 68%),
-    rgba(0, 0, 0, 0.75);
+    radial-gradient(ellipse 110% 80% at 50% 18%, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.76) 68%),
+    rgba(0, 0, 0, 0.70);
   z-index: 9000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1.5rem;
+  padding: 2rem;
   box-sizing: border-box;
+}
+
+/* ── Frame: positions torn edges relative to the modal ─────── */
+.reading-mode-frame {
+  position: relative;
+  max-width: 42rem;
+  width: 100%;
+}
+
+/* ── Torn paper edges ────────────────────────────────────────── */
+.reading-mode-tear {
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  height: 26px;
+  z-index: 9002;
+  pointer-events: none;
+  background-repeat: repeat-x;
+  background-size: 80px 26px;
+}
+
+/* Top tear: sits above the modal, parchment body at bottom of SVG */
+.reading-mode-tear--top {
+  bottom: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='26'%3E%3Cpath fill='%230a0500' fill-opacity='0.42' d='M0 26V15 L2 12 L4 15 L6 11 L8 14 L10 10 L12 13 L14 9 L16 12 L18 15 L20 10 L22 13 L24 9 L26 12 L28 15 L30 10 L32 13 L34 9 L36 12 L38 8 L40 11 L42 14 L44 9 L46 12 L48 8 L50 11 L52 14 L54 9 L56 12 L58 8 L60 11 L62 14 L64 9 L66 12 L68 8 L70 11 L72 15 L74 10 L76 13 L78 9 L80 12 V26Z'/%3E%3Cpath fill='%23c09040' d='M0 26V14 L2 8 L4 13 L6 5 L8 11 L10 4 L12 9 L14 3 L16 8 L18 12 L20 5 L22 10 L24 4 L26 8 L28 13 L30 6 L32 10 L34 3 L36 8 L38 2 L40 7 L42 12 L44 5 L46 9 L48 2 L50 7 L52 11 L54 4 L56 9 L58 2 L60 7 L62 12 L64 5 L66 10 L68 3 L70 8 L72 13 L74 5 L76 9 L78 3 L80 8 V26Z'/%3E%3C/svg%3E");
+  background-position: 0 0;
+}
+
+/* Bottom tear: sits below the modal, parchment body at top of SVG */
+.reading-mode-tear--bottom {
+  top: 100%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='26'%3E%3Cpath fill='%23c09040' d='M0 0V12 L2 18 L4 13 L6 21 L8 15 L10 22 L12 17 L14 23 L16 18 L18 14 L20 21 L22 16 L24 22 L26 18 L28 13 L30 20 L32 16 L34 23 L36 18 L38 24 L40 19 L42 14 L44 21 L46 17 L48 24 L50 19 L52 15 L54 22 L56 17 L58 24 L60 19 L62 14 L64 21 L66 16 L68 23 L70 18 L72 13 L74 21 L76 17 L78 23 L80 18 V0Z'/%3E%3Cpath fill='%230a0500' fill-opacity='0.42' d='M0 0V13 L2 16 L4 13 L6 17 L8 14 L10 18 L12 15 L14 19 L16 16 L18 13 L20 17 L22 14 L24 18 L26 16 L28 12 L30 16 L32 14 L34 19 L36 15 L38 20 L40 17 L42 13 L44 17 L46 15 L48 20 L50 17 L52 14 L54 18 L56 15 L58 20 L60 17 L62 13 L64 17 L66 14 L68 19 L70 16 L72 12 L74 17 L76 15 L78 19 L80 16 V0Z'/%3E%3C/svg%3E");
+  background-position: 0 100%;
 }
 
 /* ── Paper modal ─────────────────────────────────────────────── */
@@ -32,18 +65,18 @@
   /* No mask — just paint burnt edges directly in background layers */
   background:
     /* Charred top-left corner (heaviest scorch) */
-    radial-gradient(ellipse 52% 38% at -4% -6%, rgba(8, 3, 0, 0.88), transparent 55%),
+    radial-gradient(ellipse 52% 38% at -4% -6%, rgba(8, 3, 0, 0.72), transparent 55%),
     /* Charred bottom-right corner */
-    radial-gradient(ellipse 55% 42% at 106% 108%, rgba(5, 2, 0, 0.82), transparent 52%),
+    radial-gradient(ellipse 55% 42% at 106% 108%, rgba(5, 2, 0, 0.66), transparent 52%),
     /* Lighter scorch top-right */
-    radial-gradient(ellipse 38% 32% at 108% -4%, rgba(12, 5, 0, 0.62), transparent 50%),
+    radial-gradient(ellipse 38% 32% at 108% -4%, rgba(12, 5, 0, 0.50), transparent 50%),
     /* Lighter scorch bottom-left */
-    radial-gradient(ellipse 42% 35% at -6% 108%, rgba(10, 4, 0, 0.58), transparent 52%),
+    radial-gradient(ellipse 42% 35% at -6% 108%, rgba(10, 4, 0, 0.46), transparent 52%),
     /* Burnt edge vignette — all four edges, asymmetric weights */
-    radial-gradient(ellipse 100% 18% at 50% 0%,   rgba(30, 12, 2, 0.45), transparent 80%),
-    radial-gradient(ellipse 100% 14% at 50% 100%, rgba(20, 8, 1, 0.52), transparent 80%),
-    radial-gradient(ellipse 12% 100% at 0%   50%, rgba(25, 10, 2, 0.38), transparent 80%),
-    radial-gradient(ellipse 10% 100% at 100% 50%, rgba(18, 7, 1, 0.30), transparent 80%),
+    radial-gradient(ellipse 100% 18% at 50% 0%,   rgba(30, 12, 2, 0.36), transparent 80%),
+    radial-gradient(ellipse 100% 14% at 50% 100%, rgba(20, 8, 1, 0.42), transparent 80%),
+    radial-gradient(ellipse 12% 100% at 0%   50%, rgba(25, 10, 2, 0.28), transparent 80%),
+    radial-gradient(ellipse 10% 100% at 100% 50%, rgba(18, 7, 1, 0.22), transparent 80%),
     /* Warm ambient light from upper-right (candlelight) */
     radial-gradient(ellipse 80% 65% at 78% 12%, rgba(220, 160, 70, 0.22), transparent 62%),
     /* Central warmth */
@@ -112,26 +145,27 @@
 /* ── Close button ────────────────────────────────────────────── */
 .reading-mode-close {
   position: absolute;
-  top: 0.9rem;
-  right: 1.1rem;
+  top: 0.75rem;
+  right: 0.9rem;
   z-index: 3;
-  background: rgba(40, 18, 4, 0.08);
-  border: 1px solid rgba(60, 30, 8, 0.22);
-  font-size: 0.78rem;
-  font-family: "EB Garamond", Georgia, serif;
-  letter-spacing: 0.12em;
-  text-transform: lowercase;
+  background: rgba(40, 18, 4, 0.06);
+  border: 1px solid rgba(60, 30, 8, 0.18);
+  font-size: 1.05rem;
+  font-family: Georgia, serif;
   color: var(--rp-muted);
   cursor: pointer;
-  padding: 0.18rem 0.55rem 0.22rem;
+  padding: 0.1rem 0.42rem 0.14rem;
   border-radius: 2px;
   line-height: 1;
+  opacity: 0.72;
+  transition: opacity 0.15s, background 0.15s;
 }
 
 .reading-mode-close:hover {
+  opacity: 1;
   color: var(--rp-ink);
-  background: rgba(40, 18, 4, 0.16);
-  border-color: rgba(60, 30, 8, 0.38);
+  background: rgba(40, 18, 4, 0.14);
+  border-color: rgba(60, 30, 8, 0.32);
 }
 
 /* ── Title ───────────────────────────────────────────────────── */

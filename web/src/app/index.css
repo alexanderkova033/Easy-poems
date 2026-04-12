@@ -266,13 +266,12 @@ body::after {
 
 /* Aurora-specific glow shimmer — independent timing from the curtain drift */
 @keyframes aurora-shimmer {
-  0%   { opacity: 0.44; }
-  18%  { opacity: 0.62; }
-  35%  { opacity: 0.50; }
-  52%  { opacity: 0.70; }
-  68%  { opacity: 0.48; }
-  84%  { opacity: 0.65; }
-  100% { opacity: 0.55; }
+  0%   { opacity: 0.42; }
+  20%  { opacity: 0.58; }
+  40%  { opacity: 0.46; }
+  60%  { opacity: 0.64; }
+  80%  { opacity: 0.44; }
+  100% { opacity: 0.52; }
 }
 
 /* Manual motion-off toggle (data-backdrop-motion="off" set by JS) */
@@ -443,11 +442,11 @@ html[data-ui-font="system"] {
 /* ---- Named backgrounds (override palette + mesh; optional color-scheme) ---- */
 html[data-workshop-bg="paper"] {
   color-scheme: light;
-  --bg: #f1ebe3;
-  --surface: #faf7f1;
-  --surface-2: #f4ece3;
-  --surface-elevated: #fffdf8;
-  --border: #d8cfc4;
+  --bg: #f9f6f1;
+  --surface: #ffffff;
+  --surface-2: #f5f2ed;
+  --surface-elevated: #ffffff;
+  --border: #e0d8ce;
   --text: #2a312b;
   --muted: #5f6a62;
   --accent: #3c6245;
@@ -522,7 +521,7 @@ html[data-workshop-bg="forest"] {
 /* Zenith wash tuned for moonlit / canopy scenes */
 html[data-workshop-bg="night"] body::after,
 html[data-workshop-bg="forest"] body::after {
-  opacity: 0.56;
+  opacity: 0.48;
 }
 
 html[data-workshop-bg="dawn"] {
@@ -794,13 +793,20 @@ html[data-workshop-bg="forest"] body::before {
       color-mix(in srgb, var(--accent) 6%, transparent),
       transparent 55%
     ),
-    /* Single diagonal ray — light filtering through canopy */
+    /* Two diagonal light shafts — dappled canopy light */
     repeating-linear-gradient(
-      125deg,
+      122deg,
       transparent,
-      transparent 34px,
-      color-mix(in srgb, var(--accent) 3.8%, transparent) 34px,
-      color-mix(in srgb, var(--accent) 3.8%, transparent) 35px
+      transparent 38px,
+      color-mix(in srgb, var(--accent) 3.2%, transparent) 38px,
+      color-mix(in srgb, var(--accent) 3.2%, transparent) 39.5px
+    ),
+    repeating-linear-gradient(
+      108deg,
+      transparent,
+      transparent 52px,
+      color-mix(in srgb, var(--accent) 1.8%, transparent) 52px,
+      color-mix(in srgb, var(--accent) 1.8%, transparent) 53px
     ),
     radial-gradient(
       ellipse 90% 35% at 50% -2%,
@@ -822,7 +828,7 @@ html[data-workshop-bg="forest"] body::before {
     150% 150%,
     130% 48%,
     85% 85%,
-    100% 100%,
+    100% 100%, 100% 100%,
     130% 38%,
     320px 120px,
     270px 270px,
@@ -835,7 +841,7 @@ html[data-workshop-bg="forest"] body::before {
     72% 55%,
     50% 100%,
     12% 0%,
-    0 0,
+    0 0, 0 0,
     50% 0%,
     50% 0%,
     8% 11%,
@@ -876,14 +882,15 @@ html[data-workshop-bg="dawn"] body::before {
       color-mix(in srgb, #fff 14%, transparent),
       transparent 55%
     ),
-    repeating-conic-gradient(
-      from 0.28turn at 50% -15%,
-      transparent 0 0.42deg,
-      color-mix(in srgb, var(--accent) 3.2%, transparent) 0.42deg 0.55deg
+    /* Soft sunbloom — replaces conic rays */
+    radial-gradient(
+      ellipse 65% 35% at 50% -8%,
+      color-mix(in srgb, var(--accent) 7%, transparent),
+      transparent 58%
     ),
     radial-gradient(
       circle at 18% 12%,
-      color-mix(in srgb, #fff 28%, transparent),
+      color-mix(in srgb, #fff 22%, transparent),
       transparent 42%
     ),
     /* Horizon mist band */
@@ -1182,20 +1189,20 @@ html[data-workshop-bg="aurora"] {
 }
 
 html[data-workshop-bg="aurora"] body::before {
-  animation: aurora-pulse 100s ease-in-out infinite;
+  animation: aurora-pulse 110s ease-in-out infinite;
   background-image:
     /* Merged ambient washes */
     radial-gradient(ellipse 200% 130% at 5% 10%, color-mix(in srgb, var(--ambient-a) 80%, var(--ambient-c)), transparent 68%),
     radial-gradient(ellipse 200% 130% at 95% 75%, color-mix(in srgb, var(--ambient-b) 80%, var(--ambient-d)), transparent 68%),
-    /* Aurora curtain bands — 3 vivid bands (reduced from 5) */
-    radial-gradient(ellipse 26% 85% at 18% 42%, color-mix(in srgb, #8040e0 22%, transparent), transparent 60%),
-    radial-gradient(ellipse 24% 90% at 55% 35%, color-mix(in srgb, #30c090 20%, transparent), transparent 60%),
-    radial-gradient(ellipse 22% 88% at 78% 40%, color-mix(in srgb, #20e0b0 18%, transparent), transparent 58%),
-    /* Cyan + magenta accents */
-    radial-gradient(ellipse 18% 75% at 68% 30%, color-mix(in srgb, #00e8d8 14%, transparent), transparent 58%),
-    radial-gradient(ellipse 14% 65% at 92% 45%, color-mix(in srgb, #e040b0 10%, transparent), transparent 55%),
+    /* Aurora curtain bands — tall vivid vertical bands */
+    radial-gradient(ellipse 22% 95% at 16% 44%, color-mix(in srgb, #7030d8 28%, transparent), transparent 58%),
+    radial-gradient(ellipse 20% 100% at 48% 38%, color-mix(in srgb, #28b888 26%, transparent), transparent 58%),
+    radial-gradient(ellipse 18% 92% at 74% 42%, color-mix(in srgb, #18d8a8 24%, transparent), transparent 56%),
+    /* Cyan shimmer + violet accent */
+    radial-gradient(ellipse 16% 80% at 64% 32%, color-mix(in srgb, #00d8cc 18%, transparent), transparent 56%),
+    radial-gradient(ellipse 12% 70% at 88% 46%, color-mix(in srgb, #d038a8 14%, transparent), transparent 54%),
     /* Horizon + sky base */
-    linear-gradient(180deg, color-mix(in srgb, #060412 35%, transparent) 0%, transparent 45%, color-mix(in srgb, #102840 55%, transparent) 100%),
+    linear-gradient(180deg, color-mix(in srgb, #050310 40%, transparent) 0%, transparent 42%, color-mix(in srgb, #0e2238 60%, transparent) 100%),
     /* Star field — reduced to 10 circles */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='12' cy='18' r='0.6' fill='%23e0d8ff' fill-opacity='0.38'/%3E%3Ccircle cx='62' cy='22' r='0.7' fill='%23c8f0e0' fill-opacity='0.34'/%3E%3Ccircle cx='118' cy='28' r='0.65' fill='%23e8f0ff' fill-opacity='0.30'/%3E%3Ccircle cx='170' cy='20' r='0.7' fill='%23f0e8ff' fill-opacity='0.32'/%3E%3Ccircle cx='50' cy='38' r='0.42' fill='%23fff' fill-opacity='0.30'/%3E%3Ccircle cx='134' cy='56' r='0.68' fill='%23e8f0ff' fill-opacity='0.24'/%3E%3Ccircle cx='8' cy='74' r='0.5' fill='%23e0d8ff' fill-opacity='0.18'/%3E%3Ccircle cx='98' cy='72' r='0.55' fill='%23d8ecff' fill-opacity='0.16'/%3E%3Ccircle cx='160' cy='70' r='0.40' fill='%23fff' fill-opacity='0.15'/%3E%3Ccircle cx='182' cy='78' r='0.52' fill='%23c0ffe8' fill-opacity='0.14'/%3E%3C/svg%3E"),
     /* Aurora curtain detail */
@@ -1219,7 +1226,7 @@ html[data-workshop-bg="aurora"] body::before {
 
 html[data-workshop-bg="aurora"] body::after {
   mix-blend-mode: screen;
-  animation: aurora-shimmer 18s ease-in-out infinite;
+  animation: aurora-shimmer 32s ease-in-out infinite;
 }
 
 /* Per-theme body::after zenith-glow tuning.
@@ -1227,8 +1234,8 @@ html[data-workshop-bg="aurora"] body::after {
    Dark themes can boost opacity since backgrounds are deeper. */
 html[data-workshop-bg="dawn"] body::after {
   mix-blend-mode: multiply;
-  opacity: 0.42;
-  animation: studio-light-soft 52s ease-in-out infinite alternate;
+  opacity: 0.32;
+  animation: studio-light-soft 70s ease-in-out infinite alternate;
 }
 
 html[data-workshop-bg="paper"] body::after {
@@ -1252,21 +1259,21 @@ html[data-workshop-bg="stone"] body::after {
 }
 
 html[data-workshop-bg="crimson"] body::after {
-  opacity: 0.58;
+  opacity: 0.48;
 }
 
 html[data-workshop-bg="ocean"] body::after {
-  opacity: 0.5;
+  opacity: 0.42;
 }
 
 /* ---- Old parchment: aged cream warm light ---- */
 html[data-workshop-bg="parchment"] {
   color-scheme: light;
-  --bg: #eee4cc;
-  --surface: #f7f0dc;
-  --surface-2: #f2e8d0;
-  --surface-elevated: #fdf8ec;
-  --border: #c8b898;
+  --bg: #f5eedc;
+  --surface: #fdfaf2;
+  --surface-2: #f8f2e4;
+  --surface-elevated: #ffffff;
+  --border: #d4c4a8;
   --text: #2e2418;
   --muted: #6b5840;
   --accent: #7a5028;
@@ -1331,72 +1338,72 @@ html[data-workshop-bg="parchment"] body::before {
     8% 12%;
 }
 
-/* ---- Amber dusk: warm orange-amber, sun below horizon ---- */
+/* ---- Amber dusk: twilight sky — indigo zenith fading to amber horizon ---- */
 html[data-workshop-bg="dusk"] {
   color-scheme: dark;
-  --bg: #100804;
-  --surface: #1c1008;
-  --surface-2: #22140a;
+  --bg: #080812;
+  --surface: #0e0c1e;
+  --surface-2: #141228;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
-  --border: #4a2a10;
-  --text: #f2ddc8;
-  --muted: #b08068;
-  --accent: #e8903a;
+  --border: #2c2050;
+  --text: #f0d8c0;
+  --muted: #9888b8;
+  --accent: #d87030;
   --accent-soft: color-mix(in srgb, var(--accent) 20%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9a9a;
-  --net-line: rgba(240, 160, 60, 0.042);
-  --ambient-a: rgba(200, 100, 20, 0.1);
-  --ambient-b: rgba(160, 60, 10, 0.08);
-  --ambient-c: rgba(230, 140, 40, 0.07);
-  --ambient-d: rgba(120, 50, 10, 0.055);
-  --shine-top: rgba(255, 190, 80, 0.065);
-  --shine-mid: rgba(180, 90, 20, 0.045);
-  --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
-  --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
-  --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
+  --net-line: rgba(180, 120, 200, 0.038);
+  --ambient-a: rgba(200, 100, 20, 0.085);
+  --ambient-b: rgba(60, 40, 140, 0.075);
+  --ambient-c: rgba(220, 130, 35, 0.065);
+  --ambient-d: rgba(40, 28, 100, 0.055);
+  --shine-top: rgba(180, 140, 255, 0.055);
+  --shine-mid: rgba(180, 90, 20, 0.040);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 50%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 60%, transparent);
 }
 
 html[data-workshop-bg="dusk"] body::before {
-  animation: ember-drift 110s ease-in-out infinite;
+  animation: ember-drift 130s ease-in-out infinite;
   background-image:
     radial-gradient(ellipse 140% 120% at 18% 28%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 120% 100% at 82% 18%, var(--ambient-b), transparent 70%),
     radial-gradient(ellipse 150% 130% at 50% 92%, var(--ambient-c), transparent 76%),
     radial-gradient(ellipse 110% 95% at 68% 62%, var(--ambient-d), transparent 68%),
     /* Horizon glow — warm amber band */
-    radial-gradient(ellipse 120% 38% at 50% 100%, color-mix(in srgb, #e87820 28%, transparent), transparent 55%),
+    radial-gradient(ellipse 120% 38% at 50% 100%, color-mix(in srgb, #d86820 22%, transparent), transparent 55%),
     /* Fading sun disc just below horizon */
-    radial-gradient(ellipse 30% 20% at 50% 102%, color-mix(in srgb, #ffb030 55%, transparent), transparent 52%),
-    /* Upper sky darkening */
-    linear-gradient(180deg, color-mix(in srgb, #080402 60%, transparent) 0%, transparent 55%),
-    /* Crepuscular rays */
+    radial-gradient(ellipse 30% 20% at 50% 102%, color-mix(in srgb, #ffb030 40%, transparent), transparent 52%),
+    /* Indigo zenith — the twilight sky overhead */
+    radial-gradient(ellipse 110% 62% at 50% 0%, color-mix(in srgb, #180840 75%, transparent), transparent 65%),
+    /* Soft crepuscular rays from horizon */
     repeating-conic-gradient(
       from 0.25turn at 50% 108%,
-      transparent 0 1.2deg,
-      color-mix(in srgb, #e07820 3.5%, transparent) 1.2deg 1.6deg
+      transparent 0 1.4deg,
+      color-mix(in srgb, #d06820 1.8%, transparent) 1.4deg 1.8deg
     ),
     /* Silhouetted tree line */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160' viewBox='0 0 320 160'%3E%3Cpath fill='%230a060210' d='M0 160V110L10 90 14 105 20 78 26 105 32 88 36 108 44 80 50 108 58 72 66 105 72 85 80 108 88 70 96 100 104 82 110 105 120 78 126 108 136 88 142 110 150 80 158 108 168 72 176 100 186 82 192 108 200 78 210 105 220 88 226 108 236 80 244 108 252 72 260 105 268 85 276 108 284 70 292 100 302 82 308 105 320 88V160z'/%3E%3Cpath fill='%230a060218' d='M0 160V120L8 108 16 118 24 104 34 118 44 100 54 116 66 108 76 118 88 102 100 116 112 108 124 120 138 106 148 118 162 110 172 122 186 108 198 118 214 106 224 118 240 108 252 120 266 108 278 118 294 106 308 116 320 110V160z'/%3E%3C/svg%3E"),
-    /* Ember sparks */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='320'%3E%3Ccircle cx='42' cy='290' r='1.4' fill='%23ff8020' fill-opacity='0.6'/%3E%3Ccircle cx='88' cy='268' r='1' fill='%23ffaa40' fill-opacity='0.55'/%3E%3Ccircle cx='138' cy='282' r='1.6' fill='%23ff7010' fill-opacity='0.5'/%3E%3Ccircle cx='192' cy='272' r='0.9' fill='%23ffb050' fill-opacity='0.48'/%3E%3Ccircle cx='240' cy='290' r='1.2' fill='%23ff9030' fill-opacity='0.52'/%3E%3Ccircle cx='62' cy='245' r='0.8' fill='%23ffc060' fill-opacity='0.42'/%3E%3Ccircle cx='168' cy='250' r='1.1' fill='%23ff8828' fill-opacity='0.46'/%3E%3Ccircle cx='215' cy='230' r='0.7' fill='%23ffa040' fill-opacity='0.38'/%3E%3Ccircle cx='110' cy='208' r='0.6' fill='%23ff9030' fill-opacity='0.32'/%3E%3Ccircle cx='260' cy='215' r='0.9' fill='%23ffb050' fill-opacity='0.36'/%3E%3C/svg%3E");
+    /* Star scatter — twilight stars becoming visible */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Ccircle cx='42' cy='28' r='0.8' fill='%23e8d8ff' fill-opacity='0.5'/%3E%3Ccircle cx='88' cy='18' r='0.6' fill='%23d8ccff' fill-opacity='0.45'/%3E%3Ccircle cx='138' cy='35' r='0.9' fill='%23f0e8ff' fill-opacity='0.42'/%3E%3Ccircle cx='192' cy='22' r='0.7' fill='%23ddd0ff' fill-opacity='0.40'/%3E%3Ccircle cx='240' cy='38' r='0.8' fill='%23e8e0ff' fill-opacity='0.38'/%3E%3Ccircle cx='62' cy='55' r='0.6' fill='%23ccc4ff' fill-opacity='0.32'/%3E%3Ccircle cx='168' cy='48' r='0.7' fill='%23e0d8ff' fill-opacity='0.28'/%3E%3Ccircle cx='215' cy='62' r='0.5' fill='%23d8d0ff' fill-opacity='0.24'/%3E%3Ccircle cx='110' cy='72' r='0.6' fill='%23e4dcff' fill-opacity='0.20'/%3E%3Ccircle cx='260' cy='65' r='0.7' fill='%23dcd4ff' fill-opacity='0.18'/%3E%3C/svg%3E");
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
     130% 40%, 80% 30%,
     100% 100%, 100% 100%,
     320px 160px,
-    280px 320px;
+    280px 280px;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 70% 55%,
     50% 100%, 50% 100%,
     0 0, center top,
     50% 100%,
-    20% 88%;
+    12% 8%;
 }
 
 html[data-workshop-bg="dusk"] body::after {
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 /* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
@@ -1434,9 +1441,9 @@ html[data-workshop-bg="winter"] body::before {
     radial-gradient(ellipse 140% 120% at 50% 88%, var(--ambient-c), transparent 74%),
     radial-gradient(ellipse 100% 90% at 70% 58%, var(--ambient-d), transparent 68%),
     /* Pale zenith — icy white overhead */
-    radial-gradient(ellipse 80% 50% at 50% 0%, color-mix(in srgb, #fff 22%, transparent), transparent 58%),
+    radial-gradient(ellipse 100% 65% at 50% 0%, color-mix(in srgb, #fff 10%, transparent), transparent 68%),
     /* Cold light shaft from upper-left */
-    radial-gradient(ellipse 55% 40% at 8% 10%, color-mix(in srgb, #c8e0f8 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 60% 45% at 8% 10%, color-mix(in srgb, #c8e0f8 10%, transparent), transparent 62%),
     /* Subtle vignette bottom */
     radial-gradient(ellipse 90% 40% at 50% 100%, color-mix(in srgb, #9ab8d8 10%, transparent), transparent 55%),
     /* Snowflake / ice crystal lattice */
@@ -1524,8 +1531,8 @@ html[data-workshop-bg="autumn"] body::before {
 }
 
 html[data-workshop-bg="autumn"] body::after {
-  opacity: 0.52;
-  animation: ember-drift 85s ease-in-out infinite alternate;
+  opacity: 0.48;
+  animation: ember-drift 130s ease-in-out infinite alternate;
 }
 
 /* ---- Spring: fresh green, cherry blossoms ---- */
@@ -1622,30 +1629,36 @@ html[data-workshop-bg="summer"] {
 }
 
 html[data-workshop-bg="summer"] body::before {
-  animation: ambient-drift 150s ease-in-out infinite alternate;
+  animation: ambient-drift 160s ease-in-out infinite alternate;
   background-image:
     radial-gradient(ellipse 200% 130% at 5% 10%, var(--ambient-a), transparent 72%),
     radial-gradient(ellipse 200% 130% at 95% 75%, var(--ambient-b), transparent 70%),
+    /* Deep sky blue zenith */
+    radial-gradient(ellipse 120% 70% at 45% 0%, color-mix(in srgb, #3898d8 20%, transparent), transparent 65%),
     /* Bright sun halo — upper right */
-    radial-gradient(ellipse 70% 55% at 84% 4%, color-mix(in srgb, #ffd040 22%, transparent), transparent 60%),
-    /* Sky blue zenith */
-    radial-gradient(ellipse 110% 65% at 28% 0%, color-mix(in srgb, #48a8e0 24%, transparent), transparent 62%),
-    /* Warm green ground */
-    radial-gradient(ellipse 130% 50% at 50% 100%, color-mix(in srgb, #78c840 18%, transparent), transparent 55%),
+    radial-gradient(ellipse 75% 55% at 86% 2%, color-mix(in srgb, #ffd840 18%, transparent), transparent 58%),
+    /* Horizon haze — light sky fades at horizon */
+    radial-gradient(ellipse 140% 35% at 50% 50%, color-mix(in srgb, #c8e8ff 12%, transparent), transparent 60%),
+    /* Warm green meadow ground */
+    radial-gradient(ellipse 140% 55% at 50% 100%, color-mix(in srgb, #68bc38 16%, transparent), transparent 55%),
     /* Sun disc — upper right corner */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='162' cy='38' r='26' fill='%23ffd040' fill-opacity='0.18'/%3E%3Ccircle cx='162' cy='38' r='38' fill='%23ffda60' fill-opacity='0.10'/%3E%3Ccircle cx='162' cy='38' r='54' fill='%23ffe880' fill-opacity='0.06'/%3E%3C/svg%3E"),
-    /* Shimmer / heat dots */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Ccircle cx='40' cy='30' r='1.5' fill='%23fff082' fill-opacity='0.60'/%3E%3Ccircle cx='110' cy='18' r='1.2' fill='%23ffe664' fill-opacity='0.55'/%3E%3Ccircle cx='168' cy='36' r='1.8' fill='%23fff596' fill-opacity='0.50'/%3E%3Ccircle cx='25' cy='76' r='1.0' fill='%23ffee76' fill-opacity='0.45'/%3E%3Ccircle cx='86' cy='60' r='1.4' fill='%23fff28a' fill-opacity='0.40'/%3E%3Ccircle cx='152' cy='68' r='1.2' fill='%23fff8a0' fill-opacity='0.38'/%3E%3Ccircle cx='195' cy='50' r='0.9' fill='%23ffeb69' fill-opacity='0.35'/%3E%3Ccircle cx='62' cy='122' r='1.1' fill='%23fff080' fill-opacity='0.28'/%3E%3Ccircle cx='132' cy='110' r='1.3' fill='%23fff594' fill-opacity='0.25'/%3E%3Ccircle cx='178' cy='120' r='0.8' fill='%23ffe870' fill-opacity='0.22'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='162' cy='38' r='22' fill='%23ffd840' fill-opacity='0.20'/%3E%3Ccircle cx='162' cy='38' r='34' fill='%23ffe060' fill-opacity='0.12'/%3E%3Ccircle cx='162' cy='38' r='50' fill='%23fff080' fill-opacity='0.07'/%3E%3C/svg%3E"),
+    /* Wispy cloud forms */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160'%3E%3Cellipse cx='80' cy='42' rx='55' ry='14' fill='%23fff' fill-opacity='0.10'/%3E%3Cellipse cx='62' cy='42' rx='28' ry='10' fill='%23fff' fill-opacity='0.07'/%3E%3Cellipse cx='108' cy='42' rx='32' ry='10' fill='%23fff' fill-opacity='0.07'/%3E%3Cellipse cx='240' cy='58' rx='48' ry='12' fill='%23fff' fill-opacity='0.08'/%3E%3Cellipse cx='220' cy='58' rx='26' ry='9' fill='%23fff' fill-opacity='0.06'/%3E%3Cellipse cx='268' cy='58' rx='28' ry='9' fill='%23fff' fill-opacity='0.06'/%3E%3C/svg%3E"),
+    /* Shimmer / heat shimmer dots */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='40' cy='30' r='1.4' fill='%23fff082' fill-opacity='0.50'/%3E%3Ccircle cx='110' cy='18' r='1.1' fill='%23ffe664' fill-opacity='0.45'/%3E%3Ccircle cx='168' cy='36' r='1.6' fill='%23fff596' fill-opacity='0.42'/%3E%3Ccircle cx='25' cy='76' r='0.9' fill='%23ffee76' fill-opacity='0.36'/%3E%3Ccircle cx='86' cy='60' r='1.3' fill='%23fff28a' fill-opacity='0.32'/%3E%3Ccircle cx='152' cy='68' r='1.1' fill='%23fff8a0' fill-opacity='0.28'/%3E%3Ccircle cx='62' cy='118' r='0.9' fill='%23fff080' fill-opacity='0.22'/%3E%3Ccircle cx='138' cy='108' r='1.1' fill='%23fff594' fill-opacity='0.18'/%3E%3C/svg%3E");
   background-size:
     200% 200%, 200% 200%,
-    100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%, 100% 100%, 100% 100%,
     200px 200px,
-    220px 220px;
+    320px 160px,
+    200px 200px;
   background-position:
     0% 0%, 100% 100%,
-    0% 0%, 0% 0%, 0% 0%,
+    0% 0%, 0% 0%, 0% 0%, 0% 0%,
     60% 2%,
-    42% 22%;
+    18% 12%,
+    55% 28%;
 }
 
 html[data-workshop-bg="summer"] body::after {

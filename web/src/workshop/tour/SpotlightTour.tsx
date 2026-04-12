@@ -170,11 +170,13 @@ export function SpotlightTour({ onClose }: Props) {
   const updateRect = useCallback(() => {
     setVp({ w: window.innerWidth, h: window.innerHeight });
     const el = document.querySelector(`[data-tour-id="${STEPS[stepIndex]!.id}"]`);
-    if (el) {
+    if (!el) { setRect(null); return; }
+    // Scroll element into view so getBoundingClientRect reflects visible coords.
+    el.scrollIntoView({ block: "nearest", behavior: "instant" });
+    // Measure on the next frame so any triggered layout is settled.
+    requestAnimationFrame(() => {
       setRect(el.getBoundingClientRect() as DOMRect);
-    } else {
-      setRect(null);
-    }
+    });
   }, [stepIndex]);
 
   useEffect(() => {
