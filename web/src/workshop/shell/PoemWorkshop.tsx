@@ -84,6 +84,10 @@ export function PoemWorkshop() {
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
   const [issueHighlight, setIssueHighlight] = useState<[number, number] | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
+  const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
+  const [exportFlash, setExportFlash] = useState<string | null>(null);
+  const exportFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isReadingMode, setIsReadingMode] = useState(false);
   const [showLineSyllables, setShowLineSyllables] = useState(() => {
     try {
@@ -209,6 +213,18 @@ export function PoemWorkshop() {
     };
   }, []);
 
+  const doExportFlash = (msg: string) => {
+    setExportFlash(msg);
+    if (exportFlashTimerRef.current) clearTimeout(exportFlashTimerRef.current);
+    exportFlashTimerRef.current = setTimeout(() => setExportFlash(null), 1800);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (exportFlashTimerRef.current) clearTimeout(exportFlashTimerRef.current);
+    };
+  }, []);
+
   useLayoutEffect(() => {
     applyAppearance(appearance);
   }, [appearance]);
@@ -273,6 +289,11 @@ export function PoemWorkshop() {
         e.preventDefault();
         setFindMode("replace");
         setIsFindOpen(true);
+        return;
+      }
+      if (e.key.toLowerCase() === "r" && (e.ctrlKey || e.metaKey) && e.shiftKey) {
+        e.preventDefault();
+        setIsReadingMode((v) => !v);
         return;
       }
       if (e.key !== "Escape") return;
@@ -641,12 +662,25 @@ export function PoemWorkshop() {
                 </select>
                 <button
                   type="button"
-                  className="small-btn topbar-library-btn"
+                  className="topbar-draft-icon-btn"
+                  onClick={() => m.newPoem()}
+                  aria-label="New draft"
+                  {...hint("New draft")}
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  className="topbar-draft-icon-btn"
                   onClick={() => setIsLibraryOpen(true)}
                   aria-label="Open draft library"
                   {...hint("Library: manage all your drafts — create, switch, or archive.")}
                 >
-                  Library
+                  <svg viewBox="0 0 20 20" fill="none" aria-hidden width="14" height="14">
+                    <rect x="2" y="3" width="16" height="2.5" rx="1" fill="currentColor"/>
+                    <rect x="2" y="8.75" width="16" height="2.5" rx="1" fill="currentColor"/>
+                    <rect x="2" y="14.5" width="10" height="2.5" rx="1" fill="currentColor"/>
+                  </svg>
                 </button>
               </div>
             </div>
@@ -778,9 +812,14 @@ export function PoemWorkshop() {
               className="topbar-quick-btn topbar-quick-cmd"
               onClick={() => setIsCmdkOpen(true)}
               aria-label="Open command palette"
-              {...hint("Commands — search export, focus mode, templates, and more")}
+              {...hint("Commands — search export, focus mode, templates, and more (⌘/Ctrl+K)")}
             >
               <span className="topbar-quick-label">Commands</span>
+              <span className="topbar-quick-keys">
+                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
+                <span className="topbar-quick-plus">+</span>
+                <kbd className="kbd-hint">K</kbd>
+              </span>
             </button>
             <button
               type="button"
@@ -855,6 +894,13 @@ export function PoemWorkshop() {
           <p className="spell-warn-banner-text">
             Spell check unavailable: {m.wordlistErr}
           </p>
+          <button
+            type="button"
+            className="small-btn spell-warn-retry-btn"
+            onClick={m.retryWordlist}
+          >
+            Retry
+          </button>
         </div>
       ) : null}
 
@@ -909,7 +955,10 @@ export function PoemWorkshop() {
           className="overlay overlay-center"
           role="presentation"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setIsLibraryOpen(false);
+            if (e.target === e.currentTarget) {
+              setIsLibraryOpen(false);
+              setShowDeleteCurrentConfirm(false);
+            }
           }}
         >
           <section
@@ -954,16 +1003,37 @@ export function PoemWorkshop() {
                   >
                     Duplicate
                   </button>
-                  <button
-                    type="button"
-                    className="small-btn danger-btn"
-                    onClick={() => {
-                      m.deleteCurrentPoem();
-                      setIsLibraryOpen(false);
-                    }}
-                  >
-                    Delete
-                  </button>
+                  {showDeleteCurrentConfirm ? (
+                    <span className="library-delete-confirm" role="group" aria-label="Confirm delete draft">
+                      <span className="library-delete-confirm-text">Delete this draft?</span>
+                      <button
+                        type="button"
+                        className="small-btn danger-btn"
+                        onClick={() => {
+                          m.deleteCurrentPoem();
+                          setShowDeleteCurrentConfirm(false);
+                          setIsLibraryOpen(false);
+                        }}
+                      >
+                        Yes, delete
+                      </button>
+                      <button
+                        type="button"
+                        className="small-btn"
+                        onClick={() => setShowDeleteCurrentConfirm(false)}
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="small-btn danger-btn"
+                      onClick={() => setShowDeleteCurrentConfirm(true)}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
                 <p className="drawer-note">
                   Drafts and snapshots stay in this browser unless you export them.
@@ -1143,6 +1213,21 @@ export function PoemWorkshop() {
                                   spellCheck={false}
                                 />
                               </label>
+                              {(meta.tags ?? []).length > 0 && (
+                                <div className="draft-tag-chips">
+                                  {(meta.tags ?? []).map((tag) => (
+                                    <button
+                                      key={tag}
+                                      type="button"
+                                      className={`draft-tag-chip ${libraryQuery === tag ? "is-active" : ""}`}
+                                      onClick={() => setLibraryQuery(libraryQuery === tag ? "" : tag)}
+                                      title={`Filter by tag: ${tag}`}
+                                    >
+                                      {tag}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1224,15 +1309,37 @@ export function PoemWorkshop() {
                           >
                             Restore
                           </button>
-                          <button
-                            type="button"
-                            className="small-btn snapshot-delete-btn"
-                            onClick={() => m.deleteRevision(snap.id)}
-                            aria-label={`Delete snapshot from ${formatRelativeSnapshotWhen(snap.createdAt)}`}
-                            {...hint("Delete this snapshot")}
-                          >
-                            ×
-                          </button>
+                          {pendingDeleteSnapId === snap.id ? (
+                            <span className="snapshot-delete-confirm" role="group" aria-label="Confirm delete snapshot">
+                              <button
+                                type="button"
+                                className="small-btn danger-btn"
+                                onClick={() => {
+                                  m.deleteRevision(snap.id);
+                                  setPendingDeleteSnapId(null);
+                                }}
+                              >
+                                Delete
+                              </button>
+                              <button
+                                type="button"
+                                className="small-btn"
+                                onClick={() => setPendingDeleteSnapId(null)}
+                              >
+                                Cancel
+                              </button>
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="small-btn snapshot-delete-btn"
+                              onClick={() => setPendingDeleteSnapId(snap.id)}
+                              aria-label={`Delete snapshot from ${formatRelativeSnapshotWhen(snap.createdAt)}`}
+                              {...hint("Delete this snapshot")}
+                            >
+                              ×
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -1326,24 +1433,29 @@ export function PoemWorkshop() {
                 Close
               </button>
             </div>
+            {exportFlash ? (
+              <p className="export-flash" role="status" aria-live="polite">
+                {exportFlash}
+              </p>
+            ) : null}
             <div className="modal-actions">
-              <button type="button" className="small-btn" onClick={m.onDownloadTxt}>
+              <button type="button" className="small-btn" onClick={() => { m.onDownloadTxt(); doExportFlash("Downloaded .txt ✓"); }}>
                 Download .txt
               </button>
-              <button type="button" className="small-btn" onClick={m.onDownloadMd}>
+              <button type="button" className="small-btn" onClick={() => { m.onDownloadMd(); doExportFlash("Downloaded .md ✓"); }}>
                 Download .md
               </button>
               <button
                 type="button"
                 className="small-btn small-btn-primary"
-                onClick={() => void m.onDownloadDocx()}
+                onClick={() => void m.onDownloadDocx().then(() => doExportFlash("Downloaded Word (.docx) ✓"))}
               >
                 Download Word (.docx)
               </button>
               <button
                 type="button"
                 className="small-btn"
-                onClick={() => void m.onCopyMarkdown()}
+                onClick={() => void m.onCopyMarkdown().then(() => doExportFlash("Copied Markdown ✓"))}
                 {...hint(
                   "Copy as Markdown: title becomes a heading, form note is italic, each line preserved — handy for Notion, GitHub, blogs, or ChatGPT.",
                 )}
@@ -1377,7 +1489,7 @@ export function PoemWorkshop() {
                 <button
                   type="button"
                   className="small-btn"
-                  onClick={() => void m.exportWorkshopBackup()}
+                  onClick={() => { m.exportWorkshopBackup(); doExportFlash("Backup downloaded"); }}
                   {...hint("Download all drafts and snapshots as a JSON backup")}
                 >
                   Export backup (.json)

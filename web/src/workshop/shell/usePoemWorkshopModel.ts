@@ -307,7 +307,12 @@ export function usePoemWorkshopModel() {
     if (wordlist) setSpellBump((n) => n + 1);
   }, [wordlist]);
 
+  const [wordlistRetryBump, setWordlistRetryBump] = useState(0);
+
+  const retryWordlist = () => setWordlistRetryBump((n) => n + 1);
+
   useEffect(() => {
+    setWordlistErr(null);
     void loadEnglishWordlist()
       .then((w) => {
         setWordlist(w);
@@ -317,7 +322,8 @@ export function usePoemWorkshopModel() {
         const msg = e instanceof Error ? e.message : "Could not load word list.";
         setWordlistErr(msg);
       });
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wordlistRetryBump]);
 
   useEffect(() => {
     void loadStressLexicon()
@@ -1097,6 +1103,7 @@ export function usePoemWorkshopModel() {
     dismissExportReminder,
     wordlist,
     wordlistErr,
+    retryWordlist,
     spellBump,
     editorViewRef,
     snapshotLabel,

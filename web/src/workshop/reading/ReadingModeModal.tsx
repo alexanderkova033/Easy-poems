@@ -1,5 +1,5 @@
 import "./ReadingModeModal.css";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { stripFormatMarkers } from "@/workshop/editor/format-marks";
 
 interface ReadingModeModalProps {
@@ -9,7 +9,14 @@ interface ReadingModeModalProps {
   onClose: () => void;
 }
 
+const FONT_SIZES = [0.92, 1.0, 1.1, 1.2, 1.32, 1.46, 1.62];
+const DEFAULT_SIZE_IDX = 2;
+
 export function ReadingModeModal({ title, formNote, body, onClose }: ReadingModeModalProps) {
+  const [sizeIdx, setSizeIdx] = useState(DEFAULT_SIZE_IDX);
+  const [copyFlash, setCopyFlash] = useState(false);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Close on Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -19,8 +26,25 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    };
+  }, []);
+
   const cleanBody = stripFormatMarkers(body);
   const lines = cleanBody.split("\n");
+
+  const handleCopy = () => {
+    const text = [title, formNote, "", cleanBody].filter(Boolean).join("\n");
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopyFlash(true);
+      if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopyFlash(false), 1600);
+    });
+  };
+
+  const fontSize = FONT_SIZES[sizeIdx]!;
 
   return (
     <div
@@ -30,36 +54,79 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="reading-mode-frame">
-        <div className="reading-mode-tear reading-mode-tear--top" aria-hidden="true" />
-        <div className="reading-mode-modal" role="dialog" aria-modal="true" aria-label="Reading view">
-          <button
-            type="button"
-            className="reading-mode-close"
-            onClick={onClose}
-            aria-label="Close reading view"
-          >
-            ×
-          </button>
-          <article className="reading-mode-poem">
-            {title && <h1 className="reading-mode-title">{title}</h1>}
-            {formNote && <p className="reading-mode-form">{formNote}</p>}
-            <div className="reading-mode-divider" aria-hidden>
-              <span className="reading-mode-divider-ornament">&#10022;</span>
+      <div className="reading-mode-modal" role="dialog" aria-modal="true" aria-label="Reading view">
+        <button
+          type="button"
+          className="reading-mode-close"
+          onClick={onClose}
+          aria-label="Close reading view"
+        >
+          ×
+        </button>
+
+        {/* Controls bar */}
+        <div className="reading-mode-controls">
+          <div className="reading-mode-controls-left">
+            <div className="reading-mode-font-size-group" aria-label="Font size">
+              <button
+                type="button"
+                className="reading-mode-font-btn"
+                onClick={() => setSizeIdx((i) => Math.max(0, i - 1))}
+                disabled={sizeIdx === 0}
+                aria-label="Decrease font size"
+              >
+                A−
+              </button>
+              <button
+                type="button"
+                className="reading-mode-font-btn"
+                onClick={() => setSizeIdx((i) => Math.min(FONT_SIZES.length - 1, i + 1))}
+                disabled={sizeIdx === FONT_SIZES.length - 1}
+                aria-label="Increase font size"
+              >
+                A+
+              </button>
             </div>
-            <div className="reading-mode-body">
-              {lines.map((line, i) =>
-                line.trim() === "" ? (
-                  <div key={i} className="reading-mode-stanza-break" aria-hidden />
-                ) : (
-                  <p key={i} className="reading-mode-line">{line}</p>
-                ),
-              )}
-              <div className="reading-mode-fin" aria-hidden>&#8258;</div>
-            </div>
-          </article>
+          </div>
+          <div className="reading-mode-controls-right">
+            <span
+              className={`reading-mode-copy-feedback ${copyFlash ? "is-visible" : ""}`}
+              aria-live="polite"
+            >
+              Copied
+            </span>
+            <button
+              type="button"
+              className="reading-mode-icon-btn"
+              onClick={handleCopy}
+              aria-label="Copy poem to clipboard"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="9" y="9" width="13" height="13" rx="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              Copy
+            </button>
+          </div>
         </div>
-        <div className="reading-mode-tear reading-mode-tear--bottom" aria-hidden="true" />
+
+        <article className="reading-mode-poem" style={{ fontSize: `${fontSize}rem` }}>
+          {title && <h1 className="reading-mode-title">{title}</h1>}
+          {formNote && <p className="reading-mode-form">{formNote}</p>}
+          <div className="reading-mode-divider" aria-hidden>
+            <span className="reading-mode-divider-ornament">✦ ✦ ✦</span>
+          </div>
+          <div className="reading-mode-body">
+            {lines.map((line, i) =>
+              line.trim() === "" ? (
+                <div key={i} className="reading-mode-stanza-break" aria-hidden />
+              ) : (
+                <p key={i} className="reading-mode-line">{line}</p>
+              ),
+            )}
+            <div className="reading-mode-fin" aria-hidden>&#8258;</div>
+          </div>
+        </article>
       </div>
     </div>
   );

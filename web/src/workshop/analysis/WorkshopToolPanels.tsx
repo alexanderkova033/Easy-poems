@@ -73,6 +73,66 @@ function EmptyState({
   );
 }
 
+function GoalField({
+  label,
+  value,
+  current,
+  onChange,
+  direction,
+  hint,
+  placeholder,
+  span,
+}: {
+  label: string;
+  goalKey: string;
+  value: number | undefined;
+  current: number | null;
+  onChange: (e: ChangeEvent<HTMLInputElement>) => void;
+  direction: "min" | "max";
+  hint?: string;
+  placeholder?: string;
+  span?: boolean;
+}) {
+  const hasGoal = value != null;
+  const hasCurrent = current !== null;
+  const met = hasGoal && hasCurrent && (
+    direction === "min" ? current >= value : current <= value
+  );
+  const over = hasGoal && hasCurrent && !met;
+  const pct = hasGoal && hasCurrent && value > 0
+    ? Math.min(1, current / value)
+    : null;
+
+  return (
+    <label className={`goal-field${span ? " goal-field-span" : ""}`} title={hint}>
+      <span className="goal-field-label-row">
+        <span>{label}</span>
+        {hasGoal && hasCurrent ? (
+          <span className={`goal-field-current ${met ? "goal-met" : over ? "goal-over" : ""}`}>
+            {current} / {value}
+          </span>
+        ) : null}
+      </span>
+      <input
+        type="number"
+        min={1}
+        inputMode="numeric"
+        value={value ?? ""}
+        onChange={onChange}
+        placeholder={placeholder}
+      />
+      {pct !== null && hasGoal ? (
+        <div className="goal-progress-bar" aria-hidden>
+          <div
+            className={`goal-progress-fill ${met ? "goal-met" : over ? "goal-over" : ""}`}
+            style={{ width: `${Math.min(100, Math.round(pct * 100))}%` }}
+          />
+        </div>
+      ) : null}
+    </label>
+  );
+}
+
 function checklistJumpLabel(item: ChecklistItem): string {
   if (item.focusTitleField) return "Focus title";
   switch (item.openToolTab) {
@@ -668,91 +728,67 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             <span className="tool-heading-you-text">Goals</span>
             <span className="you-badge">Your targets</span>
           </h3>
-          <p className="muted small">Blank fields are ignored.</p>
-          <p className="muted small goals-crosslink">
-            Live counts are in{" "}
-            <button type="button" className="linkish" onClick={() => onOpenToolTab("totals")}>
-              Totals
-            </button>
-            ; per-line numbers in{" "}
-            <button type="button" className="linkish" onClick={() => onOpenToolTab("lines")}>
-              Lines
-            </button>
-            .
-          </p>
+          <p className="muted small">Blank fields are ignored. Live counts update as you write.</p>
           <div className="goal-grid">
-            <label className="goal-field">
-              Min lines
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.minLines ?? ""}
-                onChange={updateGoal("minLines")}
-              />
-            </label>
-            <label className="goal-field">
-              Max lines
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.maxLines ?? ""}
-                onChange={updateGoal("maxLines")}
-              />
-            </label>
-            <label className="goal-field">
-              Min words
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.minWords ?? ""}
-                onChange={updateGoal("minWords")}
-              />
-            </label>
-            <label className="goal-field">
-              Max words
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.maxWords ?? ""}
-                onChange={updateGoal("maxWords")}
-              />
-            </label>
-            <label className="goal-field">
-              Min stanzas
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.minStanzas ?? ""}
-                onChange={updateGoal("minStanzas")}
-                title="Blank lines between stanzas; see Totals"
-              />
-            </label>
-            <label className="goal-field">
-              Max stanzas
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.maxStanzas ?? ""}
-                onChange={updateGoal("maxStanzas")}
-              />
-            </label>
-            <label className="goal-field goal-field-span">
-              Max syllables / line (est.)
-              <input
-                type="number"
-                min={1}
-                inputMode="numeric"
-                value={goals.maxSyllablesPerLine ?? ""}
-                onChange={updateGoal("maxSyllablesPerLine")}
-                placeholder="Heavy lines"
-              />
-            </label>
+            <GoalField
+              label="Min lines"
+              goalKey="minLines"
+              value={goals.minLines}
+              current={docStats.nonEmptyLines}
+              onChange={updateGoal("minLines")}
+              direction="min"
+            />
+            <GoalField
+              label="Max lines"
+              goalKey="maxLines"
+              value={goals.maxLines}
+              current={docStats.nonEmptyLines}
+              onChange={updateGoal("maxLines")}
+              direction="max"
+            />
+            <GoalField
+              label="Min words"
+              goalKey="minWords"
+              value={goals.minWords}
+              current={docStats.totalWords}
+              onChange={updateGoal("minWords")}
+              direction="min"
+            />
+            <GoalField
+              label="Max words"
+              goalKey="maxWords"
+              value={goals.maxWords}
+              current={docStats.totalWords}
+              onChange={updateGoal("maxWords")}
+              direction="max"
+            />
+            <GoalField
+              label="Min stanzas"
+              goalKey="minStanzas"
+              value={goals.minStanzas}
+              current={docStats.stanzaCount}
+              onChange={updateGoal("minStanzas")}
+              direction="min"
+              hint="Blank lines between stanzas; see Totals"
+            />
+            <GoalField
+              label="Max stanzas"
+              goalKey="maxStanzas"
+              value={goals.maxStanzas}
+              current={docStats.stanzaCount}
+              onChange={updateGoal("maxStanzas")}
+              direction="max"
+            />
+            <GoalField
+              label="Max syllables / line (est.)"
+              goalKey="maxSyllablesPerLine"
+              value={goals.maxSyllablesPerLine}
+              current={null}
+              onChange={updateGoal("maxSyllablesPerLine")}
+              direction="max"
+              placeholder="Heavy lines"
+              span
+            />
           </div>
           {goalEvaluation.warnings.length > 0 ? (
             <ul className="goal-warnings">
@@ -772,7 +808,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           ) : null}
           {goalEvaluation.warnings.length === 0 &&
           Object.values(goals).some((v) => v != null) ? (
-            <p className="muted small">On target.</p>
+            <p className="muted small goal-on-target">✓ On target.</p>
           ) : null}
         </div>
       ) : null}

@@ -17,6 +17,18 @@ export interface FindReplaceBarProps {
   onClose: () => void;
 }
 
+function countMatches(view: EditorView, query: SearchQuery): number {
+  try {
+    if (!query.valid) return 0;
+    const cursor = query.getCursor(view.state.doc);
+    let n = 0;
+    while (!cursor.next().done) n++;
+    return n;
+  } catch {
+    return 0;
+  }
+}
+
 export function FindReplaceBar(props: FindReplaceBarProps) {
   const hint = useHoverHintBinder();
   const { editorView, open, mode, onClose } = props;
@@ -25,6 +37,9 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [wholeWord, setWholeWord] = useState(false);
   const [regexp, setRegexp] = useState(false);
+  const [matchCount, setMatchCount] = useState<number | null>(null);
+  const [wrapMsg, setWrapMsg] = useState<"start" | "end" | null>(null);
+  const wrapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const findRef = useRef<HTMLInputElement | null>(null);
 
   const query = useMemo(() => {
@@ -41,7 +56,12 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
     if (!open) return;
     if (!editorView) return;
     editorView.dispatch({ effects: setSearchQuery.of(query) });
-  }, [editorView, open, query]);
+    if (find.trim()) {
+      setMatchCount(countMatches(editorView, query));
+    } else {
+      setMatchCount(null);
+    }
+  }, [editorView, open, query, find]);
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +70,30 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
       findRef.current?.select();
     });
   }, [open]);
+
+  const showWrap = (dir: "start" | "end") => {
+    setWrapMsg(dir);
+    if (wrapTimerRef.current) clearTimeout(wrapTimerRef.current);
+    wrapTimerRef.current = setTimeout(() => setWrapMsg(null), 1400);
+  };
+
+  const handleFindNext = () => {
+    if (!editorView || !find.trim()) return;
+    const before = editorView.state.selection.main.from;
+    findNext(editorView);
+    const after = editorView.state.selection.main.from;
+    // Wrapped forward if new position is before old position
+    if (after < before) showWrap("start");
+  };
+
+  const handleFindPrev = () => {
+    if (!editorView || !find.trim()) return;
+    const before = editorView.state.selection.main.from;
+    findPrevious(editorView);
+    const after = editorView.state.selection.main.from;
+    // Wrapped backward if new position is after old position
+    if (after > before) showWrap("end");
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -62,17 +106,21 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
       if (e.key === "Enter") {
         if (!editorView || !find.trim()) return;
         e.preventDefault();
-        findNext(editorView);
+        if (e.shiftKey) {
+          handleFindPrev();
+        } else {
+          handleFindNext();
+        }
       }
     };
     window.addEventListener("keydown", onKeyDown, true);
     return () => window.removeEventListener("keydown", onKeyDown, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editorView, find, onClose, open]);
 
   useEffect(() => {
     if (open) return;
     if (!editorView) return;
-    // Clear highlights when closing.
     editorView.dispatch({
       effects: setSearchQuery.of(
         new SearchQuery({
@@ -84,7 +132,15 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
         }),
       ),
     });
+    setMatchCount(null);
+    setWrapMsg(null);
   }, [caseSensitive, editorView, open, regexp, wholeWord]);
+
+  useEffect(() => {
+    return () => {
+      if (wrapTimerRef.current) clearTimeout(wrapTimerRef.current);
+    };
+  }, []);
 
   if (!open) return null;
 
@@ -118,18 +174,18 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
           <button
             type="button"
             className="small-btn"
-            onClick={() => editorView && findPrevious(editorView)}
+            onClick={handleFindPrev}
             disabled={!editorView || !find.trim()}
-            {...hint("Previous match")}
+            {...hint("Previous match (Shift+Enter)")}
           >
             Prev
           </button>
           <button
             type="button"
             className="small-btn small-btn-primary"
-            onClick={() => editorView && findNext(editorView)}
+            onClick={handleFindNext}
             disabled={!editorView || !find.trim()}
-            {...hint("Next match")}
+            {...hint("Next match (Enter)")}
           >
             Next
           </button>
@@ -159,6 +215,16 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
             Close
           </button>
         </div>
+        {matchCount !== null ? (
+          <span className="findbar-count" role="status" aria-live="polite">
+            {matchCount === 0 ? "No matches" : `${matchCount} match${matchCount !== 1 ? "es" : ""}`}
+          </span>
+        ) : null}
+        {wrapMsg ? (
+          <span className="findbar-wrap-msg" role="status" aria-live="polite">
+            {wrapMsg === "start" ? "↩ Wrapped to top" : "↩ Wrapped to bottom"}
+          </span>
+        ) : null}
       </div>
       <div className="findbar-row findbar-toggles" aria-label="Find options">
         <label className="findbar-toggle">
@@ -193,4 +259,3 @@ export function FindReplaceBar(props: FindReplaceBarProps) {
     </div>
   );
 }
-

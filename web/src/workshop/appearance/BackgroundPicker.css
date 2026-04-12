@@ -420,6 +420,10 @@
 }
 
 .spell-warn-banner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
   padding: 0.5rem 1rem;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--warning, #e8a000) 40%, var(--border));
@@ -431,6 +435,11 @@
   font-size: 0.86rem;
   line-height: 1.45;
   color: var(--text);
+  flex: 1 1 auto;
+}
+
+.spell-warn-retry-btn {
+  flex-shrink: 0;
 }
 
 .draft-library-bar {

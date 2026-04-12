@@ -14,6 +14,14 @@ export function KeyboardShortcutsContent() {
         </li>
         <li>
           <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+          <kbd className="kbd-hint">K</kbd> — open command palette.
+        </li>
+        <li>
+          <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+          <kbd className="kbd-hint">Shift</kbd> + <kbd className="kbd-hint">R</kbd> — toggle reading view.
+        </li>
+        <li>
+          <kbd className="kbd-hint">⌘</kbd> / <kbd className="kbd-hint">Ctrl</kbd> +{" "}
           <kbd className="kbd-hint">F</kbd> — find in poem.
         </li>
         <li>

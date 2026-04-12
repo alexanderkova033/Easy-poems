@@ -2,196 +2,159 @@
 .reading-mode-overlay {
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(ellipse 110% 80% at 50% 18%, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.76) 68%),
-    rgba(0, 0, 0, 0.70);
+  background: rgba(10, 8, 5, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9000;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 2rem;
+  padding: 3rem 2rem;
   box-sizing: border-box;
-}
-
-/* ── Frame: positions torn edges relative to the modal ─────── */
-.reading-mode-frame {
-  position: relative;
-  max-width: 42rem;
-  width: 100%;
-}
-
-/* ── Torn paper edges ────────────────────────────────────────── */
-.reading-mode-tear {
-  position: absolute;
-  left: -1px;
-  right: -1px;
-  height: 26px;
-  z-index: 9002;
-  pointer-events: none;
-  background-repeat: repeat-x;
-  background-size: 80px 26px;
-}
-
-/* Top tear: sits above the modal, parchment body at bottom of SVG */
-.reading-mode-tear--top {
-  bottom: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='26'%3E%3Cpath fill='%230a0500' fill-opacity='0.42' d='M0 26V15 L2 12 L4 15 L6 11 L8 14 L10 10 L12 13 L14 9 L16 12 L18 15 L20 10 L22 13 L24 9 L26 12 L28 15 L30 10 L32 13 L34 9 L36 12 L38 8 L40 11 L42 14 L44 9 L46 12 L48 8 L50 11 L52 14 L54 9 L56 12 L58 8 L60 11 L62 14 L64 9 L66 12 L68 8 L70 11 L72 15 L74 10 L76 13 L78 9 L80 12 V26Z'/%3E%3Cpath fill='%23c09040' d='M0 26V14 L2 8 L4 13 L6 5 L8 11 L10 4 L12 9 L14 3 L16 8 L18 12 L20 5 L22 10 L24 4 L26 8 L28 13 L30 6 L32 10 L34 3 L36 8 L38 2 L40 7 L42 12 L44 5 L46 9 L48 2 L50 7 L52 11 L54 4 L56 9 L58 2 L60 7 L62 12 L64 5 L66 10 L68 3 L70 8 L72 13 L74 5 L76 9 L78 3 L80 8 V26Z'/%3E%3C/svg%3E");
-  background-position: 0 0;
-}
-
-/* Bottom tear: sits below the modal, parchment body at top of SVG */
-.reading-mode-tear--bottom {
-  top: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='26'%3E%3Cpath fill='%23c09040' d='M0 0V12 L2 18 L4 13 L6 21 L8 15 L10 22 L12 17 L14 23 L16 18 L18 14 L20 21 L22 16 L24 22 L26 18 L28 13 L30 20 L32 16 L34 23 L36 18 L38 24 L40 19 L42 14 L44 21 L46 17 L48 24 L50 19 L52 15 L54 22 L56 17 L58 24 L60 19 L62 14 L64 21 L66 16 L68 23 L70 18 L72 13 L74 21 L76 17 L78 23 L80 18 V0Z'/%3E%3Cpath fill='%230a0500' fill-opacity='0.42' d='M0 0V13 L2 16 L4 13 L6 17 L8 14 L10 18 L12 15 L14 19 L16 16 L18 13 L20 17 L22 14 L24 18 L26 16 L28 12 L30 16 L32 14 L34 19 L36 15 L38 20 L40 17 L42 13 L44 17 L46 15 L48 20 L50 17 L52 14 L54 18 L56 15 L58 20 L60 17 L62 13 L64 17 L66 14 L68 19 L70 16 L72 12 L74 17 L76 15 L78 19 L80 16 V0Z'/%3E%3C/svg%3E");
-  background-position: 0 100%;
+  overflow-y: auto;
 }
 
 /* ── Paper modal ─────────────────────────────────────────────── */
 .reading-mode-modal {
   color-scheme: light;
-  --rp-base:    #d4b882;   /* aged amber parchment base   */
-  --rp-warm:    #c8a260;   /* warmer centre               */
-  --rp-char:    #1a0e04;   /* charred near-black          */
-  --rp-scorch:  #5a2a08;   /* scorched brown              */
-  --rp-ink:     #1c1208;   /* very dark ink colour        */
-  --rp-muted:   rgba(28, 18, 8, 0.58);
+  --rp-bg:      #f9f5ee;
+  --rp-ink:     #1a120a;
+  --rp-muted:   rgba(26, 18, 10, 0.48);
+  --rp-rule:    rgba(90, 60, 20, 0.18);
+  --rp-accent:  rgba(100, 65, 20, 0.55);
 
-  /* Asymmetric border-radius — each corner is different */
-  border-radius: 2px 22px 6px 16px / 18px 4px 20px 8px;
-
-  /* Slight tilt — like paper laid on a table */
-  transform: rotate(-0.55deg);
-
-  /* No mask — just paint burnt edges directly in background layers */
-  background:
-    /* Charred top-left corner (heaviest scorch) */
-    radial-gradient(ellipse 52% 38% at -4% -6%, rgba(8, 3, 0, 0.72), transparent 55%),
-    /* Charred bottom-right corner */
-    radial-gradient(ellipse 55% 42% at 106% 108%, rgba(5, 2, 0, 0.66), transparent 52%),
-    /* Lighter scorch top-right */
-    radial-gradient(ellipse 38% 32% at 108% -4%, rgba(12, 5, 0, 0.50), transparent 50%),
-    /* Lighter scorch bottom-left */
-    radial-gradient(ellipse 42% 35% at -6% 108%, rgba(10, 4, 0, 0.46), transparent 52%),
-    /* Burnt edge vignette — all four edges, asymmetric weights */
-    radial-gradient(ellipse 100% 18% at 50% 0%,   rgba(30, 12, 2, 0.36), transparent 80%),
-    radial-gradient(ellipse 100% 14% at 50% 100%, rgba(20, 8, 1, 0.42), transparent 80%),
-    radial-gradient(ellipse 12% 100% at 0%   50%, rgba(25, 10, 2, 0.28), transparent 80%),
-    radial-gradient(ellipse 10% 100% at 100% 50%, rgba(18, 7, 1, 0.22), transparent 80%),
-    /* Warm ambient light from upper-right (candlelight) */
-    radial-gradient(ellipse 80% 65% at 78% 12%, rgba(220, 160, 70, 0.22), transparent 62%),
-    /* Central warmth */
-    radial-gradient(ellipse 90% 80% at 38% 52%, rgba(255, 235, 175, 0.14), transparent 68%),
-    /* Horizontal fibre lines (ruled-paper ghost) */
-    repeating-linear-gradient(
-      0deg,
-      rgba(60, 35, 8, 0.028),
-      rgba(60, 35, 8, 0.028) 1px,
-      transparent 1px,
-      transparent 10px
-    ),
-    /* Coarse paper-grain noise */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E"),
-    /* Subtle wavey fibre marks (like laid paper) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cpath fill='none' stroke='%235a2a0814' stroke-width='0.7' d='M8 52 Q68 40 128 54 T256 50'/%3E%3Cpath fill='none' stroke='%235a2a0810' stroke-width='0.6' d='M10 148 Q78 136 142 150 T258 146'/%3E%3Cpath fill='none' stroke='%235a2a080c' stroke-width='0.55' d='M40 14 Q108 26 198 12'/%3E%3Cpath fill='none' stroke='%235a2a080e' stroke-width='0.6' d='M12 218 Q80 206 160 222 T256 214'/%3E%3C/svg%3E"),
-    /* Base gradient — denser amber, slightly darker than before */
-    linear-gradient(158deg, #cda870 0%, #ba9050 35%, #c8a868 60%, #b88848 100%);
-
-  border: none;
-  /* Multi-layer shadow: deep ground shadow + warm ambient halo */
-  box-shadow:
-    0 2px 0 rgba(255, 200, 100, 0.12) inset,
-    0 -1px 0 rgba(8, 3, 0, 0.55) inset,
-    0 22px 80px rgba(0, 0, 0, 0.65),
-    0 6px 24px rgba(0, 0, 0, 0.48),
-    -2px 0 12px rgba(0, 0, 0, 0.22);
-
-  padding: 2.8rem 3.2rem;
-  max-width: 42rem;
+  max-width: 40rem;
   width: 100%;
-  max-height: 88vh;
-  overflow-y: auto;
-  overflow-x: hidden;
-  box-sizing: border-box;
-  position: relative;
-
-  /* Sepia-age the whole paper slightly */
-  filter: sepia(0.08) contrast(0.98);
-}
-
-/* Burnt overlay — pseudo-element sits ON TOP of text to add depth to edges */
-.reading-mode-modal::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
-  border-radius: inherit;
+  margin: 0 auto;
   background:
-    /* Inner-glow from the scorched edges */
-    radial-gradient(ellipse 50% 35% at 0% 0%,   rgba(8, 2, 0, 0.35), transparent 55%),
-    radial-gradient(ellipse 55% 40% at 100% 100%, rgba(5, 1, 0, 0.30), transparent 55%),
-    radial-gradient(ellipse 40% 28% at 100% 0%,  rgba(10, 3, 0, 0.22), transparent 50%),
-    radial-gradient(ellipse 42% 30% at 0% 100%,  rgba(8, 2, 0, 0.20), transparent 50%),
-    /* Very faint top-highlight (light bounce off paper surface) */
-    radial-gradient(ellipse 85% 22% at 50% 0%, rgba(255, 240, 200, 0.10), transparent 60%);
-  mix-blend-mode: multiply;
-}
-
-.reading-mode-poem {
+    /* Very subtle paper grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.055'/%3E%3C/svg%3E"),
+    var(--rp-bg);
+  border-radius: 3px;
+  box-shadow:
+    0 2px 0 rgba(255, 235, 180, 0.25) inset,
+    0 -1px 0 rgba(0, 0, 0, 0.12) inset,
+    0 30px 80px rgba(0, 0, 0, 0.42),
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.18);
+  padding: 0;
   position: relative;
-  z-index: 1;
 }
 
-/* ── Close button ────────────────────────────────────────────── */
-.reading-mode-close {
-  position: absolute;
-  top: 0.75rem;
-  right: 0.9rem;
-  z-index: 3;
-  background: rgba(40, 18, 4, 0.06);
-  border: 1px solid rgba(60, 30, 8, 0.18);
-  font-size: 1.05rem;
-  font-family: Georgia, serif;
+/* ── Controls bar ────────────────────────────────────────────── */
+.reading-mode-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem 0.6rem;
+  border-bottom: 1px solid var(--rp-rule);
+}
+
+.reading-mode-controls-left,
+.reading-mode-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.reading-mode-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
   color: var(--rp-muted);
+  font-size: 0.78rem;
+  font-family: system-ui, sans-serif;
   cursor: pointer;
-  padding: 0.1rem 0.42rem 0.14rem;
-  border-radius: 2px;
+  padding: 0.2rem 0.5rem;
   line-height: 1;
-  opacity: 0.72;
-  transition: opacity 0.15s, background 0.15s;
+  transition: color 0.13s, border-color 0.13s, background 0.13s;
+  white-space: nowrap;
 }
 
-.reading-mode-close:hover {
-  opacity: 1;
+.reading-mode-icon-btn:hover {
   color: var(--rp-ink);
-  background: rgba(40, 18, 4, 0.14);
-  border-color: rgba(60, 30, 8, 0.32);
+  border-color: var(--rp-rule);
+  background: rgba(100, 65, 20, 0.06);
+}
+
+.reading-mode-icon-btn svg {
+  width: 0.88rem;
+  height: 0.88rem;
+  flex-shrink: 0;
+}
+
+.reading-mode-font-size-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--rp-rule);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.reading-mode-font-btn {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--rp-rule);
+  color: var(--rp-muted);
+  font-size: 0.88rem;
+  font-family: system-ui, sans-serif;
+  cursor: pointer;
+  padding: 0.18rem 0.55rem 0.22rem;
+  line-height: 1;
+  transition: color 0.12s, background 0.12s;
+}
+
+.reading-mode-font-btn:last-child {
+  border-right: none;
+}
+
+.reading-mode-font-btn:hover {
+  color: var(--rp-ink);
+  background: rgba(100, 65, 20, 0.07);
+}
+
+.reading-mode-copy-feedback {
+  font-size: 0.75rem;
+  color: var(--rp-accent);
+  opacity: 0;
+  transition: opacity 0.2s;
+  pointer-events: none;
+}
+
+.reading-mode-copy-feedback.is-visible {
+  opacity: 1;
+}
+
+/* ── Poem content ─────────────────────────────────────────────── */
+.reading-mode-poem {
+  padding: 2.8rem 3.5rem 3.2rem;
 }
 
 /* ── Title ───────────────────────────────────────────────────── */
 .reading-mode-title {
-  font-size: 1.62rem;
+  font-size: 1.7rem;
   font-weight: 700;
-  margin: 0 0 0.25rem;
+  margin: 0 0 0.2rem;
   color: var(--rp-ink);
   font-family: "EB Garamond", "Crimson Pro", Georgia, serif;
-  font-feature-settings: "kern" 1, "liga" 1, "onum" 1, "swsh" 1;
-  letter-spacing: 0.06em;
+  font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
+  letter-spacing: 0.04em;
   text-align: center;
-  line-height: 1.22;
-  /* Ink pressed into paper — very subtle depth */
-  text-shadow:
-    0.4px 0.5px 0px rgba(8, 3, 0, 0.20),
-    -0.2px -0.2px 0px rgba(8, 3, 0, 0.08);
+  line-height: 1.2;
 }
 
 .reading-mode-form {
-  font-size: 0.82rem;
+  font-size: 0.83rem;
   color: var(--rp-muted);
   font-style: italic;
   margin: 0;
   text-align: center;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   font-family: "EB Garamond", Georgia, serif;
 }
 
@@ -199,9 +162,8 @@
 .reading-mode-divider {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  margin: 1.1rem 0 1.25rem;
-  color: var(--rp-muted);
+  gap: 0.6rem;
+  margin: 1.4rem 0 1.6rem;
 }
 
 .reading-mode-divider::before,
@@ -209,103 +171,108 @@
   content: "";
   flex: 1;
   height: 1px;
-  background: linear-gradient(
-    to var(--_dir, right),
-    transparent,
-    rgba(60, 30, 8, 0.40) 38%,
-    rgba(60, 30, 8, 0.40)
-  );
+  background: var(--rp-rule);
 }
 
-.reading-mode-divider::before { --_dir: right; }
-.reading-mode-divider::after  { --_dir: left;  }
-
 .reading-mode-divider-ornament {
-  font-size: 0.88rem;
-  opacity: 0.48;
+  font-size: 0.72rem;
+  color: var(--rp-accent);
+  opacity: 0.7;
   flex-shrink: 0;
+  letter-spacing: 0.22em;
 }
 
 /* ── Body text ───────────────────────────────────────────────── */
 .reading-mode-body {
   font-family: "EB Garamond", "Crimson Pro", Georgia, serif;
-  font-size: 1.18rem;
-  line-height: 1.82;
+  line-height: 1.88;
   color: var(--rp-ink);
   text-rendering: optimizeLegibility;
   font-kerning: normal;
-  font-weight: 500;
-  /* Enable oldstyle figures, ligatures, historic alternates */
-  font-feature-settings: "kern" 1, "liga" 1, "onum" 1, "calt" 1, "hist" 0;
+  font-weight: 400;
+  font-feature-settings: "kern" 1, "liga" 1, "onum" 1, "calt" 1;
   font-variant-ligatures: common-ligatures;
-  /* Ink absorbed into paper — the key visual trick */
-  text-shadow:
-    0.3px 0.45px 0.5px rgba(8, 3, 0, 0.18),
-    -0.15px -0.1px 0.3px rgba(8, 3, 0, 0.07);
-  /* Slightly uneven letter spacing, like hand-set type */
-  letter-spacing: 0.008em;
-  word-spacing: -0.01em;
+  letter-spacing: 0.012em;
 }
 
 .reading-mode-line {
   display: block;
   margin: 0;
-  /* Very subtle per-line tracking variation (optical effect) */
-  text-align: left;
-}
-
-/* Indent every line slightly so the left margin feels hand-ruled */
-.reading-mode-line::before {
-  content: "";
-  display: inline-block;
-  width: 0.05em;
 }
 
 .reading-mode-stanza-break {
   display: block;
-  height: 0.9em;
+  height: 1em;
 }
 
 .reading-mode-fin {
   text-align: center;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: var(--rp-muted);
-  margin-top: 1.5rem;
-  opacity: 0.52;
-  letter-spacing: 0.22em;
+  margin-top: 2rem;
+  opacity: 0.45;
+  letter-spacing: 0.3em;
   font-family: "EB Garamond", Georgia, serif;
+}
+
+/* ── Close button ────────────────────────────────────────────── */
+.reading-mode-close {
+  position: absolute;
+  top: -0.8rem;
+  right: -0.8rem;
+  z-index: 3;
+  width: 1.8rem;
+  height: 1.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rp-bg);
+  border: 1px solid rgba(0,0,0,0.14);
+  border-radius: 50%;
+  font-size: 0.95rem;
+  color: var(--rp-muted);
+  cursor: pointer;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  transition: color 0.13s, background 0.13s, border-color 0.13s;
+}
+
+.reading-mode-close:hover {
+  color: var(--rp-ink);
+  background: #fff;
+  border-color: rgba(0,0,0,0.22);
 }
 
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .reading-mode-overlay {
     padding:
-      calc(0.9rem + env(safe-area-inset-top))
-      calc(0.9rem + env(safe-area-inset-right))
-      calc(0.9rem + env(safe-area-inset-bottom))
-      calc(0.9rem + env(safe-area-inset-left));
+      calc(1rem + env(safe-area-inset-top))
+      0
+      calc(1rem + env(safe-area-inset-bottom))
+      0;
+    align-items: flex-start;
   }
 
   .reading-mode-modal {
-    padding: 1.5rem 1.35rem;
-    border-radius: 2px 14px 4px 10px / 12px 2px 14px 5px;
-    max-height: 92vh;
-    transform: rotate(-0.3deg);
+    border-radius: 0;
+    max-width: 100%;
+    width: 100%;
+    box-shadow: none;
+    min-height: 100dvh;
   }
 
   .reading-mode-close {
-    top: 0.7rem;
+    top: 0.6rem;
     right: 0.75rem;
-    font-size: 0.75rem;
+    position: fixed;
+  }
+
+  .reading-mode-poem {
+    padding: 1.6rem 1.4rem 2.5rem;
   }
 
   .reading-mode-title {
-    font-size: 1.32rem;
-    letter-spacing: 0.04em;
-  }
-
-  .reading-mode-body {
-    font-size: 1.06rem;
-    line-height: 1.76;
+    font-size: 1.36rem;
   }
 }

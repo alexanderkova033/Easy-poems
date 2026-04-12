@@ -65,7 +65,19 @@
       "Bash(sed -i 's|from \"\\\\./ToolTabBar\"|from \"@/workshop/analysis/ToolTabBar\"|g' src/workshop/palette/CommandPalette.tsx)",
       "Bash(echo \"EXIT: $?\")",
       "Bash(./node_modules/.bin/tsc --noEmit)",
-      "Bash(node_modules/.bin/tsc --version)"
+      "Bash(node_modules/.bin/tsc --version)",
+      "Bash(wc -l /c/Users/lorta/Documents/repos/Easy-poems/web/src/workshop/**/*.tsx)",
+      "Bash(xargs wc:*)",
+      "Bash(find /c/Users/lorta/Documents/repos/Easy-poems -type f -name \".gitignore\" -exec cat {} \\\\;)",
+      "Bash(find /c/Users/lorta/Documents/repos/Easy-poems/web -name \"package-lock.json\" -exec wc -l {} \\\\;)",
+      "Bash(find /c/Users/lorta/Documents/repos/Easy-poems/web/src -name \"*.test.ts*\" -exec basename {} \\\\;)",
+      "Bash(node -e \"require\\('child_process'\\).execSync\\('npx tsc --noEmit', {cwd: '/c/Users/lorta/Documents/repos/Easy-poems/web', stdio: 'pipe'}\\)\")",
+      "Bash(tsc --noEmit)",
+      "Bash(./node_modules/.bin/eslint src:*)",
+      "Bash(./node_modules/.bin/eslint src/workshop/editor/PoemBodyEditor.tsx)",
+      "Bash(./node_modules/.bin/eslint src/workshop/editor/PoemBodyEditor.tsx --format=json)",
+      "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(m['ruleId'], m['line'], m['message']\\) for f in data for m in f['messages']]\")",
+      "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const r=JSON.parse\\(d\\); r.forEach\\(f=>f.messages.forEach\\(m=>console.log\\(m.ruleId, m.line, m.message\\)\\)\\); }\\)\")"
     ]
   }
 }

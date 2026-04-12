@@ -158,9 +158,48 @@
   user-select: text;
 }
 
+.word-lookup-chip-btn {
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  transition: background 0.12s, border-color 0.12s, color 0.12s, transform 0.1s;
+}
+
+.word-lookup-chip-btn:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--bg));
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.word-lookup-chip-btn:active {
+  transform: scale(0.95);
+}
+
+.word-lookup-chip-btn.is-inserted {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .word-lookup-chip-ant {
   border-color: color-mix(in srgb, var(--border) 85%, var(--danger));
   background: color-mix(in srgb, var(--danger) 8%, var(--bg));
+}
+
+.word-lookup-chip-ant.word-lookup-chip-btn:hover {
+  background: color-mix(in srgb, var(--danger) 20%, var(--bg));
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.word-lookup-chip-ant.word-lookup-chip-btn.is-inserted {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.word-lookup-insert-hint {
+  margin: 0.4rem 0 0;
+  font-size: 0.7rem;
 }
 
 /* ── Syllable count inline widget ─────────────────────────────── */

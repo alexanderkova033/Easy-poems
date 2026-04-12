@@ -8,6 +8,7 @@ import {
   type MutableRefObject,
 } from "react";
 import type { EditorView } from "@codemirror/view";
+import { EditorSelection } from "@codemirror/state";
 
 interface DictMeaning {
   partOfSpeech: string;
@@ -141,7 +142,7 @@ function extractDefs(entry: DictEntry): DefGroup[] {
 }
 
 /** Prefer CodeMirror’s geometry so the popup tracks the real selection pixels. */
-function anchorFromEditorSelection(view: EditorView): { word: string; anchor: AnchorRect } | null {
+function anchorFromEditorSelection(view: EditorView): { word: string; anchor: AnchorRect; selFrom: number; selTo: number } | null {
   const sel = view.state.selection.main;
   if (sel.empty) return null;
   const raw = view.state.sliceDoc(sel.from, sel.to).trim();
@@ -157,11 +158,13 @@ function anchorFromEditorSelection(view: EditorView): { word: string; anchor: An
   const right = Math.max(fromC.right, toC.right);
   const bottom = Math.max(fromC.bottom, toC.bottom);
 
-  const clean = singleToken.replace(/[^a-zA-Z'-]/g, "").toLowerCase();
+  const clean = singleToken.replace(/[^a-zA-Z’-]/g, "").toLowerCase();
   if (clean.length < 2) return null;
 
   return {
     word: clean,
+    selFrom: sel.from,
+    selTo: sel.to,
     anchor: {
       left,
       top,
@@ -188,6 +191,9 @@ export function WordLookupPopup({
   );
   const [anchor, setAnchor] = useState<AnchorRect | null>(null);
   const [popupPos, setPopupPos] = useState<PopupPos | null>(null);
+  const [insertFlash, setInsertFlash] = useState<string | null>(null);
+  const selRangeRef = useRef<{ from: number; to: number } | null>(null);
+  const insertFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -199,13 +205,21 @@ export function WordLookupPopup({
     setAltSyns([]);
     setAltAnts([]);
     setExpandedPos(new Set());
+
+    // Combine the caller's abort signal with a 5-second timeout
+    const timeoutController = new AbortController();
+    const timeoutId = setTimeout(() => timeoutController.abort(), 5000);
+    const combinedSignal = AbortSignal.any
+      ? AbortSignal.any([signal, timeoutController.signal])
+      : signal;
+
     try {
       const [dictRes, dm] = await Promise.all([
         fetch(
           `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(w)}`,
-          { signal },
+          { signal: combinedSignal },
         ),
-        fetchDatamuseRelated(w, signal),
+        fetchDatamuseRelated(w, combinedSignal),
       ]);
       if (dictRes.status === 404) {
         setEntry(null);
@@ -236,11 +250,14 @@ export function WordLookupPopup({
       setAltSyns([]);
       setAltAnts([]);
       setStatus("error");
+    } finally {
+      clearTimeout(timeoutId);
     }
   }, []);
 
   const close = useCallback(() => {
     lastLookupRef.current = null;
+    selRangeRef.current = null;
     setWord(null);
     setEntry(null);
     setAltSyns([]);
@@ -249,8 +266,27 @@ export function WordLookupPopup({
     setAnchor(null);
     setPopupPos(null);
     setStatus("idle");
+    setInsertFlash(null);
     abortRef.current?.abort();
+    if (insertFlashTimerRef.current) clearTimeout(insertFlashTimerRef.current);
   }, []);
+
+  const insertWord = useCallback((replacement: string) => {
+    const view = editorViewRef.current;
+    const range = selRangeRef.current;
+    if (!view || !range) return;
+    view.dispatch({
+      changes: { from: range.from, to: range.to, insert: replacement },
+      selection: EditorSelection.cursor(range.from + replacement.length),
+    });
+    view.focus();
+    setInsertFlash(replacement);
+    if (insertFlashTimerRef.current) clearTimeout(insertFlashTimerRef.current);
+    insertFlashTimerRef.current = setTimeout(() => {
+      setInsertFlash(null);
+      close();
+    }, 900);
+  }, [editorViewRef, close]);
 
   useEffect(() => {
     const onSelectionChange = () => {
@@ -261,6 +297,7 @@ export function WordLookupPopup({
         const got = anchorFromEditorSelection(view);
         if (!got) return;
         setAnchor(got.anchor);
+        selRangeRef.current = { from: got.selFrom, to: got.selTo };
         if (lastLookupRef.current === got.word) return;
         lastLookupRef.current = got.word;
         setWord(got.word);
@@ -431,9 +468,15 @@ export function WordLookupPopup({
           <span className="word-lookup-group-label">Synonyms &amp; similar</span>
           <div className="word-lookup-chips">
             {syns.map((s) => (
-              <span key={s} className="word-lookup-chip">
+              <button
+                key={s}
+                type="button"
+                className={`word-lookup-chip word-lookup-chip-btn ${insertFlash === s ? "is-inserted" : ""}`}
+                onClick={() => insertWord(s)}
+                title={`Replace "${word}" with "${s}"`}
+              >
                 {s}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -444,12 +487,23 @@ export function WordLookupPopup({
           <span className="word-lookup-group-label">Antonyms &amp; opposites</span>
           <div className="word-lookup-chips word-lookup-chips-ant">
             {ants.map((a) => (
-              <span key={a} className="word-lookup-chip word-lookup-chip-ant">
+              <button
+                key={a}
+                type="button"
+                className={`word-lookup-chip word-lookup-chip-btn word-lookup-chip-ant ${insertFlash === a ? "is-inserted" : ""}`}
+                onClick={() => insertWord(a)}
+                title={`Replace "${word}" with "${a}"`}
+              >
                 {a}
-              </span>
+              </button>
             ))}
           </div>
         </div>
+      )}
+      {selRangeRef.current && (syns.length > 0 || ants.length > 0) && (
+        <p className="word-lookup-insert-hint muted">
+          Click a word to replace selection
+        </p>
       )}
     </div>
   );

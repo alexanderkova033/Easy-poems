@@ -117,7 +117,7 @@ export function ToolsOverviewStrip(props: ToolsOverviewStripProps) {
       </button>
       <button
         type="button"
-        className={`tools-overview-pill ${activeTab === "meter" ? "is-current" : ""} ${meterIssue ? "has-attn is-muted-attn" : ""}`}
+        className={`tools-overview-pill ${activeTab === "meter" ? "is-current" : ""} ${meterIssue ? "has-attn" : ""}`}
         onClick={() => onOpenTab("meter")}
         {...hint(
           heavyToolsStale
