@@ -13,14 +13,44 @@ export default defineConfig({
   },
   plugins: [react()],
   build: {
+    // Target evergreen browsers — produces smaller, faster output.
+    target: "es2020",
+    // Raise the chunk size warning threshold (word-list is intentionally large).
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/scheduler")) {
+          if (
+            id.includes("node_modules/react") ||
+            id.includes("node_modules/react-dom") ||
+            id.includes("node_modules/scheduler")
+          ) {
             return "vendor-react";
           }
-          if (id.includes("node_modules/@codemirror") || id.includes("node_modules/@uiw/codemirror") || id.includes("node_modules/@uiw/react-codemirror") || id.includes("node_modules/codemirror") || id.includes("node_modules/@lezer") || id.includes("node_modules/@marijn") || id.includes("node_modules/style-mod") || id.includes("node_modules/w3c-keyname") || id.includes("node_modules/crelt")) {
+          if (
+            id.includes("node_modules/@codemirror") ||
+            id.includes("node_modules/@uiw/codemirror") ||
+            id.includes("node_modules/@uiw/react-codemirror") ||
+            id.includes("node_modules/codemirror") ||
+            id.includes("node_modules/@lezer") ||
+            id.includes("node_modules/@marijn") ||
+            id.includes("node_modules/style-mod") ||
+            id.includes("node_modules/w3c-keyname") ||
+            id.includes("node_modules/crelt")
+          ) {
             return "vendor-codemirror";
+          }
+          // Word-list and CMU dictionary are large; isolate them so the main
+          // bundle stays lean and they can be cached independently.
+          if (
+            id.includes("node_modules/word-list") ||
+            id.includes("node_modules/cmu-pronouncing-dictionary")
+          ) {
+            return "vendor-dictionaries";
+          }
+          // docx is pulled in only for export; keep it out of the critical path.
+          if (id.includes("node_modules/docx")) {
+            return "vendor-docx";
           }
         },
       },

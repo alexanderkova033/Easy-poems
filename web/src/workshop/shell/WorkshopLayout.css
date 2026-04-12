@@ -1,0 +1,366 @@
+.workshop-grid {
+  display: grid;
+  gap: 1.45rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .workshop-grid {
+    grid-template-columns: 64px minmax(0, 1.35fr) minmax(320px, 480px);
+    gap: 1.55rem;
+  }
+}
+
+.poem-workshop.is-focus-mode .workshop-grid {
+  grid-template-columns: 1fr;
+}
+
+.poem-workshop.is-focus-mode .privacy {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  /*
+   * Mobile layout: two full-width "slides" (editor + tools) that sit side by
+   * side inside an overflow-hidden viewport strip. Swiping left reveals tools;
+   * swiping right reveals the editor. No vertical stacking of two tall panels.
+   */
+  .workshop-grid {
+    /* Overflow hidden on the outer shell; the slides scroll inside */
+    display: block;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Slide container — two panels at 100vw each, side by side */
+  .workshop-grid .workshop-rail {
+    display: none; /* rail hidden on mobile; actions are in the bottom bar */
+  }
+
+  .editor-panel,
+  .tools-panel {
+    width: 100%;
+    box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    min-height: 100%;
+    /* Extra bottom padding so content clears fixed action bar */
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    will-change: transform;
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow-y: auto;
+    /* Prevent rubber-banding from hijacking the slide transition */
+    overscroll-behavior-x: none;
+    /* Establish independent scroll context */
+    -webkit-overflow-scrolling: touch;
+    /* Isolate paint for each slide panel */
+    contain: paint;
+  }
+
+  /* Both slides fill the grid area and can scroll independently */
+  .editor-panel {
+    position: relative; /* in-flow to give the grid a natural height */
+    transform: translateX(0);
+    min-height: 100svh;
+  }
+
+  .tools-panel {
+    transform: translateX(100%);
+    height: 100svh;
+    max-height: none;
+  }
+
+  /* State-driven: editor view (default) */
+  .workshop-grid[data-mobile-view="editor"] .editor-panel {
+    transform: translateX(0);
+  }
+  .workshop-grid[data-mobile-view="editor"] .tools-panel {
+    transform: translateX(100%);
+  }
+
+  /* State-driven: tools view — editor slides out left, tools slides in */
+  .workshop-grid[data-mobile-view="tools"] .editor-panel {
+    transform: translateX(-100%);
+    /* move out of flow so grid doesn't retain its height when tools are showing */
+    position: absolute;
+  }
+  .workshop-grid[data-mobile-view="tools"] .tools-panel {
+    transform: translateX(0);
+    position: relative; /* in-flow when active so page height matches tools content */
+    height: auto;
+    min-height: 100svh;
+  }
+
+  /* The toggle button becomes a tab switcher in the tools head */
+  .mobile-tools-panel-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    justify-content: center;
+    min-height: 2.75rem; /* ≥44px touch target */
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 650;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.14s ease, border-color 0.14s ease;
+  }
+
+  .mobile-tools-panel-toggle::before {
+    content: "←";
+    font-size: 0.85rem;
+    opacity: 0.72;
+  }
+
+  .mobile-tools-panel-toggle:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  }
+
+  .mobile-tools-panel-toggle:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* When tools are shown, hide collapsed state — always show content */
+  .tools-panel.is-mobile-collapsed .tool-bucket-row,
+  .tools-panel.is-mobile-collapsed .tools-overview-wrap,
+  .tools-panel.is-mobile-collapsed .tools-overview-strip,
+  .tools-panel.is-mobile-collapsed .tool-tabs,
+  .tools-panel.is-mobile-collapsed .tool-tab-panel {
+    display: none !important;
+  }
+
+  .tools-panel.is-mobile-collapsed {
+    max-height: none;
+  }
+
+  /* Sticky head within the tools panel scroll */
+  .tools-panel .tools-sticky-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--surface);
+  }
+
+  .tools-overview-pill {
+    min-height: 2.75rem;
+    padding: 0.4rem 0.65rem;
+    align-items: center;
+  }
+
+  .tools-overview-strip-minimal {
+    gap: 0.35rem 0.45rem;
+    padding-left: 0.05rem;
+    padding-right: 0.05rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .tool-tab {
+    min-height: 2.85rem;
+    padding: 0.55rem 0.35rem 0.5rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .mobile-tools-panel-toggle {
+    display: none !important;
+  }
+}
+
+.workshop-rail {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .workshop-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    padding: 0.65rem 0.5rem;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+    background: color-mix(in srgb, var(--surface) 82%, var(--bg));
+    box-shadow: 0 2px 10px color-mix(in srgb, #000 6%, transparent);
+    backdrop-filter: saturate(1.02) blur(8px);
+    -webkit-backdrop-filter: saturate(1.02) blur(8px);
+    position: sticky;
+    top: 1.15rem;
+    align-self: start;
+  }
+
+  .workshop-rail.is-hidden {
+    display: none;
+  }
+}
+
+.rail-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 0.5rem 0.35rem;
+  min-height: 3.25rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.2s ease,
+    color 0.15s ease;
+}
+
+.rail-btn:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+
+.rail-btn:active {
+  transform: translateY(0);
+}
+
+.rail-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Library — accent label + icon, subtle tint */
+.rail-btn-library .workshop-rail-icon {
+  color: var(--accent);
+}
+
+.rail-btn-library .rail-label {
+  color: var(--accent);
+}
+
+/* Export — accent border + light tint, clearly the action button */
+.rail-btn-primary {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+}
+
+.rail-btn-primary .workshop-rail-icon {
+  color: var(--accent);
+}
+
+.rail-btn-primary .rail-label {
+  color: var(--accent);
+}
+
+.rail-btn-primary:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+}
+
+/* Guide — distinctive: filled accent background so it stands out at a glance */
+.rail-btn-guide {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 3px 12px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.rail-btn-guide .workshop-rail-icon {
+  color: var(--accent);
+}
+
+.rail-btn-guide .rail-label {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.rail-btn-guide:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 26%, var(--bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent),
+    0 4px 16px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.rail-btn-fonts {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.rail-btn-fonts:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg));
+}
+
+.rail-btn-fonts .workshop-rail-icon {
+  color: var(--accent);
+}
+
+.rail-btn-scene {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+}
+
+.rail-btn-scene:hover {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  background: color-mix(in srgb, var(--accent) 11%, var(--bg));
+}
+
+/* When a rail modal is open, make the matching button look "selected". */
+.rail-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  background:
+    radial-gradient(
+      circle at 32% 22%,
+      color-mix(in srgb, var(--accent) 18%, transparent),
+      transparent 62%
+    ),
+    color-mix(in srgb, var(--accent) 12%, var(--bg));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 10px 26px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.rail-btn-scene .workshop-rail-icon {
+  color: color-mix(in srgb, var(--accent) 85%, var(--muted));
+}
+
+.workshop-rail-icon {
+  width: 1.35rem;
+  height: 1.35rem;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+
+.workshop-rail-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.rail-label {
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.1;
+}
+

@@ -1,8 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { PoemWorkshop } from "@/poem-workshop/PoemWorkshop";
-import { applyAppearance, loadAppearance } from "@/poem-workshop/appearance";
-import { HoverHintsProvider } from "@/poem-workshop/HoverHintsContext";
+import { PoemWorkshop } from "@/workshop/shell/PoemWorkshop";
+import { applyAppearance, loadAppearance } from "@/workshop/appearance/appearance";
+import { HoverHintsProvider } from "@/workshop/hints/HoverHintsContext";
 import { ErrorBoundary } from "@/app/ErrorBoundary";
 import "@/app/index.css";
 

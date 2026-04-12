@@ -1,0 +1,1673 @@
+import type { ChangeEvent, KeyboardEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { SpellMode } from "@/workshop/library/local-draft-storage";
+import type { SpellHit } from "@/spellcheck/scan";
+import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
+import type { GoalEvaluation } from "@/workshop/analysis/goal-metrics";
+import type { DocumentStats } from "@/workshop/analysis/line-stats";
+import { POETRY_READING_WPM } from "@/workshop/analysis/line-stats";
+import type { ChecklistItem } from "@/workshop/analysis/publication-checklist";
+import type { RhymeCluster } from "@/workshop/analysis/rhyme-hints";
+import type { RepeatedWord } from "@/workshop/analysis/repeated-words";
+import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
+import type { LineDiffRow } from "@/workshop/library/diff-lines";
+import type {
+  LineMeterHint,
+  LineStressSource,
+  MeterCoverageSummary,
+} from "@/workshop/analysis/meter-hints";
+import { downloadTextFile } from "@/workshop/library/export-poem";
+import {
+  addToPersonalDictionary,
+  ignoreWordForSession,
+  listPersonalDictionaryWords,
+  mergePersonalDictionaryFromJson,
+  removeFromPersonalDictionary,
+} from "@/spellcheck/personal-dictionary";
+import { LiveSectionTitle } from "./ToolTabBar";
+import { RhymeFinder } from "./RhymeFinder";
+import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
+import {
+  RevisionCompareSection,
+  type CompareSnapshotOption,
+} from "./RevisionCompareSection";
+import type { ToolTab } from "@/workshop/shell/workshop-helpers";
+
+const LINES_TABLE_MAX = 400;
+const METER_TABLE_MAX = 400;
+const STANZA_TABLE_MAX = 32;
+
+function meterStressSourceMark(s: LineStressSource): string {
+  if (s === "lexicon") return "✓";
+  if (s === "mixed") return "~";
+  return "—";
+}
+
+function meterStressSourceHint(s: LineStressSource): string {
+  if (s === "lexicon") return "Stress from CMU dictionary for this line";
+  if (s === "mixed") return "Mixed dictionary + heuristic stress";
+  return "Heuristic stress (word not in CMU list or invented)";
+}
+
+function NoLinesYetHint() {
+  return (
+    <p className="tool-no-lines-hint muted small" role="status">
+      Add a line with text in the poem body to see live stats and pattern tools
+      here. Blank-only lines don&apos;t count.
+    </p>
+  );
+}
+
+function EmptyState({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="tool-empty" role="status" aria-live="polite">
+      <p className="tool-empty-title">{title}</p>
+      <div className="tool-empty-body">{children}</div>
+    </div>
+  );
+}
+
+function checklistJumpLabel(item: ChecklistItem): string {
+  if (item.focusTitleField) return "Focus title";
+  switch (item.openToolTab) {
+    case "lines":
+      return "Lines";
+    case "spell":
+      return "Spelling";
+    case "goals":
+      return "Goals";
+    default:
+      return "Open";
+  }
+}
+
+function JumpLineList({
+  lineNumbers,
+  goToLine,
+}: {
+  lineNumbers: number[];
+  goToLine: (line1Based: number) => void;
+}) {
+  return (
+    <>
+      {lineNumbers.map((n, i) => (
+        <span key={`${n}-${i}`}>
+          {i > 0 ? ", " : null}
+          <button
+            type="button"
+            className="linkish line-jump-inline"
+            onClick={() => goToLine(n)}
+          >
+            {n}
+          </button>
+        </span>
+      ))}
+    </>
+  );
+}
+
+export interface WorkshopToolPanelsProps {
+  toolTab: ToolTab;
+  docStats: DocumentStats;
+  meterHints: LineMeterHint[];
+  goals: WorkshopGoals;
+  goalEvaluation: GoalEvaluation;
+  publication: { items: ChecklistItem[]; tips: string[] };
+  rhymeClusters: RhymeCluster[];
+  vowelTailClusters: RhymeCluster[];
+  assonanceClusters: RhymeCluster[];
+  consonanceClusters: RhymeCluster[];
+  clicheHits: ClicheHit[];
+  repeated: RepeatedWord[];
+  spellHits: SpellHit[];
+  wordlist: Set<string> | null;
+  wordlistErr: string | null;
+  spellMode: SpellMode;
+  onSpellModeChange: (mode: SpellMode) => void;
+  goToLine: (line1Based: number) => void;
+  goToSpellHitAt: (hit: SpellHit) => void;
+  cycleSpellHit: (delta: number) => void;
+  spellNavIndex: number;
+  applySpellSuggestion: (hit: SpellHit, replacement: string) => boolean;
+  spellBump: number;
+  refreshSpell: () => void;
+  onSpellPersistenceError: (message: string) => void;
+  updateGoal: (
+    key: keyof WorkshopGoals,
+  ) => (e: ChangeEvent<HTMLInputElement>) => void;
+  revisions: RevisionSnapshot[];
+  snapshotLabel: string;
+  onSnapshotLabelChange: (v: string) => void;
+  onSaveSnapshot: () => void;
+  snapshotFlash: boolean;
+  onRestoreRevision: (snap: RevisionSnapshot) => void;
+  onDeleteRevision: (id: string) => void;
+  compareLeftId: string;
+  compareRightId: string;
+  onCompareLeftChange: (id: string) => void;
+  onCompareRightChange: (id: string) => void;
+  compareViewMode: "side" | "diff";
+  onCompareViewModeChange: (mode: "side" | "diff") => void;
+  compareSnapshotOptions: CompareSnapshotOption[];
+  compareLeftBody: string;
+  compareRightBody: string;
+  compareDiffRows: LineDiffRow[];
+  onOpenToolTab: (tab: ToolTab) => void;
+  focusPoemTitle: () => void;
+  stressLexiconReady: boolean;
+  stressLexiconErr: string | null;
+  heavyToolsStale: boolean;
+  meterCoverageSummary: MeterCoverageSummary;
+}
+
+export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
+  const {
+    toolTab,
+    docStats,
+    meterHints,
+    goals,
+    goalEvaluation,
+    publication,
+    rhymeClusters,
+    vowelTailClusters,
+    assonanceClusters,
+    consonanceClusters,
+    clicheHits,
+    repeated,
+    spellHits,
+    wordlist,
+    wordlistErr,
+    spellMode,
+    onSpellModeChange,
+    goToLine,
+    goToSpellHitAt,
+    cycleSpellHit,
+    spellNavIndex,
+    applySpellSuggestion,
+    spellBump,
+    refreshSpell,
+    onSpellPersistenceError,
+    updateGoal,
+    revisions,
+    snapshotLabel,
+    onSnapshotLabelChange,
+    onSaveSnapshot,
+    snapshotFlash,
+    onRestoreRevision,
+    onDeleteRevision,
+    compareLeftId,
+    compareRightId,
+    onCompareLeftChange,
+    onCompareRightChange,
+    compareViewMode,
+    onCompareViewModeChange,
+    compareSnapshotOptions,
+    compareLeftBody,
+    compareRightBody,
+    compareDiffRows,
+    onOpenToolTab,
+    focusPoemTitle,
+    stressLexiconReady,
+    stressLexiconErr,
+    heavyToolsStale,
+    meterCoverageSummary,
+  } = props;
+
+  const [hideEmptyLines, setHideEmptyLines] = useState(false);
+  const [rhymeVisibleCap, setRhymeVisibleCap] = useState(10);
+  const [spellListCap, setSpellListCap] = useState(50);
+  const [spellReplaceErr, setSpellReplaceErr] = useState<string | null>(null);
+  const dictImportInputRef = useRef<HTMLInputElement | null>(null);
+  const [meterHideBlank, setMeterHideBlank] = useState(true);
+  const [meterOnlyLowFit, setMeterOnlyLowFit] = useState(false);
+  const [meterLowFitThreshold, setMeterLowFitThreshold] = useState(60);
+  const [meterOnlyHeuristic, setMeterOnlyHeuristic] = useState(false);
+  const [rhymeEndingFilter, setRhymeEndingFilter] = useState("");
+  const [repeatWordFilter, setRepeatWordFilter] = useState("");
+  const [goLineField, setGoLineField] = useState("");
+
+  useEffect(() => {
+    if (toolTab !== "spell") setSpellReplaceErr(null);
+  }, [toolTab]);
+
+  useEffect(() => {
+    setRhymeVisibleCap(10);
+  }, [
+    rhymeClusters,
+    vowelTailClusters,
+    assonanceClusters,
+    consonanceClusters,
+    rhymeEndingFilter,
+  ]);
+
+  useEffect(() => {
+    setSpellListCap(50);
+  }, [spellHits, spellMode]);
+
+  const personalWords = useMemo(
+    () => listPersonalDictionaryWords(),
+    [spellHits, spellBump],
+  );
+
+  const filterEndingClusters = useCallback((clusters: RhymeCluster[]) => {
+    const t = rhymeEndingFilter.trim().toLowerCase();
+    if (!t) return clusters;
+    return clusters.filter((c) => c.ending.toLowerCase().includes(t));
+  }, [rhymeEndingFilter]);
+
+  const filteredRepeated = useMemo(() => {
+    const t = repeatWordFilter.trim().toLowerCase();
+    if (!t) return repeated;
+    return repeated.filter((r) => r.word.toLowerCase().includes(t));
+  }, [repeated, repeatWordFilter]);
+
+  const displayedLineRows = useMemo(() => {
+    if (!hideEmptyLines) return docStats.lines;
+    return docStats.lines.filter((r) => r.text.trim().length > 0);
+  }, [docStats.lines, hideEmptyLines]);
+
+  const displayedMeterHints = useMemo(() => {
+    const rows = meterHints.slice(0, METER_TABLE_MAX);
+    return rows.filter((r) => {
+      if (meterHideBlank && !r.stressPattern) return false;
+      if (meterOnlyHeuristic && r.stressSource !== "heuristic") return false;
+      if (!meterOnlyLowFit) return true;
+      if (r.iambicFitPercent == null) return false;
+      return r.iambicFitPercent < meterLowFitThreshold;
+    });
+  }, [
+    meterHideBlank,
+    meterHints,
+    meterLowFitThreshold,
+    meterOnlyHeuristic,
+    meterOnlyLowFit,
+  ]);
+
+  const rhymeFilteredRhyme = filterEndingClusters(rhymeClusters);
+  const rhymeFilteredVowel = filterEndingClusters(vowelTailClusters);
+  const rhymeFilteredAsson = filterEndingClusters(assonanceClusters);
+  const rhymeFilteredCons = filterEndingClusters(consonanceClusters);
+  const rhymeAnyOverCap =
+    rhymeFilteredRhyme.length > rhymeVisibleCap ||
+    rhymeFilteredVowel.length > rhymeVisibleCap ||
+    rhymeFilteredAsson.length > rhymeVisibleCap ||
+    rhymeFilteredCons.length > rhymeVisibleCap;
+
+  const openChecklistItems = publication.items.filter((i) => !i.done);
+  const issuesAllClear =
+    openChecklistItems.length === 0 &&
+    goalEvaluation.warnings.length === 0 &&
+    (!wordlist || spellHits.length === 0) &&
+    clicheHits.length === 0;
+
+  return (
+    <div className="tool-tab-panel" key={toolTab}>
+      {toolTab === "issues" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-issues"
+          role="tabpanel"
+          aria-labelledby="tool-tab-issues"
+        >
+          <LiveSectionTitle>Revision queue</LiveSectionTitle>
+          <p className="muted small">
+            Checklist gaps, goal warnings, and spelling flags together. Jump
+            buttons open the right tool or line.
+          </p>
+          {issuesAllClear ? (
+            <EmptyState title="All clear — keep writing.">
+              <p className="muted small">
+                Checklist, goals, and spelling are all satisfied. Issues appear
+                here as you draft.
+              </p>
+            </EmptyState>
+          ) : (
+            <>
+              {openChecklistItems.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Publication checklist</h4>
+                  <ul
+                    className="checklist checklist-draft"
+                    aria-label="Open checklist items"
+                  >
+                    {openChecklistItems.map((item) => (
+                      <li
+                        key={item.text}
+                        className="checklist-item open checklist-item-needs-attn"
+                      >
+                        <span className="checklist-mark" aria-hidden>
+                          ○
+                        </span>
+                        <span className="checklist-text">
+                          {item.text}
+                          {item.detail ? (
+                            <span className="checklist-detail">
+                              {" "}
+                              — {item.detail}
+                            </span>
+                          ) : null}
+                        </span>
+                        {item.focusTitleField || item.openToolTab ? (
+                          <button
+                            type="button"
+                            className="small-btn checklist-jump-btn"
+                            onClick={() =>
+                              item.focusTitleField
+                                ? focusPoemTitle()
+                                : onOpenToolTab(item.openToolTab!)
+                            }
+                          >
+                            {checklistJumpLabel(item)}
+                          </button>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {goalEvaluation.warnings.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Goals</h4>
+                  <ul className="goal-warnings">
+                    {goalEvaluation.warnings.map((w) => (
+                      <li key={w}>{w}</li>
+                    ))}
+                  </ul>
+                  <p className="muted small goal-syllable-jumps">
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => onOpenToolTab("goals")}
+                    >
+                      Open Goals
+                    </button>
+                    {goalEvaluation.syllableOverLines.length > 0 ? (
+                      <>
+                        {" "}
+                        · Lines over syllable cap:{" "}
+                        <JumpLineList
+                          lineNumbers={goalEvaluation.syllableOverLines}
+                          goToLine={goToLine}
+                        />
+                      </>
+                    ) : null}
+                  </p>
+                </>
+              ) : null}
+              {!wordlist ? (
+                <p className="muted small" aria-busy="true">
+                  Dictionary loading — spelling flags will appear here when
+                  ready.
+                </p>
+              ) : spellHits.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Spelling</h4>
+                  <p className="muted small">
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => onOpenToolTab("spell")}
+                    >
+                      Open Spelling
+                    </button>{" "}
+                    for the full list and dictionary actions.
+                  </p>
+                  <ul className="spell-hits spell-hits-draft issues-spell-preview">
+                    {spellHits.slice(0, 12).map((h) => (
+                      <li key={`${h.docFrom}-${h.docTo}`}>
+                        <div className="spell-hit-head">
+                          <button
+                            type="button"
+                            className="linkish"
+                            onClick={() => goToSpellHitAt(h)}
+                          >
+                            Line {h.lineNumber}
+                          </button>
+                          <span className="mono">{h.word}</span>
+                        </div>
+                        {h.suggestions.length > 0 ? (
+                          <p className="suggestions">
+                            Try: {h.suggestions.join(", ")}
+                          </p>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                  {spellHits.length > 12 ? (
+                    <p className="muted small">
+                      +{spellHits.length - 12} more in{" "}
+                      <button
+                        type="button"
+                        className="linkish"
+                        onClick={() => onOpenToolTab("spell")}
+                      >
+                        Spelling
+                      </button>
+                      .
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+              {clicheHits.length > 0 ? (
+                <>
+                  <h4 className="tool-subheading">Possible clichés</h4>
+                  <p className="muted small">
+                    Common phrases that may weaken your poem's originality.
+                  </p>
+                  <ul className="cliche-list">
+                    {clicheHits.map((h, i) => (
+                      <li key={i} className="cliche-hit">
+                        <button
+                          type="button"
+                          className="linkish cliche-line-btn"
+                          onClick={() => goToLine(h.lineNumber)}
+                        >
+                          Line {h.lineNumber}
+                        </button>
+                        <span className="cliche-phrase mono">&ldquo;{h.phrase}&rdquo;</span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {toolTab === "totals" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-totals"
+          role="tabpanel"
+          aria-labelledby="tool-tab-totals"
+        >
+          <LiveSectionTitle>Totals</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Detailed counts (syllables, read-aloud, stanza table) catch up after
+              you pause typing—word and line pills above stay live.
+            </p>
+          ) : null}
+          <ul
+            className="stat-chips stat-chips-draft"
+            role="status"
+            aria-live="polite"
+            aria-relevant="text"
+            title="These numbers track your poem as you type."
+          >
+            <li title="Every line break in the editor, including blanks">
+              <span className="chip-label">All lines</span>
+              <span className="chip-val">{docStats.totalLines}</span>
+            </li>
+            <li title="Lines that contain at least one non-space character">
+              <span className="chip-label">With text</span>
+              <span className="chip-val">{docStats.nonEmptyLines}</span>
+            </li>
+            <li>
+              <span className="chip-label">Words</span>
+              <span className="chip-val">{docStats.totalWords}</span>
+            </li>
+            <li>
+              <span className="chip-label">Characters</span>
+              <span className="chip-val">{docStats.totalChars}</span>
+            </li>
+            <li>
+              <span className="chip-label">Syllables (est.)</span>
+              <span className="chip-val">{docStats.totalSyllables}</span>
+            </li>
+            <li>
+              <span className="chip-label">Stanzas</span>
+              <span className="chip-val">{docStats.stanzaCount}</span>
+            </li>
+            <li>
+              <span className="chip-label">Read-aloud (est.)</span>
+              <span className="chip-val">
+                {docStats.totalWords === 0
+                  ? "—"
+                  : `${docStats.estimatedReadingMinutes} min`}
+              </span>
+            </li>
+            <li>
+              <span className="chip-label">Avg words / line</span>
+              <span className="chip-val">
+                {docStats.nonEmptyLines > 0
+                  ? docStats.avgWordsPerNonEmptyLine
+                  : "—"}
+              </span>
+            </li>
+            {docStats.longestLineByWords ? (
+              <li className="stat-chip-jump-wrap">
+                <span className="chip-label">Longest (words)</span>
+                <button
+                  type="button"
+                  className="chip-jump-btn"
+                  onClick={() =>
+                    goToLine(docStats.longestLineByWords!.lineNumber)
+                  }
+                >
+                  Line {docStats.longestLineByWords.lineNumber} (
+                  {docStats.longestLineByWords.words})
+                </button>
+              </li>
+            ) : null}
+            {docStats.longestLineByChars &&
+            docStats.longestLineByChars.lineNumber !==
+              docStats.longestLineByWords?.lineNumber ? (
+              <li className="stat-chip-jump-wrap">
+                <span className="chip-label">Longest (chars)</span>
+                <button
+                  type="button"
+                  className="chip-jump-btn"
+                  onClick={() =>
+                    goToLine(docStats.longestLineByChars!.lineNumber)
+                  }
+                >
+                  Line {docStats.longestLineByChars.lineNumber} (
+                  {docStats.longestLineByChars.chars})
+                </button>
+              </li>
+            ) : null}
+          </ul>
+          <p className="muted small totals-reading-hint">
+            Read-aloud time assumes ~{POETRY_READING_WPM} words/min (performance
+            poetry varies).
+          </p>
+          {docStats.stanzaStats.length > 0 ? (
+            <>
+              <h4 className="tool-subheading">Stanza breakdown</h4>
+              <p className="muted small">
+                Stanzas are blocks of lines separated by a blank line.
+              </p>
+              <div className="table-wrap table-wrap-draft">
+                <table className="line-table line-table-draft stanza-table">
+                  <caption className="sr-only">
+                    Per stanza: line range, lines with text, words, estimated
+                    syllables, average syllables per non-empty line
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">#</th>
+                      <th scope="col">Lines</th>
+                      <th scope="col">Non-empty</th>
+                      <th scope="col">Words</th>
+                      <th scope="col">Syll. (est.)</th>
+                      <th scope="col">Avg syll./line</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {docStats.stanzaStats
+                      .slice(0, STANZA_TABLE_MAX)
+                      .map((st) => (
+                        <tr key={st.stanzaIndex}>
+                          <td className="line-table-metric">{st.stanzaIndex}</td>
+                          <td className="line-table-metric">
+                            <button
+                              type="button"
+                              className="linkish stanza-line-range-btn"
+                              onClick={() => goToLine(st.startLine)}
+                              title={`Jump to start of stanza ${st.stanzaIndex}`}
+                            >
+                              {st.startLine}–{st.endLine}
+                            </button>
+                          </td>
+                          <td className="line-table-metric">
+                            {st.nonEmptyLines}
+                          </td>
+                          <td className="line-table-metric">{st.words}</td>
+                          <td className="line-table-metric">{st.syllables}</td>
+                          <td className="line-table-metric">
+                            {st.nonEmptyLines > 0
+                              ? st.avgSyllablesPerNonEmptyLine
+                              : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+              {docStats.stanzaStats.length > STANZA_TABLE_MAX ? (
+                <p className="muted small">
+                  Showing first {STANZA_TABLE_MAX} of{" "}
+                  {docStats.stanzaStats.length} stanzas.
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          <p className="muted small totals-hint">
+            Open <button type="button" className="linkish" onClick={() => onOpenToolTab("lines")}>Lines</button>{" "}
+            for the full table, or{" "}
+            <button type="button" className="linkish" onClick={() => onOpenToolTab("meter")}>
+              Meter
+            </button>{" "}
+            for stress patterns.
+          </p>
+        </div>
+      ) : null}
+
+      {toolTab === "goals" ? (
+        <div
+          className="tool-block"
+          id="tool-panel-goals"
+          role="tabpanel"
+          aria-labelledby="tool-tab-goals"
+        >
+          <h3 className="tool-heading-you">
+            <span className="you-marker" aria-hidden />
+            <span className="tool-heading-you-text">Goals</span>
+            <span className="you-badge">Your targets</span>
+          </h3>
+          <p className="muted small">Blank fields are ignored.</p>
+          <p className="muted small goals-crosslink">
+            Live counts are in{" "}
+            <button type="button" className="linkish" onClick={() => onOpenToolTab("totals")}>
+              Totals
+            </button>
+            ; per-line numbers in{" "}
+            <button type="button" className="linkish" onClick={() => onOpenToolTab("lines")}>
+              Lines
+            </button>
+            .
+          </p>
+          <div className="goal-grid">
+            <label className="goal-field">
+              Min lines
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.minLines ?? ""}
+                onChange={updateGoal("minLines")}
+              />
+            </label>
+            <label className="goal-field">
+              Max lines
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.maxLines ?? ""}
+                onChange={updateGoal("maxLines")}
+              />
+            </label>
+            <label className="goal-field">
+              Min words
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.minWords ?? ""}
+                onChange={updateGoal("minWords")}
+              />
+            </label>
+            <label className="goal-field">
+              Max words
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.maxWords ?? ""}
+                onChange={updateGoal("maxWords")}
+              />
+            </label>
+            <label className="goal-field">
+              Min stanzas
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.minStanzas ?? ""}
+                onChange={updateGoal("minStanzas")}
+                title="Blank lines between stanzas; see Totals"
+              />
+            </label>
+            <label className="goal-field">
+              Max stanzas
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.maxStanzas ?? ""}
+                onChange={updateGoal("maxStanzas")}
+              />
+            </label>
+            <label className="goal-field goal-field-span">
+              Max syllables / line (est.)
+              <input
+                type="number"
+                min={1}
+                inputMode="numeric"
+                value={goals.maxSyllablesPerLine ?? ""}
+                onChange={updateGoal("maxSyllablesPerLine")}
+                placeholder="Heavy lines"
+              />
+            </label>
+          </div>
+          {goalEvaluation.warnings.length > 0 ? (
+            <ul className="goal-warnings">
+              {goalEvaluation.warnings.map((w) => (
+                <li key={w}>{w}</li>
+              ))}
+            </ul>
+          ) : null}
+          {goalEvaluation.syllableOverLines.length > 0 ? (
+            <p className="muted small goal-syllable-jumps">
+              Jump to lines over your syllable cap:{" "}
+              <JumpLineList
+                lineNumbers={goalEvaluation.syllableOverLines}
+                goToLine={goToLine}
+              />
+            </p>
+          ) : null}
+          {goalEvaluation.warnings.length === 0 &&
+          Object.values(goals).some((v) => v != null) ? (
+            <p className="muted small">On target.</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {toolTab === "checklist" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-checklist"
+          role="tabpanel"
+          aria-labelledby="tool-tab-checklist"
+        >
+          <LiveSectionTitle>Publication checklist</LiveSectionTitle>
+          <p className="muted small">
+            Draft-only reminders from counts and goals—not legal review.
+          </p>
+          <div
+            className="revision-pass-row"
+            role="group"
+            aria-label="Revision pass shortcuts"
+          >
+            <span className="revision-pass-label">Revision pass:</span>{" "}
+            <button
+              type="button"
+              className="small-btn"
+              onClick={() => onOpenToolTab("spell")}
+            >
+              Spelling
+            </button>{" "}
+            <button
+              type="button"
+              className="small-btn"
+              onClick={() => onOpenToolTab("repeat")}
+            >
+              Repeats
+            </button>{" "}
+            <button
+              type="button"
+              className="small-btn"
+              onClick={() => onOpenToolTab("lines")}
+            >
+              Lines
+            </button>{" "}
+            <button
+              type="button"
+              className="small-btn"
+              onClick={() => onOpenToolTab("meter")}
+            >
+              Meter
+            </button>
+          </div>
+          <ul
+            className="checklist checklist-draft"
+            aria-label="Publication readiness from your draft"
+            title="Items update from your current draft."
+          >
+            {publication.items.map((item) => (
+              <li
+                key={item.text}
+                className={`checklist-item ${item.done ? "done" : "open"}${!item.done ? " checklist-item-needs-attn" : ""}`}
+              >
+                <span className="checklist-mark" aria-hidden>
+                  {item.done ? "✓" : "○"}
+                </span>
+                <span className="checklist-text">
+                  {item.text}
+                  {item.detail ? (
+                    <span className="checklist-detail">
+                      {" "}
+                      — {item.detail}
+                    </span>
+                  ) : null}
+                </span>
+                {!item.done &&
+                (item.openToolTab || item.focusTitleField) ? (
+                  <button
+                    type="button"
+                    className="small-btn checklist-jump-btn"
+                    onClick={() =>
+                      item.focusTitleField
+                        ? focusPoemTitle()
+                        : onOpenToolTab(item.openToolTab!)
+                    }
+                  >
+                    {checklistJumpLabel(item)}
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+          <ul className="checklist-tips">
+            {publication.tips.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {toolTab === "lines" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-lines"
+          role="tabpanel"
+          aria-labelledby="tool-tab-lines"
+        >
+          <LiveSectionTitle>Line table</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Table syllable estimates match your text in a moment.
+            </p>
+          ) : null}
+          <form
+            className="lines-go-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const n = parseInt(goLineField.trim(), 10);
+              if (!Number.isFinite(n) || n < 1) return;
+              goToLine(n);
+            }}
+          >
+            <label className="lines-go-label">
+              Go to line
+              <input
+                id="go-line-input"
+                value={goLineField}
+                onChange={(e) => setGoLineField(e.target.value)}
+                inputMode="numeric"
+                placeholder="#"
+                aria-label="Go to line number"
+              />
+            </label>
+            <button type="submit" className="small-btn">
+              Go
+            </button>
+          </form>
+          <p className="tools-table-note">
+            Syllable counts match <strong>Totals</strong> (same estimate). Line
+            numbers in the table are clickable—pick a row to jump in the draft.
+          </p>
+          <div className="lines-table-toolbar">
+            <label className="lines-hide-empty-label">
+              <input
+                type="checkbox"
+                checked={hideEmptyLines}
+                onChange={(e) => setHideEmptyLines(e.target.checked)}
+              />
+              Hide blank lines
+            </label>
+          </div>
+          <div className="table-wrap table-wrap-draft">
+            <table
+              className="line-table line-table-draft"
+              title="Per-line stats; click a row to jump in the editor."
+            >
+              <caption className="sr-only">
+                Per line: line number, estimated syllables, word count,
+                and character count. Activate a row to move the cursor
+                there.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <abbr title="Line number">Line</abbr>
+                  </th>
+                  <th scope="col">
+                    <abbr title="Estimated syllables (heuristic)">Syll.</abbr>
+                  </th>
+                  <th scope="col">Words</th>
+                  <th scope="col">Chars</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedLineRows.slice(0, LINES_TABLE_MAX).map((row) => (
+                  <tr
+                    key={row.lineNumber}
+                    className="line-table-data-row line-table-row-jump"
+                    tabIndex={0}
+                    aria-label={`Line ${row.lineNumber}: ${row.syllables} syllables, ${row.words} words. Open in editor.`}
+                    onClick={() => goToLine(row.lineNumber)}
+                    onKeyDown={(e: KeyboardEvent<HTMLTableRowElement>) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        goToLine(row.lineNumber);
+                      }
+                    }}
+                  >
+                    <td className="line-table-metric line-table-line-num">
+                      {row.lineNumber}
+                    </td>
+                    <td className="line-table-metric">{row.syllables}</td>
+                    <td className="line-table-metric">{row.words}</td>
+                    <td className="line-table-metric">{row.chars}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {displayedLineRows.length > LINES_TABLE_MAX ? (
+            <p className="muted small">
+              Showing first {LINES_TABLE_MAX} of {displayedLineRows.length}{" "}
+              rows
+              {hideEmptyLines ? " (blank lines hidden)" : ""}.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {toolTab === "meter" ? (
+        <div
+          className="tool-block tool-block-live tool-block-meter"
+          id="tool-panel-meter"
+          role="tabpanel"
+          aria-labelledby="tool-tab-meter"
+        >
+          <LiveSectionTitle>Stress &amp; meter (approx.)</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Tools updating… (meter matches your text in a moment)
+            </p>
+          ) : null}
+          <details className="tool-hint-details">
+            <summary className="tool-hint-summary">How to read this</summary>
+            <p className="muted small tool-hint-body">
+              <strong>/</strong> = stressed syllable, <strong>x</strong> = unstressed.
+              These are estimates &mdash; trust your ear over the numbers.{" "}
+              <abbr title="CMU Pronouncing Dictionary: a large English pronunciation database. Words it knows get accurate stress. Words it does not know (names, invented words) fall back to heuristic guessing.">CMU dictionary</abbr>{" "}
+              words are marked &#10003;; others are guesses (&#126; or &mdash;).
+              &ldquo;Iambic-ish %&rdquo; measures fit to a{" "}
+              <abbr title="Iambic meter: alternating unstressed and stressed syllables (x /). da-DUM da-DUM. A sonnet uses 5 pairs per line (iambic pentameter).">weak-strong alternating pattern</abbr>{" "}
+              &mdash; a cue, not a verdict.
+            </p>
+          </details>
+          {stressLexiconErr ? (
+            <p className="error compact" role="alert">
+              {stressLexiconErr} Meter falls back to heuristics.
+            </p>
+          ) : stressLexiconReady ? (
+            <p className="muted small meter-lexicon-status" role="status">
+              Dictionary stress ready (filtered CMU pronunciations for the local word
+              list).
+            </p>
+          ) : (
+            <p className="muted small meter-lexicon-status" aria-busy="true">
+              Loading stress dictionary…
+            </p>
+          )}
+          {meterCoverageSummary.nonEmptyLines > 0 ? (
+            <p className="muted small meter-coverage-summary" role="status">
+              Non-empty lines: {meterCoverageSummary.nonEmptyLines} — CMU-backed:{" "}
+              {meterCoverageSummary.lexiconLines}, mixed:{" "}
+              {meterCoverageSummary.mixedLines}, heuristic only:{" "}
+              {meterCoverageSummary.heuristicLines}
+            </p>
+          ) : null}
+          <p className="muted small meter-source-legend">
+            <strong>Source column:</strong> {meterStressSourceMark("lexicon")}{" "}
+            full CMU coverage for counted words on that line;{" "}
+            {meterStressSourceMark("mixed")} mix of CMU and guess;{" "}
+            {meterStressSourceMark("heuristic")} heuristic only (names, coinages,
+            or missing from list).
+          </p>
+
+          <div className="meter-controls" role="group" aria-label="Meter filters">
+            <label className="meter-toggle">
+              <input
+                type="checkbox"
+                checked={meterHideBlank}
+                onChange={(e) => setMeterHideBlank(e.target.checked)}
+              />{" "}
+              Hide blanks
+            </label>
+            <label className="meter-toggle">
+              <input
+                type="checkbox"
+                checked={meterOnlyLowFit}
+                onChange={(e) => setMeterOnlyLowFit(e.target.checked)}
+              />{" "}
+              Show low fit
+            </label>
+            <label className="meter-toggle">
+              <input
+                type="checkbox"
+                checked={meterOnlyHeuristic}
+                onChange={(e) => setMeterOnlyHeuristic(e.target.checked)}
+              />{" "}
+              Heuristic lines only
+            </label>
+            {meterOnlyLowFit ? (
+              <label className="meter-threshold">
+                Below{" "}
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={meterLowFitThreshold}
+                  onChange={(e) =>
+                    setMeterLowFitThreshold(
+                      Number.isFinite(e.target.valueAsNumber)
+                        ? e.target.valueAsNumber
+                        : 60,
+                    )
+                  }
+                />{" "}
+                %
+              </label>
+            ) : null}
+          </div>
+          <div className="table-wrap table-wrap-draft">
+            <table
+              className="line-table line-table-draft line-table-meter"
+              title="Per-line stress pattern; click a row to jump in the editor."
+            >
+              <caption className="sr-only">
+                Line number, syllable count, stress marks, dictionary vs heuristic,
+                iambic fit, jump to line.
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">
+                    <abbr title="Line number">Line</abbr>
+                  </th>
+                  <th scope="col">
+                    <abbr title="Estimated syllables">Syll.</abbr>
+                  </th>
+                  <th scope="col">Stress (est.)</th>
+                  <th scope="col">
+                    <abbr title="✓ CMU for whole line; ~ mixed; — heuristic">
+                      Dict
+                    </abbr>
+                  </th>
+                  <th scope="col">
+                    <abbr title="Loose match to alternating weak-strong">Iambic-ish</abbr>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayedMeterHints.map((row) => (
+                  <tr
+                    key={row.lineNumber}
+                    className="line-table-data-row line-table-row-jump"
+                    tabIndex={0}
+                    aria-label={`Line ${row.lineNumber}: stress pattern. Open in editor.`}
+                    onClick={() => goToLine(row.lineNumber)}
+                    onKeyDown={(e: KeyboardEvent<HTMLTableRowElement>) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        goToLine(row.lineNumber);
+                      }
+                    }}
+                  >
+                    <td className="line-table-metric">{row.lineNumber}</td>
+                    <td className="line-table-metric">{row.syllables}</td>
+                    <td className="line-table-stress mono">
+                      {row.stressPattern || "—"}
+                    </td>
+                    <td
+                      className="line-table-metric meter-dict-col"
+                      title={meterStressSourceHint(row.stressSource)}
+                    >
+                      {meterStressSourceMark(row.stressSource)}
+                    </td>
+                    <td className="line-table-metric">
+                      {row.iambicFitPercent != null ? `${row.iambicFitPercent}%` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {meterHints.length > METER_TABLE_MAX ? (
+            <p className="muted small">
+              Showing first {METER_TABLE_MAX} of {meterHints.length} lines.
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {toolTab === "rhyme" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-rhyme"
+          role="tabpanel"
+          aria-labelledby="tool-tab-rhyme"
+        >
+          <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          <RhymeFinder />
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Tools updating… (rhyme matches your text in a moment)
+            </p>
+          ) : null}
+          <details className="tool-hint-details">
+            <summary className="tool-hint-summary">How this works</summary>
+            <p className="muted small tool-hint-body">
+              These are <abbr title="Based on spelling patterns at the end of words, not phonetic pronunciation. 'love' and 'dove' would match; 'love' and 'above' might not, even though they rhyme in speech.">letter-pattern</abbr> detectors &mdash; a useful first pass, but your ear is the real judge. Tap a line number to jump to it.
+            </p>
+          </details>
+          <label className="tool-filter-field">
+            <span className="tool-filter-label">Filter endings</span>
+            <input
+              type="search"
+              value={rhymeEndingFilter}
+              onChange={(e) => setRhymeEndingFilter(e.target.value)}
+              placeholder="Substring, e.g. ing"
+              aria-label="Filter rhyme clusters by ending letters"
+            />
+          </label>
+          <h4 className="tool-subheading">Shared final letter pattern</h4>
+          {rhymeClusters.length === 0 ? (
+            <EmptyState title="No shared endings yet">
+              <p className="muted small">
+                Keep drafting—this fills in once multiple lines end the same way.
+              </p>
+            </EmptyState>
+          ) : rhymeFilteredRhyme.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {rhymeFilteredRhyme.slice(0, rhymeVisibleCap).map((c) => (
+                <li key={c.ending}>
+                  <span className="mono">…{c.ending}</span> — lines{" "}
+                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <h4 className="tool-subheading">
+            <abbr title="Eye rhyme: words that look like they rhyme because of shared spelling (e.g. 'love' and 'move'), even if they sound different.">Eye rhymes</abbr> (same spelling from last vowel)
+          </h4>
+          {vowelTailClusters.length === 0 ? (
+            <EmptyState title="No eye rhymes yet">
+              <p className="muted small">
+                Groups lines whose endings look alike on the page — useful for visual or slant rhyme.
+              </p>
+            </EmptyState>
+          ) : rhymeFilteredVowel.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {rhymeFilteredVowel.slice(0, rhymeVisibleCap).map((c) => (
+                <li key={c.ending}>
+                  <span className="mono">…{c.ending}</span> — lines{" "}
+                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <h4 className="tool-subheading">
+            <abbr title="Assonance: repetition of vowel sounds, e.g. 'fleet' and 'dream'. Detected by vowel letter patterns in each line's last word — spelling only, not sound.">Shared vowel letters</abbr> (last word)
+          </h4>
+          {assonanceClusters.length === 0 ? (
+            <EmptyState title="No assonance clusters yet">
+              <p className="muted small">
+                Needs two lines whose final words share the same vowel-letter
+                pattern.
+              </p>
+            </EmptyState>
+          ) : rhymeFilteredAsson.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {rhymeFilteredAsson.slice(0, rhymeVisibleCap).map((c) => (
+                <li key={c.ending}>
+                  <span className="mono">{c.ending}</span> — lines{" "}
+                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+          <h4 className="tool-subheading">
+            <abbr title="Consonance: repetition of consonant sounds at word endings, e.g. 'luck' and 'block'. Detected by the consonant letters after the last vowel in each line's final word — spelling only.">Shared ending consonants</abbr> (last word)
+          </h4>
+          {consonanceClusters.length === 0 ? (
+            <EmptyState title="No consonance clusters yet">
+              <p className="muted small">
+                Appears when final words share a similar written consonant
+                coda.
+              </p>
+            </EmptyState>
+          ) : rhymeFilteredCons.length === 0 ? (
+            <p className="muted small">No endings match this filter.</p>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {rhymeFilteredCons.slice(0, rhymeVisibleCap).map((c) => (
+                <li key={c.ending}>
+                  <span className="mono">…{c.ending}</span> — lines{" "}
+                  <JumpLineList lineNumbers={c.lineNumbers} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {rhymeAnyOverCap ? (
+            <p className="rhyme-show-more-wrap">
+              <button
+                type="button"
+                className="small-btn"
+                onClick={() => setRhymeVisibleCap((c) => c + 10)}
+              >
+                Show 10 more clusters
+              </button>
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {toolTab === "repeat" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-repeat"
+          role="tabpanel"
+          aria-labelledby="tool-tab-repeat"
+        >
+          <LiveSectionTitle>Repeated words</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Tools updating… (repeats match your text in a moment)
+            </p>
+          ) : null}
+          <p className="muted small">
+            Non‑stopwords, 4+ letters, appearing twice or more (top 40). Tap a line
+            number to jump.
+          </p>
+          <label className="tool-filter-field">
+            <span className="tool-filter-label">Filter words</span>
+            <input
+              type="search"
+              value={repeatWordFilter}
+              onChange={(e) => setRepeatWordFilter(e.target.value)}
+              placeholder="Substring"
+              aria-label="Filter repeated words"
+            />
+          </label>
+          {repeated.length === 0 ? (
+            <EmptyState title="No repeats detected">
+              <p className="muted small">
+                Nice—this list stays empty unless a non-stopword repeats.
+              </p>
+            </EmptyState>
+          ) : filteredRepeated.length === 0 ? (
+            <p className="muted small">No words match this filter.</p>
+          ) : (
+            <ul className="hint-list hint-list-draft">
+              {filteredRepeated.map((r) => (
+                <li key={r.word}>
+                  <span className="mono">{r.word}</span> ×{r.count} — lines{" "}
+                  <JumpLineList lineNumbers={r.lines} goToLine={goToLine} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : null}
+
+      {toolTab === "spell" ? (
+        <div
+          className="tool-block tool-block-live"
+          id="tool-panel-spell"
+          role="tabpanel"
+          aria-labelledby="tool-tab-spell"
+        >
+          <LiveSectionTitle>Spelling</LiveSectionTitle>
+          {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
+          {heavyToolsStale ? (
+            <p
+              className="tools-stale-hint muted small"
+              role="status"
+              aria-live="polite"
+            >
+              Catching up to your latest typing. This list and the editor
+              underlines use the same scan after the same short pause; jumps
+              select the whole line until that catches up.
+            </p>
+          ) : (
+            <p className="muted small spell-sync-note" role="status">
+              List matches editor underlines (same dictionary pass on your draft).
+            </p>
+          )}
+          <div
+            className="spell-strategy-toggle"
+            role="group"
+            aria-label="How strictly to flag unknown words"
+          >
+            <button
+              type="button"
+              className={`segment-btn spell-strategy-btn ${spellMode === "permissive" ? "active" : ""}`}
+              aria-pressed={spellMode === "permissive"}
+              onClick={() => onSpellModeChange("permissive")}
+            >
+              <span className="spell-strategy-title">Poetry-friendly</span>
+              <span className="spell-strategy-sub">Fewer flags</span>
+            </button>
+            <button
+              type="button"
+              className={`segment-btn spell-strategy-btn ${spellMode === "strict" ? "active" : ""}`}
+              aria-pressed={spellMode === "strict"}
+              onClick={() => onSpellModeChange("strict")}
+            >
+              <span className="spell-strategy-title">Strict</span>
+              <span className="spell-strategy-sub">More flags</span>
+            </button>
+          </div>
+          {wordlistErr ? (
+            <p className="error compact" role="alert">
+              {wordlistErr}
+            </p>
+          ) : !wordlist ? (
+            <div
+              className="spell-loading-skeleton"
+              aria-busy="true"
+              aria-label="Loading dictionary"
+            >
+              <div className="spell-skeleton-line spell-skeleton-line-long" />
+              <div className="spell-skeleton-line spell-skeleton-line-mid" />
+              <div className="spell-skeleton-line spell-skeleton-line-short" />
+            </div>
+          ) : (
+            <>
+              <p className="muted small">
+                Local list + your additions—many "unknowns" are on purpose.
+              </p>
+              <details className="tool-hint-details personal-dict-details">
+                <summary className="tool-hint-summary">
+                  Personal dictionary ({personalWords.length})
+                </summary>
+                <p className="muted small tool-hint-body">
+                  Words you add with <strong>Add word</strong> are saved in this
+                  browser only.
+                </p>
+                {personalWords.length === 0 ? (
+                  <p className="muted small">No words yet.</p>
+                ) : (
+                  <ul className="personal-dict-wordlist">
+                    {personalWords.map((w) => (
+                      <li key={w}>
+                        <span className="mono">{w}</span>
+                        <button
+                          type="button"
+                          className="small-btn personal-dict-remove"
+                          onClick={() => {
+                            if (!removeFromPersonalDictionary(w)) {
+                              onSpellPersistenceError(
+                                "Could not update your dictionary (browser storage blocked or full).",
+                              );
+                              return;
+                            }
+                            refreshSpell();
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="personal-dict-io-row">
+                  {personalWords.length > 0 ? (
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() =>
+                        downloadTextFile(
+                          "easy-poems-personal-dictionary.json",
+                          `${JSON.stringify(personalWords, null, 2)}\n`,
+                        )
+                      }
+                    >
+                      Export JSON
+                    </button>
+                  ) : null}
+                  <input
+                    ref={dictImportInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="sr-only"
+                    aria-label="Import personal dictionary JSON"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = "";
+                      if (!f) return;
+                      void (async () => {
+                        try {
+                          const text = await f.text();
+                          const res = mergePersonalDictionaryFromJson(text);
+                          if (!res.ok) {
+                            onSpellPersistenceError(res.error);
+                            return;
+                          }
+                          refreshSpell();
+                        } catch {
+                          onSpellPersistenceError(
+                            "Could not read that file.",
+                          );
+                        }
+                      })();
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="small-btn"
+                    onClick={() => dictImportInputRef.current?.click()}
+                  >
+                    Import JSON
+                  </button>
+                </div>
+              </details>
+              {spellHits.length === 0 ? (
+                <EmptyState title="No spelling flags">
+                  <p className="muted small">
+                    Looks clean under your current mode. Switch modes if you want a
+                    stricter scan.
+                  </p>
+                </EmptyState>
+              ) : (
+                <>
+                  <div className="spell-hit-nav" role="group" aria-label="Step through spelling flags">
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() => cycleSpellHit(-1)}
+                    >
+                      ← Previous
+                    </button>
+                    <span className="spell-hit-nav-pos" aria-live="polite">
+                      {spellNavIndex + 1} / {spellHits.length}
+                    </span>
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() => cycleSpellHit(1)}
+                    >
+                      Next →
+                    </button>
+                  </div>
+                  <p className="muted small spell-hotkey-hint">
+                    <kbd className="kbd-hint">Ctrl</kbd> +{" "}
+                    <kbd className="kbd-hint">Alt</kbd> +{" "}
+                    <kbd className="kbd-hint">,</kbd> /{" "}
+                    <kbd className="kbd-hint">.</kbd> cycles flags whenever there
+                    are any (not while typing in the poem or another field).
+                  </p>
+                  {spellReplaceErr ? (
+                    <p className="error compact" role="alert">
+                      {spellReplaceErr}
+                    </p>
+                  ) : null}
+                <ul className="spell-hits spell-hits-draft">
+                  {spellHits.slice(0, spellListCap).map((h) => (
+                    <li key={`${h.docFrom}-${h.docTo}`}>
+                      <div className="spell-hit-head">
+                        <button
+                          type="button"
+                          className="linkish"
+                          onClick={() => goToSpellHitAt(h)}
+                        >
+                          Line {h.lineNumber}
+                        </button>
+                        <span className="mono">{h.word}</span>
+                      </div>
+                      {h.suggestions.length > 0 ? (
+                        <p className="suggestions">
+                          Try: {h.suggestions.join(", ")}
+                        </p>
+                      ) : null}
+                      {h.suggestions.length > 0 ? (
+                        <div className="spell-suggestion-actions">
+                          {h.suggestions.slice(0, 3).map((sug) => (
+                            <button
+                              key={sug}
+                              type="button"
+                              className="small-btn"
+                              disabled={heavyToolsStale}
+                              title={
+                                heavyToolsStale
+                                  ? "Pause typing so the list matches the editor"
+                                  : `Replace with “${sug}”`
+                              }
+                              onClick={() => {
+                                setSpellReplaceErr(null);
+                                if (!applySpellSuggestion(h, sug)) {
+                                  setSpellReplaceErr(
+                                    "Could not replace — wait until tools match your draft (pause typing), then try again.",
+                                  );
+                                  return;
+                                }
+                                refreshSpell();
+                              }}
+                            >
+                              Use “{sug}”
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="spell-actions">
+                        <button
+                          type="button"
+                          className="small-btn"
+                          onClick={() => {
+                            if (!addToPersonalDictionary(h.normalized)) {
+                              onSpellPersistenceError(
+                                "Could not save that word to your dictionary (browser storage blocked or full).",
+                              );
+                              return;
+                            }
+                            refreshSpell();
+                          }}
+                        >
+                          Add word
+                        </button>
+                        <button
+                          type="button"
+                          className="small-btn"
+                          onClick={() => {
+                            if (!ignoreWordForSession(h.normalized)) {
+                              onSpellPersistenceError(
+                                "Could not update session spelling skips.",
+                              );
+                              return;
+                            }
+                            refreshSpell();
+                          }}
+                        >
+                          Skip (session)
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {spellHits.length > spellListCap ? (
+                  <p className="spell-show-more-wrap">
+                    <button
+                      type="button"
+                      className="small-btn"
+                      onClick={() => setSpellListCap((c) => c + 50)}
+                    >
+                      Show 50 more
+                    </button>
+                  </p>
+                ) : null}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      ) : null}
+
+      {toolTab === "snapshots" ? (
+        <div
+          className="tool-block tool-block-snapshots"
+          id="tool-panel-snapshots"
+          role="tabpanel"
+          aria-labelledby="tool-tab-snapshots"
+        >
+          <RevisionCompareSection
+            embedInTools
+            revisions={revisions}
+            snapshotLabel={snapshotLabel}
+            onSnapshotLabelChange={onSnapshotLabelChange}
+            onSaveSnapshot={onSaveSnapshot}
+            snapshotFlash={snapshotFlash}
+            onRestoreRevision={onRestoreRevision}
+            onDeleteRevision={onDeleteRevision}
+            compareLeftId={compareLeftId}
+            compareRightId={compareRightId}
+            onCompareLeftChange={onCompareLeftChange}
+            onCompareRightChange={onCompareRightChange}
+            compareViewMode={compareViewMode}
+            onCompareViewModeChange={onCompareViewModeChange}
+            compareSnapshotOptions={compareSnapshotOptions}
+            compareLeftBody={compareLeftBody}
+            compareRightBody={compareRightBody}
+            compareDiffRows={compareDiffRows}
+          />
+        </div>
+      ) : null}
+
+    </div>
+  );
+}
