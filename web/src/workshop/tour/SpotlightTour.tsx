@@ -17,42 +17,49 @@ const STEPS: TourStep[] = [
   {
     id: "poem-editor",
     title: "Your writing space",
-    body: "Type your poem in the editor. The title and every line autosave instantly — nothing ever leaves your browser.",
+    body: "Type your poem here — title at the top, verses below. Everything autosaves to your browser instantly. Press Enter for a new line, leave a blank line between stanzas. Nothing ever leaves your device.",
     placement: "right",
     pad: 10,
   },
   {
     id: "format-toolbar",
-    title: "Formatting tools",
-    body: "Bold, italic, strikethrough — emphasise any word. Marks carry through to reading mode and .docx exports.",
+    title: "Formatting & reading",
+    body: "Bold, italic, or strikethrough any word. The read-aloud button plays your poem in a natural voice. The reading-mode button opens a distraction-free parchment view. All marks carry through to exported .docx files.",
     placement: "bottom",
     pad: 8,
   },
   {
     id: "topbar-actions",
-    title: "Quick shortcuts",
-    body: "Open templates, enter focus mode, take snapshots. Or press Cmd+K (Ctrl+K on Windows) to search every action at once.",
+    title: "Quick actions",
+    body: "Start from a template, enter full-screen focus mode, capture a named revision snapshot, or export to .docx. Press Cmd+K (Ctrl+K on Windows) to search every action from one place — the fastest way to navigate the app.",
     placement: "bottom",
     pad: 8,
   },
   {
     id: "rail-library",
-    title: "Your draft library",
-    body: "Store many poems and switch between them. Save named snapshots to track your revision history and compare versions.",
+    title: "Draft library",
+    body: "Keep as many poems as you like and switch between them instantly. Save a snapshot any time you want to preserve a version — you can compare two snapshots side-by-side later to see exactly what changed line by line.",
     placement: "right",
+    pad: 8,
+  },
+  {
+    id: "tool-buckets",
+    title: "Two tool buckets",
+    body: "Overview shows word counts, goal progress, issues, and a publication checklist. Sound digs into rhyme scheme, meter stress, cliché detection, and repeated words. Switch freely — both update live as you write.",
+    placement: "top",
     pad: 8,
   },
   {
     id: "tools-panel",
     title: "Live analysis",
-    body: "The tools panel updates as you type: rhyme scheme, syllable count, meter stress, spell check, word totals, and AI feedback.",
+    body: "The panel re-analyses your poem on every keystroke. Hover any result to see more detail. Click a line number to jump there in the editor. Spell-check works in both permissive (poetry-friendly) and strict modes.",
     placement: "left",
     pad: 10,
   },
   {
-    id: "tool-buckets",
-    title: "Two tool buckets",
-    body: "Overview shows word counts, issues, and goals. Sound digs into rhyme, meter, and musicality. Switch freely between them.",
+    id: "ai-analysis",
+    title: "AI feedback",
+    body: "Paste an OpenAI or Anthropic API key to unlock AI scoring across six dimensions: imagery, rhythm, emotional resonance, originality, coherence, and word choice. Save a snapshot first, then edit and compare — the AI shows exactly what improved.",
     placement: "top",
     pad: 8,
   },
@@ -65,7 +72,7 @@ interface Props {
 
 interface Viewport { w: number; h: number }
 
-const TOOLTIP_W = 280;
+const TOOLTIP_W = 300;
 const TOOLTIP_MIN_H = 150;
 const MARGIN = 12; // min gap between tooltip and viewport edge
 
@@ -131,6 +138,19 @@ function computeTooltipPos(
   return { top, left, finalPlacement };
 }
 
+/** Find the nearest scrollable ancestor of a given element. */
+function nearestScrollable(el: Element | null): Element | null {
+  while (el && el !== document.documentElement) {
+    const style = window.getComputedStyle(el);
+    const overflow = style.overflowY;
+    if ((overflow === "auto" || overflow === "scroll") && el.scrollHeight > el.clientHeight) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return document.documentElement;
+}
+
 // ── Component ────────────────────────────────────────────────────────────────
 export function SpotlightTour({ onClose }: Props) {
   const [stepIndex, setStepIndex] = useState(0);
@@ -141,6 +161,7 @@ export function SpotlightTour({ onClose }: Props) {
   });
   const [animDir, setAnimDir] = useState<"next" | "prev">("next");
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<SVGSVGElement | null>(null);
 
   const step = STEPS[stepIndex]!;
   const pad = step.pad ?? 10;
@@ -208,6 +229,23 @@ export function SpotlightTour({ onClose }: Props) {
     }
   };
 
+  /**
+   * Forward wheel events from the dim overlay to the underlying scrollable
+   * container so users can scroll the page while the tour is active.
+   */
+  const onOverlayWheel = useCallback((e: React.WheelEvent<SVGSVGElement>) => {
+    const svg = overlayRef.current;
+    if (!svg) return;
+    // Temporarily remove pointer events so elementFromPoint sees through
+    svg.style.pointerEvents = "none";
+    const underneath = document.elementFromPoint(e.clientX, e.clientY);
+    svg.style.pointerEvents = "";
+    const scrollable = nearestScrollable(underneath);
+    if (scrollable) {
+      scrollable.scrollBy({ top: e.deltaY, left: e.deltaX, behavior: "auto" });
+    }
+  }, []);
+
   // ── Spotlight geometry ──────────────────────────────────────────────────
   const fallbackRect = { x: vp.w / 2 - 80, y: vp.h / 2 - 60, width: 160, height: 120 };
   const r = rect ?? fallbackRect;
@@ -232,10 +270,12 @@ export function SpotlightTour({ onClose }: Props) {
     >
       {/* ── Dim overlay with SVG spotlight ── */}
       <svg
+        ref={overlayRef}
         className="spotlight-overlay"
         viewBox={`0 0 ${vp.w} ${vp.h}`}
         xmlns="http://www.w3.org/2000/svg"
         aria-hidden
+        onWheel={onOverlayWheel}
       >
         <defs>
           <mask id="spotlight-mask">

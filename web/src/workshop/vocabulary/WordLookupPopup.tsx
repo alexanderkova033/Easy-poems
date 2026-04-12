@@ -120,12 +120,11 @@ async function fetchDatamuseRelated(
 }
 
 const MAX_POS_GROUPS = 3;
-const MAX_DEFS_PER_GROUP = 2;
+const COLLAPSED_DEFS = 2;
 
 interface DefGroup {
   pos: string;
-  defs: string[];
-  totalDefs: number;
+  allDefs: string[];
 }
 
 function extractDefs(entry: DictEntry): DefGroup[] {
@@ -135,11 +134,7 @@ function extractDefs(entry: DictEntry): DefGroup[] {
       .map((d) => d.definition)
       .filter(Boolean);
     if (texts.length === 0) continue;
-    groups.push({
-      pos: m.partOfSpeech,
-      defs: texts.slice(0, MAX_DEFS_PER_GROUP),
-      totalDefs: texts.length,
-    });
+    groups.push({ pos: m.partOfSpeech, allDefs: texts });
     if (groups.length >= MAX_POS_GROUPS) break;
   }
   return groups;
@@ -187,6 +182,7 @@ export function WordLookupPopup({
   const [entry, setEntry] = useState<DictEntry | null>(null);
   const [altSyns, setAltSyns] = useState<string[]>([]);
   const [altAnts, setAltAnts] = useState<string[]>([]);
+  const [expandedPos, setExpandedPos] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState<"idle" | "loading" | "notfound" | "error">(
     "idle",
   );
@@ -202,6 +198,7 @@ export function WordLookupPopup({
     setEntry(null);
     setAltSyns([]);
     setAltAnts([]);
+    setExpandedPos(new Set());
     try {
       const [dictRes, dm] = await Promise.all([
         fetch(
@@ -248,6 +245,7 @@ export function WordLookupPopup({
     setEntry(null);
     setAltSyns([]);
     setAltAnts([]);
+    setExpandedPos(new Set());
     setAnchor(null);
     setPopupPos(null);
     setStatus("idle");
@@ -382,21 +380,39 @@ export function WordLookupPopup({
 
       {defGroups.length > 0 && (
         <div className="word-lookup-defs">
-          {defGroups.map((g) => (
-            <div key={g.pos} className="word-lookup-def-group">
-              <span className="word-lookup-pos">{g.pos}</span>
-              <ol className="word-lookup-def-list">
-                {g.defs.map((text, i) => (
-                  <li key={i} className="word-lookup-def-item">{text}</li>
-                ))}
-              </ol>
-              {g.totalDefs > MAX_DEFS_PER_GROUP && (
-                <span className="word-lookup-more-defs">
-                  +{g.totalDefs - MAX_DEFS_PER_GROUP} more
-                </span>
-              )}
-            </div>
-          ))}
+          {defGroups.map((g) => {
+            const isExpanded = expandedPos.has(g.pos);
+            const visibleDefs = isExpanded ? g.allDefs : g.allDefs.slice(0, COLLAPSED_DEFS);
+            const hiddenCount = g.allDefs.length - COLLAPSED_DEFS;
+            return (
+              <div key={g.pos} className="word-lookup-def-group">
+                <span className="word-lookup-pos">{g.pos}</span>
+                <ol className="word-lookup-def-list">
+                  {visibleDefs.map((text, i) => (
+                    <li key={i} className="word-lookup-def-item">{text}</li>
+                  ))}
+                </ol>
+                {!isExpanded && hiddenCount > 0 && (
+                  <button
+                    type="button"
+                    className="word-lookup-more-defs"
+                    onClick={() => setExpandedPos((prev) => new Set([...prev, g.pos]))}
+                  >
+                    +{hiddenCount} more
+                  </button>
+                )}
+                {isExpanded && hiddenCount > 0 && (
+                  <button
+                    type="button"
+                    className="word-lookup-more-defs"
+                    onClick={() => setExpandedPos((prev) => { const s = new Set(prev); s.delete(g.pos); return s; })}
+                  >
+                    Show less
+                  </button>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 

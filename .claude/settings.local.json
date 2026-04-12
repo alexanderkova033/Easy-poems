@@ -63,7 +63,9 @@
       "Bash(sed -i 's|from \"\\\\./appearance\"|from \"@/workshop/appearance/appearance\"|g' src/workshop/editor/FormatToolbar.tsx)",
       "Bash(sed -i 's|from \"\\\\./ReadAloudButton\"|from \"@/workshop/voice/ReadAloudButton\"|g' src/workshop/editor/FormatToolbar.tsx)",
       "Bash(sed -i 's|from \"\\\\./ToolTabBar\"|from \"@/workshop/analysis/ToolTabBar\"|g' src/workshop/palette/CommandPalette.tsx)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(node_modules/.bin/tsc --version)"
     ]
   }
 }

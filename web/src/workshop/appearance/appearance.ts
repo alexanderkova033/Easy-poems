@@ -123,6 +123,24 @@ export const BACKGROUND_OPTIONS = [
     blurb: "Pale ice, crystalline lattice, cold silver light.",
     glyph: "❄",
   },
+  {
+    id: "autumn",
+    label: "Autumn",
+    blurb: "Amber afternoon, warm dark tones, falling leaves.",
+    glyph: "❦",
+  },
+  {
+    id: "spring",
+    label: "Spring",
+    blurb: "Cherry blossoms, fresh green, soft morning light.",
+    glyph: "✿",
+  },
+  {
+    id: "summer",
+    label: "Summer",
+    blurb: "Clear sky, golden sun, bright open air.",
+    glyph: "⊙",
+  },
 ] as const;
 
 export type PoemFontId = (typeof POEM_FONT_OPTIONS)[number]["id"];

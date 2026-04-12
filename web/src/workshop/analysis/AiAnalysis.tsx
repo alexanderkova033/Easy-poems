@@ -346,7 +346,7 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
   }, [canCompare, hasPoem, lines, mode, model, savedLines, savedResult, title]);
 
   return (
-    <section className="ai-analysis-section" aria-label="AI poem analysis">
+    <section className="ai-analysis-section" aria-label="AI poem analysis" data-tour-id="ai-analysis">
       {/* Collapsible header */}
       <button
         type="button"
