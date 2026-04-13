@@ -18,15 +18,15 @@
   --btn-height-sm: 2.35rem;
   --btn-height-md: 2.55rem;
   --btn-height-lg: 2.8rem;
-  --bg: #0a0f0d;
-  --surface: #121a17;
-  --surface-2: #16201c;
+  --bg: #090f08;
+  --surface: #111a11;
+  --surface-2: #152016;
   --surface-elevated: color-mix(in srgb, var(--surface) 86%, var(--bg));
-  --border: #2a3832;
+  --border: #283a28;
   /* Softer than near-white for easier reading */
-  --text: #d5ddd7;
-  --muted: #9aafaa;
-  --accent: #7a9b7c;
+  --text: #d4ddd5;
+  --muted: #98ae9a;
+  --accent: #68aa6e;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
   --selection-bg: color-mix(in srgb, var(--accent) 32%, var(--surface));
   --selection-fg: var(--text);
@@ -1665,4 +1665,190 @@ html[data-workshop-bg="summer"] body::after {
   mix-blend-mode: multiply;
   opacity: 0.30;
   animation: studio-light-soft 55s ease-in-out infinite alternate;
+}
+
+/* ---- Rainy day: blue-grey overcast, rain streaks ---- */
+html[data-workshop-bg="rain"] {
+  color-scheme: dark;
+  --bg: #0b0e12;
+  --surface: #131820;
+  --surface-2: #18202a;
+  --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
+  --border: #2a3848;
+  --text: #ccd8e4;
+  --muted: #7a8898;
+  --accent: #6aa8d0;
+  --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  --selection-fg: var(--text);
+  --danger: #f09098;
+  --net-line: rgba(100, 140, 180, 0.040);
+  --ambient-a: rgba(50, 90, 140, 0.080);
+  --ambient-b: rgba(35, 65, 110, 0.065);
+  --ambient-c: rgba(70, 110, 160, 0.055);
+  --ambient-d: rgba(55, 85, 130, 0.042);
+  --shine-top: rgba(160, 195, 225, 0.055);
+  --shine-mid: rgba(80, 120, 165, 0.038);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 42%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 50%, transparent);
+  --shadow-3: 0 10px 38px color-mix(in srgb, #000 50%, transparent);
+}
+
+html[data-workshop-bg="rain"] body::before {
+  animation: ambient-drift 150s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 120% 100% at 14% 28%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 100% 90% at 88% 22%, var(--ambient-b), transparent 70%),
+    radial-gradient(ellipse 130% 110% at 50% 92%, var(--ambient-c), transparent 76%),
+    radial-gradient(ellipse 95% 85% at 72% 62%, var(--ambient-d), transparent 68%),
+    /* Overcast sky wash from top */
+    radial-gradient(
+      ellipse 140% 60% at 50% 0%,
+      color-mix(in srgb, var(--accent) 7%, transparent),
+      transparent 62%
+    ),
+    /* Puddle reflection glow at bottom */
+    radial-gradient(
+      ellipse 100% 35% at 50% 100%,
+      color-mix(in srgb, var(--accent) 6%, transparent),
+      transparent 55%
+    ),
+    /* Rain streaks — fine near-vertical lines */
+    repeating-linear-gradient(
+      173deg,
+      transparent,
+      transparent 3px,
+      color-mix(in srgb, var(--accent) 1.8%, transparent) 3px,
+      color-mix(in srgb, var(--accent) 1.8%, transparent) 3.5px,
+      transparent 3.5px,
+      transparent 12px
+    ),
+    /* Secondary sparser streak layer */
+    repeating-linear-gradient(
+      171deg,
+      transparent,
+      transparent 7px,
+      color-mix(in srgb, var(--accent) 1.2%, transparent) 7px,
+      color-mix(in srgb, var(--accent) 1.2%, transparent) 7.5px,
+      transparent 7.5px,
+      transparent 24px
+    ),
+    linear-gradient(var(--net-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--net-line) 1px, transparent 1px),
+    /* Rain drop streaks SVG */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cline x1='42' y1='14' x2='38' y2='28' stroke='%236aa8d0' stroke-opacity='0.22' stroke-width='0.8' stroke-linecap='round'/%3E%3Cline x1='78' y1='8' x2='74' y2='22' stroke='%236aa8d0' stroke-opacity='0.18' stroke-width='0.7' stroke-linecap='round'/%3E%3Cline x1='122' y1='20' x2='118' y2='34' stroke='%236aa8d0' stroke-opacity='0.20' stroke-width='0.9' stroke-linecap='round'/%3E%3Cline x1='158' y1='10' x2='154' y2='24' stroke='%236aa8d0' stroke-opacity='0.16' stroke-width='0.7' stroke-linecap='round'/%3E%3Cline x1='20' y1='52' x2='16' y2='66' stroke='%236aa8d0' stroke-opacity='0.19' stroke-width='0.8' stroke-linecap='round'/%3E%3Cline x1='60' y1='45' x2='56' y2='59' stroke='%236aa8d0' stroke-opacity='0.15' stroke-width='0.7' stroke-linecap='round'/%3E%3Cline x1='95' y1='62' x2='91' y2='76' stroke='%236aa8d0' stroke-opacity='0.18' stroke-width='0.8' stroke-linecap='round'/%3E%3Cline x1='140' y1='48' x2='136' y2='62' stroke='%236aa8d0' stroke-opacity='0.14' stroke-width='0.7' stroke-linecap='round'/%3E%3Cline x1='35' y1='98' x2='31' y2='112' stroke='%236aa8d0' stroke-opacity='0.14' stroke-width='0.7' stroke-linecap='round'/%3E%3Cline x1='75' y1='108' x2='71' y2='122' stroke='%236aa8d0' stroke-opacity='0.16' stroke-width='0.8' stroke-linecap='round'/%3E%3Cline x1='110' y1='92' x2='106' y2='106' stroke='%236aa8d0' stroke-opacity='0.13' stroke-width='0.6' stroke-linecap='round'/%3E%3Cellipse cx='43' cy='29' rx='3.5' ry='1.5' fill='%234488bb' fill-opacity='0.18'/%3E%3Cellipse cx='122' cy='35' rx='2.8' ry='1.2' fill='%234488bb' fill-opacity='0.14'/%3E%3Cellipse cx='75' cy='123' rx='4' ry='1.6' fill='%234488bb' fill-opacity='0.12'/%3E%3C/svg%3E"),
+    /* Window condensation paths — larger scale */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280'%3E%3Cpath fill='none' stroke='%236aa8d0' stroke-opacity='0.08' stroke-width='0.6' stroke-linecap='round' d='M68 8 Q66 30 72 46 Q76 60 70 80'/%3E%3Cpath fill='none' stroke='%236aa8d0' stroke-opacity='0.07' stroke-width='0.5' stroke-linecap='round' d='M138 22 Q135 44 140 62 Q144 76 138 96'/%3E%3Cpath fill='none' stroke='%236aa8d0' stroke-opacity='0.06' stroke-width='0.5' stroke-linecap='round' d='M210 15 Q207 37 212 54 Q216 68 210 88'/%3E%3Cpath fill='none' stroke='%236aa8d0' stroke-opacity='0.07' stroke-width='0.6' stroke-linecap='round' d='M38 140 Q35 164 40 182 Q44 198 38 220'/%3E%3Cpath fill='none' stroke='%236aa8d0' stroke-opacity='0.06' stroke-width='0.5' stroke-linecap='round' d='M180 148 Q177 172 182 190 Q186 206 180 228'/%3E%3C/svg%3E");
+  background-size:
+    160% 160%,
+    155% 155%,
+    170% 170%,
+    150% 150%,
+    130% 55%,
+    100% 40%,
+    100% 100%,
+    100% 100%,
+    48px 48px,
+    48px 48px,
+    180px 180px,
+    280px 280px;
+  background-position:
+    0% 0%,
+    100% 0%,
+    50% 100%,
+    72% 55%,
+    50% 0%,
+    50% 100%,
+    0 0,
+    0 0,
+    center -1px,
+    center -1px,
+    22% 8%,
+    62% 15%;
+}
+
+html[data-workshop-bg="rain"] body::after {
+  opacity: 0.35;
+  animation: studio-light-soft 60s ease-in-out infinite alternate;
+}
+
+/* ---- Park afternoon: dappled light, green canopy, warm air ---- */
+html[data-workshop-bg="park"] {
+  color-scheme: light;
+  --bg: #edf4e6;
+  --surface: #f5faf0;
+  --surface-2: #eef5e8;
+  --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
+  --border: #c0d8b0;
+  --text: #1e2c1a;
+  --muted: #4e6244;
+  --accent: #4a8b32;
+  --accent-soft: color-mix(in srgb, var(--accent) 18%, transparent);
+  --selection-bg: color-mix(in srgb, var(--accent) 16%, #cce0b8);
+  --selection-fg: var(--text);
+  --danger: #a82018;
+  --net-line: rgba(40, 80, 30, 0.042);
+  --ambient-a: rgba(80, 160, 55, 0.055);
+  --ambient-b: rgba(55, 130, 40, 0.044);
+  --ambient-c: rgba(105, 185, 75, 0.048);
+  --ambient-d: rgba(140, 200, 90, 0.038);
+  --shine-top: rgba(255, 255, 255, 0.45);
+  --shine-mid: rgba(140, 200, 90, 0.040);
+  --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
+  --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
+  --shadow-3: 0 14px 46px color-mix(in srgb, #000 16%, transparent);
+}
+
+html[data-workshop-bg="park"] body::before {
+  animation: ambient-drift 170s ease-in-out infinite alternate;
+  background-image:
+    radial-gradient(ellipse 200% 130% at 5% 10%, var(--ambient-a), transparent 72%),
+    radial-gradient(ellipse 200% 130% at 95% 75%, var(--ambient-b), transparent 70%),
+    /* Afternoon sun warmth — upper right */
+    radial-gradient(ellipse 65% 55% at 88% 6%, color-mix(in srgb, #f8d860 16%, transparent), transparent 56%),
+    /* Green canopy wash from top */
+    radial-gradient(ellipse 110% 45% at 50% 0%, color-mix(in srgb, #60c030 14%, transparent), transparent 58%),
+    /* Warm grass ground */
+    radial-gradient(ellipse 130% 50% at 50% 108%, color-mix(in srgb, #78c040 16%, transparent), transparent 55%),
+    /* Dappled light — angled bands */
+    repeating-linear-gradient(
+      115deg,
+      transparent,
+      transparent 28px,
+      color-mix(in srgb, #f8f0c0 3.5%, transparent) 28px,
+      color-mix(in srgb, #f8f0c0 3.5%, transparent) 36px
+    ),
+    repeating-linear-gradient(
+      110deg,
+      transparent,
+      transparent 44px,
+      color-mix(in srgb, #d4e8a0 2.5%, transparent) 44px,
+      color-mix(in srgb, #d4e8a0 2.5%, transparent) 50px
+    ),
+    /* Path / ground contour lines */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180' viewBox='0 0 320 180'%3E%3Cpath fill='none' stroke='%23305820' stroke-opacity='0.08' stroke-width='1.2' stroke-linecap='round' d='M-20 148 Q80 105 160 96 T360 72'/%3E%3Cpath fill='none' stroke='%23386825' stroke-opacity='0.06' stroke-width='0.9' d='M40 165 Q120 132 200 128 T320 118'/%3E%3Cpath fill='none' stroke='%234a7830' stroke-opacity='0.07' stroke-width='0.8' d='M180 155 Q225 120 290 115'/%3E%3C/svg%3E"),
+    /* Leaf scatter */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath fill='%2358a030' fill-opacity='0.14' d='M30 15 Q55 8 62 30 Q50 38 28 30 Q24 22 30 15'/%3E%3Cpath fill='%2348901e' fill-opacity='0.11' transform='translate(80,28) rotate(-22)' d='M20 8 Q38 4 42 22 Q33 28 18 22 Q16 14 20 8'/%3E%3Cpath fill='%2368b840' fill-opacity='0.12' transform='translate(148,12) rotate(18)' d='M16 6 Q30 2 34 18 Q26 24 14 18 Q12 10 16 6'/%3E%3Cpath fill='%2340882a' fill-opacity='0.10' transform='translate(12,75) rotate(-8)' d='M22 10 Q42 5 47 24 Q37 32 20 26 Q17 17 22 10'/%3E%3Cpath fill='%2360a838' fill-opacity='0.09' transform='translate(110,65) rotate(35)' d='M14 6 Q26 3 29 16 Q22 21 12 16 Q10 10 14 6'/%3E%3Cpath fill='%2350982c' fill-opacity='0.08' transform='translate(168,80) rotate(-15)' d='M18 8 Q34 4 38 20 Q29 26 16 20 Q14 13 18 8'/%3E%3C/svg%3E"),
+    /* Sunlight sparkle dots */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Ccircle cx='42' cy='22' r='1.4' fill='%23fff8c8' fill-opacity='0.55'/%3E%3Ccircle cx='108' cy='15' r='1.1' fill='%23fffacc' fill-opacity='0.50'/%3E%3Ccircle cx='180' cy='30' r='1.6' fill='%23fff6c0' fill-opacity='0.48'/%3E%3Ccircle cx='22' cy='65' r='0.9' fill='%23fffabe' fill-opacity='0.42'/%3E%3Ccircle cx='78' cy='52' r='1.2' fill='%23fff8cc' fill-opacity='0.38'/%3E%3Ccircle cx='145' cy='68' r='1.0' fill='%23fff4c4' fill-opacity='0.35'/%3E%3Ccircle cx='218' cy='44' r='1.4' fill='%23fffac8' fill-opacity='0.32'/%3E%3Ccircle cx='55' cy='112' r='0.8' fill='%23fff8c0' fill-opacity='0.28'/%3E%3Ccircle cx='122' cy='100' r='1.1' fill='%23fffac4' fill-opacity='0.24'/%3E%3C/svg%3E");
+  background-size:
+    200% 200%, 200% 200%,
+    100% 100%, 100% 100%, 100% 100%,
+    100% 100%, 100% 100%,
+    320px 180px,
+    200px 200px,
+    240px 240px;
+  background-position:
+    0% 0%, 100% 100%,
+    0% 0%, 0% 0%, 0% 0%,
+    0 0, 0 0,
+    50% 99%,
+    28% 22%,
+    55% 18%;
+}
+
+html[data-workshop-bg="park"] body::after {
+  mix-blend-mode: multiply;
+  opacity: 0.22;
+  animation: studio-light-soft 65s ease-in-out infinite alternate;
 }

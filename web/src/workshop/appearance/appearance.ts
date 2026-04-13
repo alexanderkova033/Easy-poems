@@ -141,6 +141,24 @@ export const BACKGROUND_OPTIONS = [
     blurb: "Clear sky, golden sun, bright open air.",
     glyph: "⊙",
   },
+  {
+    id: "rain",
+    label: "Rainy day",
+    blurb: "Streaking droplets, wet reflections, grey overcast.",
+    glyph: "⌁",
+  },
+  {
+    id: "park",
+    label: "Park afternoon",
+    blurb: "Dappled light, green canopy, warm afternoon air.",
+    glyph: "⊛",
+  },
+  {
+    id: "custom",
+    label: "Custom",
+    blurb: "Your generated backdrop.",
+    glyph: "✦",
+  },
 ] as const;
 
 export type PoemFontId = (typeof POEM_FONT_OPTIONS)[number]["id"];
@@ -151,6 +169,26 @@ export type PoemWeightId = (typeof POEM_WEIGHT_OPTIONS)[number]["id"];
 export type PoemDecorationId = (typeof POEM_DECORATION_OPTIONS)[number]["id"];
 export type BackdropMotionSetting = "system" | "on" | "off";
 export type BackdropPowerSetting = "off" | "low" | "very-low";
+
+/** CSS variable values for a user-generated custom backdrop. */
+export interface CustomBackgroundTheme {
+  colorScheme: "light" | "dark";
+  label: string;
+  bg: string;
+  surface: string;
+  surface2: string;
+  border: string;
+  text: string;
+  muted: string;
+  accent: string;
+  ambientA: string;
+  ambientB: string;
+  ambientC: string;
+  ambientD: string;
+  shineTop: string;
+  shineMid: string;
+  netLine: string;
+}
 
 export interface AppearanceSettings {
   poemFont: PoemFontId;
@@ -163,6 +201,8 @@ export interface AppearanceSettings {
   backdropMotion: BackdropMotionSetting;
   /** Reduce paint complexity (fewer layers / less blend). */
   backdropPower: BackdropPowerSetting;
+  /** User-generated custom backdrop (active when background === "custom"). */
+  customBackground: CustomBackgroundTheme | null;
 }
 
 const DEFAULTS: AppearanceSettings = {
@@ -174,6 +214,7 @@ const DEFAULTS: AppearanceSettings = {
   poemDecoration: "none",
   backdropMotion: "system",
   backdropPower: "off",
+  customBackground: null,
 };
 
 export function defaultAppearance(): AppearanceSettings {
@@ -210,6 +251,19 @@ function isBackdropMotionSetting(x: string): x is BackdropMotionSetting {
 
 function isBackdropPowerSetting(x: string): x is BackdropPowerSetting {
   return x === "off" || x === "low" || x === "very-low";
+}
+
+function loadCustomBackground(v: unknown): CustomBackgroundTheme | null {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const fields = [
+    "colorScheme", "label", "bg", "surface", "surface2", "border",
+    "text", "muted", "accent", "ambientA", "ambientB", "ambientC",
+    "ambientD", "shineTop", "shineMid", "netLine",
+  ];
+  if (!fields.every((k) => typeof o[k] === "string")) return null;
+  if (o.colorScheme !== "light" && o.colorScheme !== "dark") return null;
+  return o as unknown as CustomBackgroundTheme;
 }
 
 const APPEARANCE_SCHEMA_VERSION = 3;
@@ -256,6 +310,7 @@ export function loadAppearance(): AppearanceSettings {
           : typeof o.lowPowerBackdrops === "boolean"
             ? (o.lowPowerBackdrops ? "low" : "off")
             : DEFAULTS.backdropPower,
+      customBackground: loadCustomBackground(o.customBackground),
     };
   } catch {
     return { ...DEFAULTS };
@@ -283,11 +338,52 @@ const POEM_WEIGHT_VAR: Record<PoemWeightId, string> = {
 };
 
 let _lastBg: string | undefined;
+let _customVarsApplied = false;
+
+const CUSTOM_CSS_VARS = [
+  "--bg", "--surface", "--surface-2", "--border", "--text", "--muted", "--accent",
+  "--ambient-a", "--ambient-b", "--ambient-c", "--ambient-d",
+  "--shine-top", "--shine-mid", "--net-line",
+] as const;
+
+function applyCustomVars(el: HTMLElement, cb: CustomBackgroundTheme): void {
+  el.style.colorScheme = cb.colorScheme;
+  el.style.setProperty("--bg", cb.bg);
+  el.style.setProperty("--surface", cb.surface);
+  el.style.setProperty("--surface-2", cb.surface2);
+  el.style.setProperty("--border", cb.border);
+  el.style.setProperty("--text", cb.text);
+  el.style.setProperty("--muted", cb.muted);
+  el.style.setProperty("--accent", cb.accent);
+  el.style.setProperty("--ambient-a", cb.ambientA);
+  el.style.setProperty("--ambient-b", cb.ambientB);
+  el.style.setProperty("--ambient-c", cb.ambientC);
+  el.style.setProperty("--ambient-d", cb.ambientD);
+  el.style.setProperty("--shine-top", cb.shineTop);
+  el.style.setProperty("--shine-mid", cb.shineMid);
+  el.style.setProperty("--net-line", cb.netLine);
+  _customVarsApplied = true;
+}
+
+function clearCustomVars(el: HTMLElement): void {
+  if (!_customVarsApplied) return;
+  el.style.colorScheme = "";
+  CUSTOM_CSS_VARS.forEach((v) => el.style.removeProperty(v));
+  _customVarsApplied = false;
+}
 
 export function applyAppearance(s: AppearanceSettings): void {
   const el = document.documentElement;
   el.dataset.poemFont = s.poemFont;
   el.dataset.uiFont = s.uiFont;
+
+  // Inject or clear custom CSS variable overrides.
+  const isCustomActive = s.background === "custom" && s.customBackground != null;
+  if (isCustomActive) {
+    applyCustomVars(el, s.customBackground!);
+  } else {
+    clearCustomVars(el);
+  }
 
   // Cross-fade backdrop when the background theme changes.
   const nextBg = s.background === "default" ? "" : s.background;
