@@ -1,4 +1,5 @@
 import "./TemplatesModal.css";
+import { useState } from "react";
 interface Template {
   id: string;
   name: string;
@@ -149,6 +150,11 @@ const TEMPLATES: Template[] = [
   },
 ];
 
+function templatePreview(body: string): string {
+  const lines = body.split("\n").filter((l) => l.trim().length > 0).slice(0, 3);
+  return lines.join("\n");
+}
+
 export function TemplatesModal({
   onClose,
   onInsert,
@@ -156,6 +162,7 @@ export function TemplatesModal({
   onClose: () => void;
   onInsert: (body: string, form: string) => void;
 }) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   return (
     <div
       className="overlay"
@@ -183,11 +190,24 @@ export function TemplatesModal({
         </p>
         <ul className="templates-list">
           {TEMPLATES.map((t) => (
-            <li key={t.id} className="template-item">
+            <li
+              key={t.id}
+              className="template-item"
+              onMouseEnter={() => setHoveredId(t.id)}
+              onMouseLeave={() => setHoveredId(null)}
+              onFocus={() => setHoveredId(t.id)}
+              onBlur={() => setHoveredId(null)}
+            >
               <div className="template-item-info">
                 <span className="template-item-name">{t.name}</span>
                 <span className="template-item-form muted small">{t.form}</span>
                 <span className="template-item-hint muted small">{t.hint}</span>
+                {hoveredId === t.id && (
+                  <pre className="template-item-preview" aria-hidden>
+                    {templatePreview(t.body)}
+                    {"\n…"}
+                  </pre>
+                )}
               </div>
               <button
                 type="button"

@@ -123,10 +123,13 @@ body::before {
   transition: opacity 0.45s ease;
 }
 
-/* Theme cross-fade: JS adds this class for one frame to trigger the fade */
+/* Theme cross-fade: JS adds this class for one frame to trigger the fade.
+   animation: none resets the keyframe counter so the new theme's animation
+   starts from 0% instead of teleporting from wherever the old one was. */
 html.theme-switching body::before,
 html.theme-switching body::after {
   opacity: 0 !important;
+  animation: none !important;
   transition: opacity 0.2s ease !important;
 }
 

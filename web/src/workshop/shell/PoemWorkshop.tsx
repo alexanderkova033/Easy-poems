@@ -37,7 +37,7 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
 import {
@@ -105,6 +105,13 @@ export function PoemWorkshop() {
     } catch {
       /* ignore */
     }
+    return true;
+  });
+  const [wordLookupEnabled, setWordLookupEnabled] = useState(() => {
+    try {
+      const v = localStorage.getItem(STORAGE_KEY_WORD_LOOKUP_ENABLED);
+      if (v === "0" || v === "false") return false;
+    } catch { /* ignore */ }
     return true;
   });
   const workshopGridRef = useRef<HTMLDivElement | null>(null);
@@ -476,6 +483,18 @@ export function PoemWorkshop() {
         keywords:
           "hover tooltip tip button explain description help hints delayed hover",
         run: () => setHoverHintsEnabled((v) => !v),
+      },
+      {
+        id: "toggle-word-lookup",
+        title: wordLookupEnabled
+          ? "Turn off word lookup popup"
+          : "Turn on word lookup popup",
+        keywords: "word lookup dictionary synonym antonym popup disable enable",
+        run: () => {
+          const next = !wordLookupEnabled;
+          setWordLookupEnabled(next);
+          try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, next ? "1" : "0"); } catch { /* ignore */ }
+        },
       },
       {
         id: "library",
@@ -1884,7 +1903,14 @@ export function PoemWorkshop() {
                       issueHighlight={issueHighlight}
                       showLineSyllables={showLineSyllables}
                     />
-                    <WordLookupPopup editorViewRef={m.editorViewRef} />
+                    <WordLookupPopup
+                      editorViewRef={m.editorViewRef}
+                      enabled={wordLookupEnabled}
+                      onDisable={() => {
+                        setWordLookupEnabled(false);
+                        try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, "0"); } catch { /* ignore */ }
+                      }}
+                    />
                     <div
                       className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
                     >
@@ -1960,6 +1986,7 @@ export function PoemWorkshop() {
           data-tour-id="tools-panel"
         >
           <div className="tools-sticky-head">
+            <div className="tools-swipe-handle" aria-hidden />
             <div className="tools-head-row tools-head-row-simple">
               <div>
                 <h2 className="tools-heading">Tools</h2>

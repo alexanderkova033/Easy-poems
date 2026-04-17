@@ -55,6 +55,24 @@ const DIM_META: Record<keyof AnalysisDimensions, { label: string; desc: string }
   clarity:     { label: "Clarity",     desc: "Coherence and ease of following the poem's meaning" },
 };
 
+// ---- issue category derivation ---- //
+const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
+  { label: "Imagery",    color: "var(--ai-cat-imagery,  #7fa8c9)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
+  { label: "Rhythm",     color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
+  { label: "Sound",      color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
+  { label: "Word choice", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
+  { label: "Structure",  color: "var(--ai-cat-struct,   #9fc4b4)", keywords: /structur|stanza|line break|enjamb|syntax|sentence|paragraph|openin|ending|volta|turn/i },
+  { label: "Clarity",    color: "var(--ai-cat-clarity,  #c4a0a0)", keywords: /clear|clarity|confus|obscure|ambig|vague|awkward|hard to follow|understand/i },
+];
+
+function deriveCategory(issue: AnalysisIssue): { label: string; color: string } | null {
+  const text = `${issue.rationale} ${issue.improvements.join(" ")}`;
+  for (const rule of CATEGORY_RULES) {
+    if (rule.keywords.test(text)) return { label: rule.label, color: rule.color };
+  }
+  return null;
+}
+
 // ---- sub-components ---- //
 function ScoreRing({ score }: { score: number }) {
   const r = 30;
@@ -105,6 +123,7 @@ function IssueCard({
   const rangeLabel = issue.line_start === issue.line_end
     ? `Line ${issue.line_start}`
     : `Lines ${issue.line_start}–${issue.line_end}`;
+  const cat = deriveCategory(issue);
 
   return (
     <details
@@ -129,6 +148,11 @@ function IssueCard({
               {rangeLabel}
             </button>
           ) : <span className="ai-issue-line">{rangeLabel}</span>}
+          {cat && (
+            <span className="ai-issue-cat" style={{ borderColor: cat.color, color: cat.color }}>
+              {cat.label}
+            </span>
+          )}
           {issue.excerpt
             ? <span className="ai-issue-excerpt">&ldquo;{issue.excerpt}&rdquo;</span>
             : null}
@@ -214,6 +238,9 @@ function AnalysisResults({
                 {deltaLabel(deltas.overall)} from last
               </span>
             )}
+            <span className="ai-overall-prose muted small">
+              {buildProseSummary(result.dimensions)}
+            </span>
           </div>
         </div>
 
@@ -271,6 +298,26 @@ function AnalysisResults({
       </p>
     </div>
   );
+}
+
+// ---- prose summary from dimensions ---- //
+function buildProseSummary(dims: AnalysisDimensions): string {
+  const entries = Object.entries(dims) as [keyof AnalysisDimensions, number][];
+  entries.sort((a, b) => b[1] - a[1]);
+  const top = entries[0]!;
+  const bottom = entries[entries.length - 1]!;
+  const label = DIM_META[top[0]].label.toLowerCase();
+  const weakLabel = DIM_META[bottom[0]].label.toLowerCase();
+  if (top[1] >= 75 && bottom[1] < 55) {
+    return `Strongest in ${label}; most room to grow in ${weakLabel}.`;
+  }
+  if (top[1] >= 75) {
+    return `${DIM_META[top[0]].label} is a clear strength here.`;
+  }
+  if (bottom[1] < 45) {
+    return `Focus next revision on ${weakLabel}.`;
+  }
+  return `Balanced across all four dimensions.`;
 }
 
 // ---- main component ---- //

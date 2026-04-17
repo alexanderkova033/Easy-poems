@@ -31,5 +31,9 @@ export const STORAGE_KEY_SHOW_RHYME_SCHEME = "easy-poems:showRhymeScheme";
 /** Delayed “what does this do?” bubbles on buttons (fine-pointer / hover devices). */
 export const STORAGE_KEY_UI_HOVER_HINTS = "easy-poems:uiHoverHints";
 
+// Reading mode
+export const STORAGE_KEY_READING_FONT_SIZE = "easy-poems:readingFontSize";
+export const STORAGE_KEY_WORD_LOOKUP_ENABLED = "easy-poems:wordLookupEnabled";
+
 // AI settings
 export const STORAGE_KEY_AI_MODEL = "ep_openai_model";

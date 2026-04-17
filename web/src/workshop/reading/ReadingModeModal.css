@@ -243,6 +243,33 @@
   border-color: rgba(0,0,0,0.22);
 }
 
+/* ── Print ───────────────────────────────────────────────────── */
+@media print {
+  .reading-mode-overlay {
+    position: static;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    padding: 0;
+    display: block;
+  }
+
+  .reading-mode-modal {
+    box-shadow: none;
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .reading-mode-controls,
+  .reading-mode-close {
+    display: none !important;
+  }
+
+  .reading-mode-poem {
+    padding: 1rem 0;
+  }
+}
+
 /* ── Mobile ──────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .reading-mode-overlay {

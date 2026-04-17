@@ -1,6 +1,7 @@
 import "./ReadingModeModal.css";
 import { useEffect, useRef, useState } from "react";
 import { stripFormatMarkers } from "@/workshop/editor/format-marks";
+import { STORAGE_KEY_READING_FONT_SIZE } from "@/shared/storage-keys";
 
 interface ReadingModeModalProps {
   title: string;
@@ -12,8 +13,19 @@ interface ReadingModeModalProps {
 const FONT_SIZES = [0.92, 1.0, 1.1, 1.2, 1.32, 1.46, 1.62];
 const DEFAULT_SIZE_IDX = 2;
 
+function loadSizeIdx(): number {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_READING_FONT_SIZE);
+    if (raw !== null) {
+      const n = parseInt(raw, 10);
+      if (Number.isFinite(n) && n >= 0 && n < FONT_SIZES.length) return n;
+    }
+  } catch { /* ignore */ }
+  return DEFAULT_SIZE_IDX;
+}
+
 export function ReadingModeModal({ title, formNote, body, onClose }: ReadingModeModalProps) {
-  const [sizeIdx, setSizeIdx] = useState(DEFAULT_SIZE_IDX);
+  const [sizeIdx, setSizeIdx] = useState(loadSizeIdx);
   const [copyFlash, setCopyFlash] = useState(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,6 +37,10 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_READING_FONT_SIZE, String(sizeIdx)); } catch { /* ignore */ }
+  }, [sizeIdx]);
 
   useEffect(() => {
     return () => {
@@ -106,6 +122,19 @@ export function ReadingModeModal({ title, formNote, body, onClose }: ReadingMode
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
               </svg>
               Copy
+            </button>
+            <button
+              type="button"
+              className="reading-mode-icon-btn"
+              onClick={() => window.print()}
+              aria-label="Print poem"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M6 9V2h12v7" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              Print
             </button>
           </div>
         </div>

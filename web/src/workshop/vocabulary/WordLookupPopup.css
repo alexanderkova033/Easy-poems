@@ -27,6 +27,36 @@
   color: var(--text);
 }
 
+.word-lookup-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.word-lookup-disable-btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 0.18rem 0.42rem;
+  border-radius: 5px;
+  transition: color 0.1s, background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+
+.word-lookup-disable-btn:hover {
+  color: var(--text);
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--border) 40%, transparent);
+}
+
 .word-lookup-close {
   appearance: none;
   border: none;
@@ -43,6 +73,12 @@
 .word-lookup-close:hover {
   color: var(--text);
   background: color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.word-lookup-none {
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
 }
 
 .word-lookup-loading,

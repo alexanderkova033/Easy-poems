@@ -75,6 +75,12 @@ export function FirstVisitHint({
         </div>
       </div>
 
+      <p className="welcome-cmdk-hint">
+        <kbd className="welcome-kbd">Ctrl</kbd>/<kbd className="welcome-kbd">⌘</kbd>
+        <kbd className="welcome-kbd">K</kbd>
+        {" "}opens the command palette — search all features from there.
+      </p>
+
       <div className="welcome-banner-actions">
         {onOpenGuide && (
           <button

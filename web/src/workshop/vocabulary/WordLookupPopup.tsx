@@ -10,6 +10,7 @@ import {
 import type { EditorView } from "@codemirror/view";
 import { EditorSelection } from "@codemirror/state";
 
+
 interface DictMeaning {
   partOfSpeech: string;
   definitions: {
@@ -178,8 +179,12 @@ function anchorFromEditorSelection(view: EditorView): { word: string; anchor: An
 
 export function WordLookupPopup({
   editorViewRef,
+  enabled,
+  onDisable,
 }: {
   editorViewRef: MutableRefObject<EditorView | null>;
+  enabled: boolean;
+  onDisable?: () => void;
 }) {
   const [word, setWord] = useState<string | null>(null);
   const [entry, setEntry] = useState<DictEntry | null>(null);
@@ -288,7 +293,13 @@ export function WordLookupPopup({
     }, 900);
   }, [editorViewRef, close]);
 
+  const handleDisable = useCallback(() => {
+    onDisable?.();
+    close();
+  }, [close, onDisable]);
+
   useEffect(() => {
+    if (!enabled) return;
     const onSelectionChange = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => {
@@ -313,7 +324,7 @@ export function WordLookupPopup({
       document.removeEventListener("selectionchange", onSelectionChange);
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [editorViewRef, runLookup]);
+  }, [editorViewRef, runLookup, enabled]);
 
   const defGroups = entry ? extractDefs(entry) : [];
   const syns = altSyns;
@@ -368,7 +379,7 @@ export function WordLookupPopup({
     };
   }, [word, close]);
 
-  if (!word || !anchor) return null;
+  if (!enabled || !word || !anchor) return null;
 
   const showLoading = status === "loading";
   const showError = status === "error";
@@ -394,9 +405,14 @@ export function WordLookupPopup({
     >
       <div className="word-lookup-head">
         <span className="word-lookup-word">{word}</span>
-        <button type="button" className="word-lookup-close" onClick={close} aria-label="Close">
-          ×
-        </button>
+        <div className="word-lookup-head-actions">
+          <button type="button" className="word-lookup-disable-btn" onClick={handleDisable} title="Turn off auto word lookup">
+            Disable
+          </button>
+          <button type="button" className="word-lookup-close" onClick={close} aria-label="Close">
+            ×
+          </button>
+        </div>
       </div>
 
       {showLoading && (
@@ -482,22 +498,26 @@ export function WordLookupPopup({
         </div>
       )}
 
-      {ants.length > 0 && (
+      {(ants.length > 0 || (syns.length > 0 && !showLoading && !showError)) && (
         <div className="word-lookup-group word-lookup-group-tight">
           <span className="word-lookup-group-label">Antonyms &amp; opposites</span>
-          <div className="word-lookup-chips word-lookup-chips-ant">
-            {ants.map((a) => (
-              <button
-                key={a}
-                type="button"
-                className={`word-lookup-chip word-lookup-chip-btn word-lookup-chip-ant ${insertFlash === a ? "is-inserted" : ""}`}
-                onClick={() => insertWord(a)}
-                title={`Replace "${word}" with "${a}"`}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
+          {ants.length > 0 ? (
+            <div className="word-lookup-chips word-lookup-chips-ant">
+              {ants.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  className={`word-lookup-chip word-lookup-chip-btn word-lookup-chip-ant ${insertFlash === a ? "is-inserted" : ""}`}
+                  onClick={() => insertWord(a)}
+                  title={`Replace "${word}" with "${a}"`}
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="word-lookup-none muted small">None found</p>
+          )}
         </div>
       )}
       {selRangeRef.current && (syns.length > 0 || ants.length > 0) && (
