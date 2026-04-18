@@ -22,7 +22,6 @@ import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
-import { StuckHelper } from "@/workshop/analysis/StuckHelper";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { WordLookupPopup } from "@/workshop/vocabulary/WordLookupPopup";
 import { TemplatesModal } from "./TemplatesModal";
@@ -2119,6 +2118,8 @@ export function PoemWorkshop() {
             heavyToolsStale={m.heavyToolsStale}
             meterCoverageSummary={m.meterCoverageSummary}
             clicheHits={m.clicheHits}
+            poemTitle={m.title}
+            poemLines={m.lines}
           />
         </aside>
       </div>
@@ -2162,8 +2163,6 @@ export function PoemWorkshop() {
           Export
         </button>
       </nav>
-
-      <StuckHelper title={m.title} lines={m.lines} />
 
       <AiAnalysis
         title={m.title}

@@ -142,6 +142,21 @@ function IconTabSnapshots() {
   );
 }
 
+function IconTabSuggest() {
+  return (
+    <svg className="tool-tab-svg" viewBox="0 0 24 24" aria-hidden>
+      <path
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.65"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 18h6M10 21h4M12 3a6 6 0 014.5 10c.6.7 1 1.6 1 2.5V17H6.5v-1.5c0-.9.4-1.8 1-2.5A6 6 0 0112 3z"
+      />
+    </svg>
+  );
+}
+
 /** Order tuned for flow: triage → counts → spelling → line work → polish → versions → external help */
 export const TOOL_TABS: {
   id: ToolTab;
@@ -158,6 +173,7 @@ export const TOOL_TABS: {
   { id: "goals", label: "Goals", Icon: IconTabGoals },
   { id: "checklist", label: "Ready", Icon: IconTabChecklist },
   { id: "snapshots", label: "Snapshots", Icon: IconTabSnapshots },
+  { id: "suggest", label: "Stuck?", Icon: IconTabSuggest },
 ];
 
 export function LiveSectionTitle({ children }: { children: ReactNode }) {

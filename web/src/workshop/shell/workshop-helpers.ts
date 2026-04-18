@@ -12,7 +12,8 @@ export type ToolTab =
   | "rhyme"
   | "repeat"
   | "spell"
-  | "snapshots";
+  | "snapshots"
+  | "suggest";
 
 /** High-level tool groups (right panel); each maps to a subset of {@link ToolTab}. */
 export type ToolBucket = "overview" | "sound";
@@ -40,6 +41,7 @@ export function tabsForBucket(bucket: ToolBucket): ToolTab[] {
         "goals",
         "checklist",
         "snapshots",
+        "suggest",
       ];
     case "sound":
       return ["meter", "rhyme", "repeat"];

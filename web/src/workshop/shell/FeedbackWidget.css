@@ -95,6 +95,16 @@
   justify-content: flex-end;
 }
 
+/* On mobile the fixed action bar sits at the bottom — push the feedback
+   button above it so they don't overlap. The bar is ~4rem tall plus safe-area. */
+@media (max-width: 899px) {
+  .feedback-float-btn {
+    bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+    right: 0.85rem;
+    opacity: 0.4;
+  }
+}
+
 @media print {
   .feedback-float-btn { display: none !important; }
 }

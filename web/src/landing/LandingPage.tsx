@@ -1,10 +1,34 @@
+import { useEffect, useRef, useState } from "react";
 import "./LandingPage.css";
 
 export function LandingPage({ onEnter }: { onEnter: () => void }) {
+  const heroRef = useRef<HTMLElement>(null);
+  const [stickyVisible, setStickyVisible] = useState(false);
+
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setStickyVisible(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <div className="landing-root">
+      {/* Sticky mini-header — appears after hero scrolls out of view */}
+      <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
+        <span className="landing-sticky-logo" aria-hidden>❧</span>
+        <span className="landing-sticky-name">Easy Poems</span>
+        <button type="button" className="landing-btn landing-btn-primary landing-sticky-cta" onClick={onEnter}>
+          Start writing
+        </button>
+      </header>
+
       {/* Hero */}
-      <section className="landing-hero">
+      <section className="landing-hero" ref={heroRef}>
         <div className="landing-hero-inner">
           <span className="landing-leaf" aria-hidden>❧</span>
           <h1 className="landing-headline">
@@ -12,9 +36,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             Have more fun doing it.
           </h1>
           <p className="landing-sub">
-            Easy Poems analyzes your rhyme, rhythm, and word choices — then gives
-            you specific, line-by-line feedback so you can improve and enjoy the
-            process.
+            Rhyme, rhythm, and word-choice feedback — line by line, as you type.
           </p>
           <div className="landing-ctas">
             <button type="button" className="landing-btn landing-btn-primary" onClick={onEnter}>

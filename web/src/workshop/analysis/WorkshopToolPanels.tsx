@@ -26,6 +26,7 @@ import {
 } from "@/spellcheck/personal-dictionary";
 import { LiveSectionTitle } from "./ToolTabBar";
 import { RhymeFinder } from "./RhymeFinder";
+import { StuckHelper } from "./StuckHelper";
 import type { ClicheHit } from "@/workshop/analysis/cliche-scan";
 import {
   RevisionCompareSection,
@@ -224,6 +225,8 @@ export interface WorkshopToolPanelsProps {
   stressLexiconErr: string | null;
   heavyToolsStale: boolean;
   meterCoverageSummary: MeterCoverageSummary;
+  poemTitle: string;
+  poemLines: string[];
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -277,6 +280,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     stressLexiconErr,
     heavyToolsStale,
     meterCoverageSummary,
+    poemTitle,
+    poemLines,
   } = props;
 
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
@@ -1701,6 +1706,17 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             compareRightBody={compareRightBody}
             compareDiffRows={compareDiffRows}
           />
+        </div>
+      ) : null}
+
+      {toolTab === "suggest" ? (
+        <div
+          className="tool-block"
+          id="tool-panel-suggest"
+          role="tabpanel"
+          aria-labelledby="tool-tab-suggest"
+        >
+          <StuckHelper title={poemTitle} lines={poemLines} />
         </div>
       ) : null}
 
