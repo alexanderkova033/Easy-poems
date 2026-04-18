@@ -8,12 +8,17 @@ interface SuggestResult {
   rhymes_with?: string;
 }
 
-const TYPE_CONFIG: Record<SuggestType, { label: string; icon: string; hint: string }> = {
-  continue: { label: "Continue", icon: "→", hint: "Suggest what comes next" },
-  words:    { label: "Better words", icon: "✦", hint: "Evocative words that fit your poem" },
-  rhyme:    { label: "Rhymes", icon: "♪", hint: "Words that rhyme with your last line" },
-  spark:    { label: "New angle", icon: "⚡", hint: "Surprising creative directions" },
-};
+const TYPE_CONFIG: {
+  id: SuggestType;
+  icon: string;
+  label: string;
+  desc: string;
+}[] = [
+  { id: "continue", icon: "→", label: "Continue",     desc: "What comes next" },
+  { id: "words",    icon: "✦", label: "Better words", desc: "Vivid alternatives" },
+  { id: "rhyme",    icon: "♪", label: "Rhymes",       desc: "For your last line" },
+  { id: "spark",    icon: "⚡", label: "New angle",    desc: "Break out of a rut" },
+];
 
 async function fetchSuggestions(
   title: string,
@@ -45,7 +50,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       type="button"
-      className={`stuck-copy-btn${copied ? " is-copied" : ""}`}
+      className={`sh-copy-btn${copied ? " is-copied" : ""}`}
       onClick={handleCopy}
       aria-label={copied ? "Copied!" : "Copy to clipboard"}
       title={copied ? "Copied!" : "Copy"}
@@ -61,8 +66,7 @@ export interface StuckHelperProps {
 }
 
 export function StuckHelper({ title, lines }: StuckHelperProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeType, setActiveType] = useState<SuggestType>("continue");
+  const [activeType, setActiveType] = useState<SuggestType | null>(null);
   const [context, setContext] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SuggestResult | null>(null);
@@ -83,82 +87,95 @@ export function StuckHelper({ title, lines }: StuckHelperProps) {
     }
   }, [title, lines, context]);
 
+  const hasPoem = lines.some(l => l.trim().length > 0);
+
   return (
-    <section className="stuck-helper">
-      <button
-        type="button"
-        className="stuck-toggle"
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen(o => !o)}
-      >
-        <span className="stuck-toggle-icon" aria-hidden>💡</span>
-        <span className="stuck-toggle-label">Stuck? Get suggestions</span>
-        <span className="stuck-toggle-chevron" aria-hidden>{isOpen ? "▲" : "▼"}</span>
-      </button>
+    <div className="sh-root">
+      {/* Intro */}
+      <div className="sh-intro">
+        <p className="sh-intro-text">
+          Pick a mode below to get unstuck. Add an optional note to give the AI more context.
+        </p>
+        <input
+          type="text"
+          className="sh-context-input"
+          placeholder={hasPoem
+            ? "Optional note\u2009\u2014\u2009e.g. \u201cwants to feel hopeful\u201d"
+            : "Paste a line or describe your poem idea\u2026"}
+          value={context}
+          onChange={e => setContext(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && activeType) handleGenerate(activeType); }}
+          maxLength={200}
+        />
+      </div>
 
-      {isOpen && (
-        <div className="stuck-body">
-          <div className="stuck-type-row">
-            {(Object.entries(TYPE_CONFIG) as [SuggestType, typeof TYPE_CONFIG[SuggestType]][]).map(([type, cfg]) => (
-              <button
-                key={type}
-                type="button"
-                className={`stuck-type-btn${activeType === type && result ? " is-active" : ""}`}
-                title={cfg.hint}
-                onClick={() => handleGenerate(type)}
-                disabled={loading}
-              >
-                <span className="stuck-type-icon" aria-hidden>{cfg.icon}</span>
-                {cfg.label}
-              </button>
+      {/* Mode cards */}
+      <div className="sh-modes">
+        {TYPE_CONFIG.map(({ id, icon, label, desc }) => {
+          const isActive = activeType === id && !loading && result !== null;
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`sh-mode-card${isActive ? " is-active" : ""}${loading && activeType === id ? " is-loading" : ""}`}
+              onClick={() => handleGenerate(id)}
+              disabled={loading}
+            >
+              <span className="sh-mode-icon" aria-hidden>{loading && activeType === id ? "" : icon}</span>
+              {loading && activeType === id && <span className="sh-spinner" aria-hidden />}
+              <span className="sh-mode-label">{label}</span>
+              <span className="sh-mode-desc">{desc}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="sh-error" role="alert">{error}</div>
+      )}
+
+      {/* Results */}
+      {result && !loading && (
+        <div className="sh-results">
+          <div className="sh-results-header">
+            <span className="sh-results-label">
+              {activeType === "words" ? "Word suggestions" :
+               activeType === "rhyme" ? `Rhymes${result.rhymes_with ? ` for \u201c${result.rhymes_with}\u201d` : ""}` :
+               activeType === "spark" ? "Creative directions" :
+               "Continue with\u2026"}
+            </span>
+            <button
+              type="button"
+              className="sh-regenerate-btn"
+              onClick={() => activeType && handleGenerate(activeType)}
+              title="Generate again"
+            >
+              ↺ Again
+            </button>
+          </div>
+          <ul className="sh-suggestions">
+            {result.suggestions.map((s, i) => (
+              <li key={i} className="sh-suggestion">
+                <span className="sh-suggestion-text">{s}</span>
+                <CopyButton text={s} />
+              </li>
             ))}
-          </div>
-
-          <div className="stuck-context-row">
-            <input
-              type="text"
-              className="stuck-context-input"
-              placeholder={'Optional note (e.g. \u201cabout loss, wants to end hopefully\u201d)'}
-              value={context}
-              onChange={e => setContext(e.target.value)}
-              onKeyDown={e => { if (e.key === "Enter") handleGenerate(activeType); }}
-              maxLength={200}
-            />
-          </div>
-
-          {loading && (
-            <div className="stuck-loading">
-              <span className="stuck-spinner" aria-hidden />
-              Thinking…
-            </div>
-          )}
-
-          {error && (
-            <div className="stuck-error" role="alert">{error}</div>
-          )}
-
-          {result && !loading && (
-            <div className="stuck-results">
-              {result.rhymes_with && (
-                <p className="stuck-rhymes-label">
-                  Rhymes with <strong>{result.rhymes_with}</strong>:
-                </p>
-              )}
-              <ul className="stuck-suggestions">
-                {result.suggestions.map((s, i) => (
-                  <li key={i} className="stuck-suggestion">
-                    <span className="stuck-suggestion-text">{s}</span>
-                    <CopyButton text={s} />
-                  </li>
-                ))}
-              </ul>
-              <p className="stuck-regenerate-hint">
-                Click a button above to regenerate with a different style.
-              </p>
-            </div>
-          )}
+          </ul>
         </div>
       )}
-    </section>
+
+      {/* Idle state */}
+      {!result && !loading && !error && (
+        <div className="sh-idle">
+          <span className="sh-idle-icon" aria-hidden>💡</span>
+          <p className="sh-idle-hint">
+            {hasPoem
+              ? "Choose a mode above to get suggestions based on your poem."
+              : "Start writing a few lines, then come back for suggestions."}
+          </p>
+        </div>
+      )}
+    </div>
   );
 }

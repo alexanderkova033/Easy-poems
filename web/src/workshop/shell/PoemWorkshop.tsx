@@ -2191,13 +2191,12 @@ export function PoemWorkshop() {
         />
       )}
 
-      <FeedbackWidget />
-
       <footer className="privacy">
-        <details className="privacy-details">
-          <summary className="privacy-summary">
-            Privacy — your drafts stay in this browser
-          </summary>
+        <div className="privacy-top-row">
+          <details className="privacy-details">
+            <summary className="privacy-summary">
+              Privacy — your drafts stay in this browser
+            </summary>
           <div className="privacy-body">
             <p>
               No analytics, no accounts, no tracking. Drafts, snapshots, and settings
@@ -2221,7 +2220,9 @@ export function PoemWorkshop() {
               {" "}any time.
             </p>
           </div>
-        </details>
+          </details>
+          <FeedbackWidget />
+        </div>
       </footer>
     </div>
   );

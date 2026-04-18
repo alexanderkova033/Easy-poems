@@ -1544,6 +1544,14 @@
   -webkit-backdrop-filter: saturate(1.02) blur(8px);
 }
 
+.privacy-top-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 @media (prefers-color-scheme: light) {
   .editor-panel,
   .results,

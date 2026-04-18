@@ -54,11 +54,11 @@ export function FeedbackWidget() {
     <>
       <button
         type="button"
-        className="feedback-float-btn"
+        className="feedback-inline-btn"
         onClick={openModal}
         aria-label="Share feedback about Easy Poems"
       >
-        Feedback
+        Send feedback
       </button>
 
       {open ? (
