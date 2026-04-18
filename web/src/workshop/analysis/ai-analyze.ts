@@ -17,9 +17,11 @@ export interface AnalysisDimensions {
 
 export interface AnalysisIssue {
   id: string;
+  severity?: "high" | "medium" | "low";
   line_start: number;
   line_end: number;
   excerpt?: string;
+  problem_words?: string[];
   rationale: string;
   improvements: string[];
 }
@@ -27,6 +29,7 @@ export interface AnalysisIssue {
 export interface PoemAnalysis {
   meta: AnalysisMeta;
   overall_score: number;
+  summary?: string;
   dimensions: AnalysisDimensions;
   issues: AnalysisIssue[];
 }
@@ -35,6 +38,11 @@ function clampScore(n: unknown): number {
   const v = typeof n === "number" ? n : parseInt(String(n), 10);
   if (!Number.isFinite(v)) return 50;
   return Math.max(1, Math.min(100, Math.round(v)));
+}
+
+function parseSeverity(v: unknown): "high" | "medium" | "low" | undefined {
+  if (v === "high" || v === "medium" || v === "low") return v;
+  return undefined;
 }
 
 function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
@@ -49,6 +57,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
         typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
     },
     overall_score: clampScore(obj.overall_score),
+    summary: typeof obj.summary === "string" ? obj.summary : undefined,
     dimensions: {
       imagery: clampScore(dims.imagery),
       musicality: clampScore(dims.musicality),
@@ -59,9 +68,15 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
       .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
       .map((iss, idx) => ({
         id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
+        severity: parseSeverity(iss.severity),
         line_start: clampScore(iss.line_start),
         line_end: clampScore(iss.line_end),
         excerpt: typeof iss.excerpt === "string" ? iss.excerpt : undefined,
+        problem_words: Array.isArray(iss.problem_words)
+          ? (iss.problem_words as unknown[])
+              .filter((s): s is string => typeof s === "string")
+              .slice(0, 3)
+          : undefined,
         rationale: typeof iss.rationale === "string" ? iss.rationale : "",
         improvements: Array.isArray(iss.improvements)
           ? (iss.improvements as unknown[])

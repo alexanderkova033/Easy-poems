@@ -1,0 +1,84 @@
+/**
+ * Vercel serverless function — POST /api/suggest
+ *
+ * Receives { title, lines, type, context? } and returns writing suggestions
+ * when the user is stuck.
+ */
+
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { checkRateLimit } from "./_rate-limit";
+import { callOpenAI } from "./_openai";
+
+type SuggestType = "continue" | "words" | "rhyme" | "spark";
+
+const PROMPTS: Record<SuggestType, string> = {
+  continue: `The user is writing a poem and is stuck on what comes next. Study the poem's tone, imagery, and direction, then suggest 3 possible next lines or short stanzas that feel natural and continue the poem. Each suggestion should be distinct in approach. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each suggestion is 1-2 lines of verse. No markdown fences.`,
+
+  words: `The user is writing a poem and wants more interesting word choices. Analyze the existing lines and suggest 6 evocative, specific words or short phrases (nouns, verbs, or adjectives) that would fit the poem's theme and mood. Return valid JSON: { "suggestions": ["word1", "word2", "word3", "word4", "word5", "word6"] }. No explanations, just the words. No markdown fences.`,
+
+  rhyme: `The user needs rhyme suggestions for their poem. Look at the last word of the final line and suggest 6 words that rhyme with it (exact or near-rhyme), preferably fitting the poem's subject and tone. Return valid JSON: { "suggestions": ["word1", "word2", "word3", "word4", "word5", "word6"], "rhymes_with": "<the word you found>" }. No markdown fences.`,
+
+  spark: `The user needs a creative spark to break out of a rut. Based on the poem's existing theme and mood, suggest 3 unexpected creative directions, images, or "what if" prompts that could take the poem somewhere surprising and memorable. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each is 1 sentence. No markdown fences.`,
+};
+
+function buildPrompt(title: string, lines: string[], context: string): string {
+  const parts: string[] = [];
+  if (title.trim()) parts.push(`Title: ${title.trim()}`);
+  if (lines.length > 0) {
+    parts.push("Poem so far:\n" + lines.map((l, i) => `${i + 1}: ${l}`).join("\n"));
+  }
+  if (context.trim()) parts.push(`User note: ${context.trim()}`);
+  return parts.join("\n\n");
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  if (!checkRateLimit(req.headers["x-forwarded-for"])) {
+    return res.status(429).json({ error: "Too many requests — please wait a moment." });
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
+  }
+
+  const body = req.body as { title?: unknown; lines?: unknown; type?: unknown; context?: unknown; model?: unknown };
+
+  const suggestType = (typeof body.type === "string" ? body.type : "continue") as SuggestType;
+  if (!PROMPTS[suggestType]) {
+    return res.status(400).json({ error: "Invalid suggestion type." });
+  }
+
+  const title = typeof body.title === "string" ? body.title : "";
+  const lines = Array.isArray(body.lines) ? (body.lines as unknown[]).map((l) => String(l ?? "")) : [];
+  const context = typeof body.context === "string" ? body.context : "";
+  const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+
+  const result = await callOpenAI(
+    apiKey,
+    {
+      model,
+      messages: [
+        { role: "system", content: PROMPTS[suggestType] },
+        { role: "user", content: buildPrompt(title, lines, context) },
+      ],
+      max_tokens: 600,
+      temperature: 0.85,
+    },
+    res,
+  );
+
+  if (!result) return;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(result.content);
+  } catch {
+    return res.status(502).json({ error: "OpenAI returned invalid JSON." });
+  }
+
+  return res.status(200).json(parsed);
+}

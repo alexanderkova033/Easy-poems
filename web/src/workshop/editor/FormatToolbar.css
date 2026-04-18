@@ -493,7 +493,16 @@ button.primary:disabled {
   min-height: 2.4rem;
 }
 
-/* On narrow screens shrink the whole toolbar so it fits without scrolling */
+/* On narrow screens: hide tidy buttons (clutter) and shrink remaining controls */
+@media (max-width: 899px) {
+  .fmt-tidy-btn {
+    display: none;
+  }
+  .fmt-sep {
+    display: none;
+  }
+}
+
 @media (max-width: 520px) {
   .format-toolbar {
     gap: 0.1rem;
@@ -501,45 +510,46 @@ button.primary:disabled {
   }
 
   .fmt-btn {
-    width: 1.65rem;
-    height: 1.65rem;
-    font-size: 0.8rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.82rem;
   }
 
   .fmt-size-label-text {
-    display: none; /* drop the "Size" word label — select is self-explanatory */
+    display: none;
   }
 
   .fmt-size-select {
     font-size: 0.72rem;
     padding: 0.1rem 0.25rem;
-    height: 1.65rem;
+    height: 1.75rem;
   }
 
   .fmt-syllable-toggle {
-    min-width: 1.9rem;
-    font-size: 0.64rem;
-    padding: 0 0.2rem;
-  }
-
-  .fmt-tidy-btn {
-    font-size: 0.64rem;
-    padding: 0.1rem 0.3rem;
-    min-width: 1.65rem;
-    min-height: 1.65rem;
-  }
-
-  .fmt-sep {
-    height: 1.1em;
-    margin: 0 0.05rem;
+    min-width: 2rem;
+    font-size: 0.66rem;
+    padding: 0 0.25rem;
   }
 }
 
 /* ---- Issue highlight in editor ---- */
 .cm-line-issue-highlight {
-  background: color-mix(in srgb, var(--danger) 10%, transparent) !important;
-  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--danger) 50%, transparent);
   border-radius: 3px;
   transition: background 0.15s ease;
+}
+
+.cm-line-issue-high {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 18%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--ai-score-low, #d95f5f);
+}
+
+.cm-line-issue-medium {
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 16%, transparent) !important;
+  box-shadow: inset 3px 0 0 var(--ai-score-mid, #e6a817);
+}
+
+.cm-line-issue-low {
+  background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+  box-shadow: inset 3px 0 0 color-mix(in srgb, var(--accent) 60%, transparent);
 }
 

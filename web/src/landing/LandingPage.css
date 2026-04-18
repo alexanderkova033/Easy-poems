@@ -1,0 +1,436 @@
+/* ── Landing Page ─────────────────────────────────────────────────────────── */
+
+.landing-root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+
+.landing-hero {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 5rem 1.5rem 4rem;
+}
+
+.landing-hero-inner {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1.25rem;
+}
+
+.landing-leaf {
+  font-size: 2.8rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.landing-headline {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.landing-sub {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.65;
+  color: var(--muted);
+  max-width: 520px;
+}
+
+.landing-ctas {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+
+.landing-btn {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 0.7rem 1.6rem;
+  min-height: 2.85rem;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.14s ease, box-shadow 0.16s ease;
+}
+
+.landing-btn:active {
+  transform: translateY(1px);
+}
+
+.landing-btn-primary {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.landing-btn-primary:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #fff);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.landing-btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+}
+
+.landing-btn-ghost:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+}
+
+.landing-btn-lg {
+  font-size: 1.1rem;
+  padding: 0.85rem 2rem;
+}
+
+/* ── Section titles ───────────────────────────────────────────────────────── */
+
+.landing-section-title {
+  margin: 0 0 2rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text);
+}
+
+/* ── Comic guide ─────────────────────────────────────────────────────────── */
+
+.landing-guide {
+  width: 100%;
+  max-width: 1080px;
+  padding: 3rem 1.5rem 3.5rem;
+}
+
+.landing-comics {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.landing-comic-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.65rem;
+  padding: 1.5rem 1.2rem 1.2rem;
+  width: 196px;
+  background: color-mix(in srgb, var(--surface) 85%, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  position: relative;
+}
+
+.landing-comic-arrow {
+  align-self: center;
+  font-size: 1.3rem;
+  color: var(--muted);
+  padding: 0 0.2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* On mobile: stack vertically, swap arrow to ↓ */
+@media (max-width: 720px) {
+  .landing-comics {
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .landing-comic-panel {
+    width: 100%;
+    max-width: 340px;
+    flex-direction: row;
+    text-align: left;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.1rem 1.1rem 1rem;
+  }
+  .landing-comic-art {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    margin-top: 0;
+  }
+  .landing-comic-num {
+    top: auto;
+    left: auto;
+    right: 0.75rem;
+    bottom: 0.75rem;
+  }
+  .landing-comic-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .landing-comic-arrow {
+    display: none;
+  }
+}
+
+.landing-comic-num {
+  position: absolute;
+  top: -0.7rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-comic-art {
+  width: 80px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.landing-comic-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.landing-comic-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ── Comic art mockups ───────────────────────────────────────────────────── */
+
+.lc-editor-mock {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 72px;
+}
+
+.lc-line {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+.lc-line-1 { width: 100%; }
+.lc-line-2 { width: 75%; }
+.lc-line-3 { width: 88%; }
+
+.lc-cursor {
+  width: 2px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 1px;
+  animation: lc-blink 1s step-start infinite;
+  margin-top: 2px;
+}
+
+@keyframes lc-blink {
+  50% { opacity: 0; }
+}
+
+.lc-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 76px;
+}
+
+.lc-bar {
+  height: 7px;
+  border-radius: 3px;
+}
+
+.lc-bar-green { background: var(--ai-score-high, #5fba7d); }
+.lc-bar-yellow { background: var(--ai-score-mid, #e6a817); }
+.lc-bar-red { background: var(--ai-score-low, #d95f5f); }
+
+.lc-score-ring {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lc-score-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.lc-score-ring span {
+  position: relative;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.lc-export {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 2px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+}
+
+.lc-export-icon {
+  font-size: 1.4rem;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.lc-export-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── Concepts ─────────────────────────────────────────────────────────────── */
+
+.landing-concepts {
+  width: 100%;
+  max-width: 880px;
+  padding: 1rem 1.5rem 3.5rem;
+}
+
+.landing-concepts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.landing-concept {
+  padding: 1.25rem 1.1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 78%, var(--bg));
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.landing-concept-icon {
+  font-size: 1.3rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.landing-concept h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.landing-concept p {
+  margin: 0;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ── Footer CTA ──────────────────────────────────────────────────────────── */
+
+.landing-footer-cta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 3rem 1.5rem 5rem;
+  border-top: 1px solid var(--border);
+  text-align: center;
+}
+
+.landing-footer-tagline {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 520px;
+}
+
+/* ── Mobile tweaks ───────────────────────────────────────────────────────── */
+
+@media (max-width: 520px) {
+  .landing-hero {
+    padding: 3rem 1.1rem 2rem;
+  }
+  .landing-headline {
+    font-size: 1.75rem;
+  }
+  .landing-sub {
+    font-size: 0.95rem;
+  }
+  .landing-btn {
+    width: 100%;
+    min-height: 3rem;
+  }
+  .landing-ctas {
+    width: 100%;
+    flex-direction: column;
+  }
+  .landing-guide {
+    padding: 2rem 1.1rem 2.5rem;
+  }
+  .landing-section-title {
+    font-size: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .landing-concepts {
+    padding: 0 1.1rem 2.5rem;
+  }
+  .landing-concepts-grid {
+    grid-template-columns: 1fr;
+  }
+  .landing-footer-cta {
+    padding: 2rem 1.1rem 4rem;
+  }
+  .landing-footer-tagline {
+    font-size: 0.95rem;
+  }
+}

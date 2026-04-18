@@ -2,6 +2,29 @@ import "./FirstVisitHint.css";
 import { useCallback, useEffect, useState } from "react";
 import { FIRST_VISIT_HINT_STORAGE_KEY, readFirstVisitHintDismissed } from "./firstVisitHintStorage";
 
+const STEPS = [
+  {
+    icon: "✏️",
+    title: "Type your poem here",
+    desc: "The big text area on the left. Title is optional.",
+  },
+  {
+    icon: "📊",
+    title: "Watch the tools panel",
+    desc: "Rhyme scheme, syllables, repeats — all update live as you type.",
+  },
+  {
+    icon: "✦",
+    title: 'Press \u201cAnalyze poem\u201d',
+    desc: "Scroll to the bottom of the tools panel and get AI feedback on each line.",
+  },
+  {
+    icon: "↓",
+    title: "Export when ready",
+    desc: "Download as .docx or .txt, or use Reading Mode for a clean view.",
+  },
+];
+
 export function FirstVisitHint({
   onDismissed,
   onOpenGuide,
@@ -23,11 +46,7 @@ export function FirstVisitHint({
   }, [visible]);
 
   const dismiss = useCallback(() => {
-    try {
-      localStorage.setItem(FIRST_VISIT_HINT_STORAGE_KEY, "1");
-    } catch {
-      /* ignore */
-    }
+    try { localStorage.setItem(FIRST_VISIT_HINT_STORAGE_KEY, "1"); } catch { /* ignore */ }
     setVisible(false);
     onDismissed?.();
   }, [onDismissed]);
@@ -36,43 +55,24 @@ export function FirstVisitHint({
 
   return (
     <div className="welcome-banner" role="banner">
-      <div className="welcome-banner-inner">
-        {/* Headline */}
-        <div className="welcome-headline">
-          <span className="welcome-leaf" aria-hidden>❧</span>
-          <div>
-            <h2 className="welcome-title">A quiet space to write poetry</h2>
-            <p className="welcome-sub">
-              Write in the editor on the left. Your draft is saved automatically —
-              no account needed, nothing leaves your browser.
-            </p>
-          </div>
+      <div className="welcome-headline">
+        <span className="welcome-leaf" aria-hidden>❧</span>
+        <div>
+          <h2 className="welcome-title">Welcome to Easy Poems</h2>
+          <p className="welcome-sub">Four steps to your first poem:</p>
         </div>
+      </div>
 
-        {/* Three-step journey */}
-        <div className="welcome-steps">
-          <div className="welcome-step">
-            <span className="welcome-step-num">1</span>
-            <div className="welcome-step-body">
-              <strong>Write your poem</strong>
-              <span>Type in the big text area. Title and form note are optional.</span>
-            </div>
+      {/* Comic strip */}
+      <div className="welcome-comic-strip">
+        {STEPS.map((step, i) => (
+          <div key={i} className="welcome-comic-cell">
+            <div className="welcome-comic-icon" aria-hidden>{step.icon}</div>
+            <div className="welcome-comic-num" aria-hidden>{i + 1}</div>
+            <strong className="welcome-comic-title">{step.title}</strong>
+            <span className="welcome-comic-desc">{step.desc}</span>
           </div>
-          <div className="welcome-step">
-            <span className="welcome-step-num">2</span>
-            <div className="welcome-step-body">
-              <strong>Use the tools panel</strong>
-              <span>Live word count, rhyme scheme, syllable count, and more — on the right.</span>
-            </div>
-          </div>
-          <div className="welcome-step">
-            <span className="welcome-step-num">3</span>
-            <div className="welcome-step-body">
-              <strong>Save or export</strong>
-              <span>Snapshots let you save drafts of the same poem. Export as .txt, .docx, or copy it.</span>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       <p className="welcome-cmdk-hint">
@@ -88,7 +88,7 @@ export function FirstVisitHint({
             className="small-btn small-btn-primary welcome-guide-btn"
             onClick={() => { onOpenGuide(); dismiss(); }}
           >
-            Full guide →
+            Full interactive guide →
           </button>
         )}
         <button

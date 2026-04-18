@@ -73,6 +73,27 @@ function deriveCategory(issue: AnalysisIssue): { label: string; color: string } 
   return null;
 }
 
+function severityColor(s?: "high" | "medium" | "low"): string {
+  if (s === "high") return "var(--ai-score-low, #d95f5f)";
+  if (s === "medium") return "var(--ai-score-mid, #e6a817)";
+  return "var(--border)";
+}
+
+// ---- copy-to-clipboard hook ---- //
+function useCopyFlash() {
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const copy = useCallback((text: string, idx: number) => {
+    void navigator.clipboard.writeText(text).then(() => {
+      setCopiedIdx(idx);
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => setCopiedIdx(null), 1500);
+    });
+  }, []);
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+  return { copiedIdx, copy };
+}
+
 // ---- sub-components ---- //
 function ScoreRing({ score }: { score: number }) {
   const r = 30;
@@ -112,62 +133,137 @@ function DimensionBar({
 }
 
 function IssueCard({
-  issue, index, onJump, onHighlight, onClearHighlight,
+  issue, index, isOpen, onOpenChange, isResolved, onResolve, onIgnore,
+  onJump, onHighlight, onClearHighlight,
 }: {
   issue: AnalysisIssue;
   index: number;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  isResolved: boolean;
+  onResolve: (resolved: boolean) => void;
+  onIgnore: () => void;
   onJump?: (line: number) => void;
-  onHighlight?: (start: number, end: number) => void;
+  onHighlight?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
 }) {
   const rangeLabel = issue.line_start === issue.line_end
     ? `Line ${issue.line_start}`
     : `Lines ${issue.line_start}–${issue.line_end}`;
   const cat = deriveCategory(issue);
+  const sevColor = severityColor(issue.severity);
+  const { copiedIdx, copy } = useCopyFlash();
+
+  const triggerHighlight = () => {
+    if (!isResolved) onHighlight?.(issue.line_start, issue.line_end, issue.severity);
+  };
 
   return (
-    <details
-      className="ai-issue"
-      onMouseEnter={() => onHighlight?.(issue.line_start, issue.line_end)}
+    <div
+      className={`ai-issue ai-issue-sev-${issue.severity ?? "low"}${isResolved ? " is-resolved" : ""}`}
+      style={{ borderLeftColor: isResolved ? "var(--border)" : sevColor }}
+      onMouseEnter={triggerHighlight}
       onMouseLeave={() => onClearHighlight?.()}
-      onToggle={(e) => {
-        if ((e.currentTarget as HTMLDetailsElement).open) {
-          onHighlight?.(issue.line_start, issue.line_end);
-        } else {
-          onClearHighlight?.();
-        }
-      }}
     >
-      <summary className="ai-issue-head">
-        <span className="ai-issue-num">{index + 1}</span>
+      {/* Header row — clicking toggles open */}
+      <div
+        className="ai-issue-head"
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        onClick={() => {
+          const next = !isOpen;
+          onOpenChange(next);
+          if (next) triggerHighlight();
+          else onClearHighlight?.();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            const next = !isOpen;
+            onOpenChange(next);
+            if (next) triggerHighlight();
+            else onClearHighlight?.();
+          }
+        }}
+      >
+        <span className="ai-issue-num" style={{ background: isResolved ? "var(--muted)" : sevColor }}>
+          {isResolved ? "✓" : index + 1}
+        </span>
         <span className="ai-issue-head-inner">
-          {onJump ? (
+          {onJump && !isResolved ? (
             <button type="button" className="ai-issue-line linkish"
-              onClick={(e) => { e.preventDefault(); onJump(issue.line_start); }}
+              onClick={(e) => { e.stopPropagation(); onJump(issue.line_start); triggerHighlight(); }}
               title={`Jump to line ${issue.line_start}`}>
               {rangeLabel}
             </button>
           ) : <span className="ai-issue-line">{rangeLabel}</span>}
-          {cat && (
+          {cat && !isResolved && (
             <span className="ai-issue-cat" style={{ borderColor: cat.color, color: cat.color }}>
               {cat.label}
             </span>
           )}
-          {issue.excerpt
+          {!isResolved && issue.excerpt
             ? <span className="ai-issue-excerpt">&ldquo;{issue.excerpt}&rdquo;</span>
             : null}
+          {isResolved && <span className="ai-issue-resolved-label">Addressed</span>}
         </span>
-        <span className="ai-issue-chevron" aria-hidden>›</span>
-      </summary>
-      <div className="ai-issue-body">
-        <p className="ai-issue-rationale">{issue.rationale}</p>
-        {issue.improvements.length > 0 && (
-          <ul className="ai-issue-improvements">
-            {issue.improvements.map((imp, i) => <li key={i}>{imp}</li>)}
-          </ul>
-        )}
+        <div className="ai-issue-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            className={`ai-resolve-btn${isResolved ? " is-resolved" : ""}`}
+            title={isResolved ? "Undo — mark as not resolved" : "Mark as resolved"}
+            onClick={() => { onResolve(!isResolved); if (!isResolved) onClearHighlight?.(); }}
+            aria-label={isResolved ? "Undo resolved" : "Mark resolved"}
+          >
+            {isResolved ? "↩" : "✓"}
+          </button>
+          <button
+            type="button"
+            className="ai-ignore-btn"
+            title="Ignore this issue"
+            onClick={() => { onIgnore(); onClearHighlight?.(); }}
+            aria-label="Ignore issue"
+          >
+            ✕
+          </button>
+          <span className="ai-issue-chevron" aria-hidden style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
+        </div>
       </div>
-    </details>
+
+      {/* Expandable body */}
+      {isOpen && (
+        <div className="ai-issue-body">
+          {issue.problem_words && issue.problem_words.length > 0 && (
+            <div className="ai-problem-words">
+              <span className="ai-problem-words-label">Weak words:</span>
+              {issue.problem_words.map((w, i) => (
+                <span key={i} className="ai-problem-word">&ldquo;{w}&rdquo;</span>
+              ))}
+            </div>
+          )}
+          <p className="ai-issue-rationale">{issue.rationale}</p>
+          {issue.improvements.length > 0 && (
+            <ul className="ai-issue-improvements">
+              {issue.improvements.map((imp, i) => (
+                <li key={i} className="ai-improvement-row">
+                  <span className="ai-improvement-text">{imp}</span>
+                  <button
+                    type="button"
+                    className={`ai-copy-btn${copiedIdx === i ? " is-copied" : ""}`}
+                    title="Copy suggestion"
+                    onClick={() => copy(imp, i)}
+                    aria-label="Copy suggestion to clipboard"
+                  >
+                    {copiedIdx === i ? "✓" : "⎘"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -197,6 +293,8 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
   );
 }
 
+type SeverityFilter = "all" | "high" | "medium" | "low";
+
 function AnalysisResults({
   result, previous, onJump, onHighlight, onClearHighlight,
 }: {
@@ -216,6 +314,74 @@ function AnalysisResults({
         clarity: result.dimensions.clarity - previous.dimensions.clarity,
       }
     : null;
+
+  const [resolvedIds, setResolvedIds] = useState<Set<string>>(() => new Set());
+  const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => new Set());
+  const [showIgnored, setShowIgnored] = useState(false);
+  const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
+  const [allExpanded, setAllExpanded] = useState(false);
+
+  const visibleIssues = result.issues.filter((i) => !ignoredIds.has(i.id));
+  const totalIssues = visibleIssues.length;
+  const resolvedCount = [...resolvedIds].filter((id) => !ignoredIds.has(id)).length;
+  const allDone = totalIssues > 0 && resolvedCount === totalIssues;
+
+  const sevCounts: Record<SeverityFilter, number> = {
+    all: totalIssues,
+    high: visibleIssues.filter((i) => i.severity === "high").length,
+    medium: visibleIssues.filter((i) => i.severity === "medium").length,
+    low: visibleIssues.filter((i) => !i.severity || i.severity === "low").length,
+  };
+
+  const filteredIssues = severityFilter === "all"
+    ? visibleIssues
+    : visibleIssues.filter((i) =>
+        severityFilter === "low"
+          ? (!i.severity || i.severity === "low")
+          : i.severity === severityFilter
+      );
+
+  // Unresolved first, resolved last
+  const sortedIssues = [
+    ...filteredIssues.filter((i) => !resolvedIds.has(i.id)),
+    ...filteredIssues.filter((i) => resolvedIds.has(i.id)),
+  ];
+
+  const toggleAll = () => {
+    const next = !allExpanded;
+    setAllExpanded(next);
+    if (next) {
+      setOpenIds(new Set(filteredIssues.map((i) => i.id)));
+    } else {
+      setOpenIds(new Set());
+    }
+  };
+
+  const handleOpenChange = (id: string, open: boolean) => {
+    setOpenIds((prev) => {
+      const s = new Set(prev);
+      if (open) s.add(id); else s.delete(id);
+      return s;
+    });
+  };
+
+  const handleResolve = (id: string, resolved: boolean) => {
+    setResolvedIds((prev) => {
+      const s = new Set(prev);
+      if (resolved) s.add(id); else s.delete(id);
+      return s;
+    });
+    if (resolved) {
+      setOpenIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    }
+  };
+
+  const handleIgnore = (id: string) => {
+    setIgnoredIds((prev) => { const s = new Set(prev); s.add(id); return s; });
+    setOpenIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    setResolvedIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+  };
 
   return (
     <div className="ai-results">
@@ -257,31 +423,140 @@ function AnalysisResults({
         </div>
       </div>
 
+      {/* Overall summary */}
+      {result.summary && (
+        <p className="ai-poem-summary">{result.summary}</p>
+      )}
+
       {/* Comparison panel */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
-      {/* Issues / feedback */}
+      {/* Issues section */}
       {result.issues.length > 0 ? (
         <div className="ai-issues-section">
-          <h4 className="ai-issues-heading">
-            Line-level feedback
-            <span className="ai-issues-count">{result.issues.length}</span>
-          </h4>
-          <p className="ai-issues-intro muted small">
-            Hover an issue to highlight the lines in the editor. Click to expand the suggestion.
-          </p>
-          <div className="ai-issues-list">
-            {result.issues.map((iss, i) => (
-              <IssueCard
-                key={iss.id}
-                issue={iss}
-                index={i}
-                onJump={onJump}
-                onHighlight={onHighlight}
-                onClearHighlight={onClearHighlight}
-              />
-            ))}
+
+          {/* Header row: title + progress + expand-all */}
+          <div className="ai-issues-toolbar">
+            <div className="ai-issues-toolbar-left">
+              <h4 className="ai-issues-heading">
+                Line-level feedback
+                <span className="ai-issues-count">{totalIssues}</span>
+              </h4>
+              {resolvedCount > 0 && (
+                <span className="ai-resolved-badge">
+                  {resolvedCount}/{totalIssues} addressed
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              className="ai-expand-all-btn"
+              onClick={toggleAll}
+              title={allExpanded ? "Collapse all" : "Expand all"}
+            >
+              {allExpanded ? "Collapse all" : "Expand all"}
+            </button>
           </div>
+
+          {/* Progress bar */}
+          {totalIssues > 0 && (
+            <div className="ai-progress-track" title={`${resolvedCount} of ${totalIssues} issues addressed`}>
+              <div
+                className="ai-progress-fill"
+                style={{ width: `${(resolvedCount / totalIssues) * 100}%` }}
+              />
+            </div>
+          )}
+
+          {/* Severity filter tabs */}
+          {(sevCounts.high > 0 || sevCounts.medium > 0) && (
+            <div className="ai-sev-filter" role="group" aria-label="Filter by severity">
+              {(["all", "high", "medium", "low"] as SeverityFilter[]).map((sev) => {
+                if (sev !== "all" && sevCounts[sev] === 0) return null;
+                return (
+                  <button
+                    key={sev}
+                    type="button"
+                    className={`ai-sev-tab${severityFilter === sev ? " is-active" : ""} ai-sev-tab-${sev}`}
+                    onClick={() => setSeverityFilter(sev)}
+                  >
+                    {sev === "all" ? "All" : sev.charAt(0).toUpperCase() + sev.slice(1)}
+                    <span className="ai-sev-tab-count">{sevCounts[sev]}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {/* All-done celebration */}
+          {allDone ? (
+            <div className="ai-all-done">
+              <span className="ai-all-done-icon" aria-hidden>✦</span>
+              <div>
+                <strong>All issues addressed!</strong>
+                <p className="muted small">Great work. Run another analysis to check the revised poem.</p>
+              </div>
+              <button
+                type="button"
+                className="small-btn ai-all-done-undo"
+                onClick={() => setResolvedIds(new Set())}
+              >
+                Reset
+              </button>
+            </div>
+          ) : (
+            <div className="ai-issues-list">
+              {sortedIssues.map((iss) => (
+                <IssueCard
+                  key={iss.id}
+                  issue={iss}
+                  index={result.issues.indexOf(iss)}
+                  isOpen={openIds.has(iss.id)}
+                  onOpenChange={(open) => handleOpenChange(iss.id, open)}
+                  isResolved={resolvedIds.has(iss.id)}
+                  onResolve={(resolved) => handleResolve(iss.id, resolved)}
+                  onIgnore={() => handleIgnore(iss.id)}
+                  onJump={onJump}
+                  onHighlight={onHighlight}
+                  onClearHighlight={onClearHighlight}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Ignored issues footer */}
+          {ignoredIds.size > 0 && (
+            <div className="ai-ignored-footer">
+              <button
+                type="button"
+                className="ai-show-ignored-btn"
+                onClick={() => setShowIgnored((v) => !v)}
+              >
+                {showIgnored ? "Hide" : "Show"} {ignoredIds.size} ignored issue{ignoredIds.size !== 1 ? "s" : ""}
+              </button>
+              {showIgnored && (
+                <div className="ai-ignored-list">
+                  {result.issues.filter((i) => ignoredIds.has(i.id)).map((iss) => (
+                    <div key={iss.id} className="ai-ignored-row">
+                      <span className="ai-ignored-label">
+                        {iss.line_start === iss.line_end
+                          ? `Line ${iss.line_start}`
+                          : `Lines ${iss.line_start}–${iss.line_end}`}
+                        {iss.excerpt ? ` — "${iss.excerpt}"` : ""}
+                      </span>
+                      <button
+                        type="button"
+                        className="ai-unignore-btn"
+                        onClick={() => setIgnoredIds((prev) => { const s = new Set(prev); s.delete(iss.id); return s; })}
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <div className="ai-no-issues-wrap">
@@ -325,7 +600,7 @@ export interface AiAnalysisProps {
   title: string;
   lines: string[];
   onJumpToLine?: (line: number) => void;
-  onHighlightLines?: (start: number, end: number) => void;
+  onHighlightLines?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
 }
 
@@ -415,7 +690,6 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
           {/* Controls row */}
           <div className="ai-controls-row">
             <div className="ai-controls-left">
-              {/* Mode toggle */}
               <div className="ai-mode-toggle" role="group" aria-label="Analysis mode">
                 <button type="button"
                   className={`ai-mode-btn ${effectiveMode === "fresh" ? "is-active" : ""}`}
@@ -465,7 +739,6 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
             </p>
           )}
 
-          {/* Compare mode hint */}
           {effectiveMode === "compare" && canCompare && (
             <p className="ai-compare-hint muted small">
               Baseline saved from previous run — the model will score the current
@@ -473,7 +746,6 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
             </p>
           )}
 
-          {/* States */}
           {isUnconfigured && (
             <div className="ai-unconfigured" role="status">
               <p className="ai-unconfigured-title">Server not configured</p>

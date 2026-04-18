@@ -37,3 +37,6 @@ export const STORAGE_KEY_WORD_LOOKUP_ENABLED = "easy-poems:wordLookupEnabled";
 
 // AI settings
 export const STORAGE_KEY_AI_MODEL = "ep_openai_model";
+
+// Landing page
+export const STORAGE_KEY_LANDING_DISMISSED = "easy-poems:landing-dismissed";

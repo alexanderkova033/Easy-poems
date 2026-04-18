@@ -106,7 +106,7 @@ export interface PoemBodyEditorProps {
   spellBump: number;
   jumpLine?: number | null;
   jumpBump?: number;
-  issueHighlight?: [number, number] | null;
+  issueHighlight?: [number, number, string?] | null;
   /** Per-line syllable counts at end of each line (CodeMirror widgets). */
   showLineSyllables?: boolean;
   id?: string;
@@ -159,7 +159,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     };
   }, []);
 
-  // Issue highlight: dim background on hovered AI issue lines
+  // Issue highlight: strong background on hovered/active AI issue lines + scroll into view
   useEffect(() => {
     const view = props.editorViewRef.current;
     if (!view) return;
@@ -169,15 +169,24 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       return;
     }
     try {
-      const [startLine, endLine] = range;
+      const [startLine, endLine, sev] = range;
+      const sevClass = sev === "high"
+        ? "cm-line-issue-highlight cm-line-issue-high"
+        : sev === "medium"
+          ? "cm-line-issue-highlight cm-line-issue-medium"
+          : "cm-line-issue-highlight cm-line-issue-low";
       const decos = [];
       const lineCount = view.state.doc.lines;
       for (let n = startLine; n <= Math.min(endLine, lineCount); n++) {
         const line = view.state.doc.line(n);
-        decos.push(Decoration.line({ class: "cm-line-issue-highlight" }).range(line.from));
+        decos.push(Decoration.line({ class: sevClass }).range(line.from));
       }
+      const anchorLine = view.state.doc.line(Math.max(1, Math.min(startLine, lineCount)));
       view.dispatch({
-        effects: setIssueHighlight.of(Decoration.set(decos)),
+        effects: [
+          setIssueHighlight.of(Decoration.set(decos)),
+          EditorView.scrollIntoView(anchorLine.from, { y: "center", yMargin: 80 }),
+        ],
       });
     } catch { /* line out of range */ }
   }, [props.editorViewRef, props.issueHighlight]);

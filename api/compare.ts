@@ -21,13 +21,16 @@ Return valid JSON with this exact shape:
     "originality": <integer 1-100>,
     "clarity": <integer 1-100>
   },
+  "summary": "<2-3 sentences: honest, specific overall impression of the current poem — what it achieves and the single most important improvement direction>",
   "issues": [
     {
       "id": "issue-1",
+      "severity": "<high|medium|low>",
       "line_start": <1-based int>,
       "line_end": <1-based int>,
       "excerpt": "<short quote, optional>",
-      "rationale": "<polite, specific>",
+      "problem_words": ["<specific weak word or phrase>"],
+      "rationale": "<polite, specific — mention exact weak words when relevant>",
       "improvements": ["<direction>"]
     }
   ],
@@ -41,6 +44,9 @@ Return valid JSON with this exact shape:
 
 Rules:
 - Scores are for the CURRENT version, integers 1-100.
+- summary: always present, 2-3 sentences, honest and specific.
+- severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
+- problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
 - improvements/regressions/unchanged: 1-4 items each, or empty arrays.
 - issues: 3-6 most actionable, or fewer for strong poems.
 - Return ONLY the JSON object, no markdown fences.`;

@@ -22,6 +22,7 @@ import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
+import { StuckHelper } from "@/workshop/analysis/StuckHelper";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { WordLookupPopup } from "@/workshop/vocabulary/WordLookupPopup";
 import { TemplatesModal } from "./TemplatesModal";
@@ -82,7 +83,7 @@ export function PoemWorkshop() {
   const librarySearchRef = useRef<HTMLInputElement | null>(null);
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
-  const [issueHighlight, setIssueHighlight] = useState<[number, number] | null>(null);
+  const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
   const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
@@ -2162,11 +2163,13 @@ export function PoemWorkshop() {
         </button>
       </nav>
 
+      <StuckHelper title={m.title} lines={m.lines} />
+
       <AiAnalysis
         title={m.title}
         lines={m.lines}
         onJumpToLine={m.goToLine}
-        onHighlightLines={(start, end) => setIssueHighlight([start, end])}
+        onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
         onClearHighlight={() => setIssueHighlight(null)}
       />
 

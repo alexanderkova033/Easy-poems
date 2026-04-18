@@ -1,0 +1,264 @@
+/* ── Stuck Helper ───────────────────────────────────────────────────────────── */
+
+.stuck-helper {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 80%, var(--bg));
+}
+
+/* Toggle button */
+.stuck-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+}
+
+.stuck-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.stuck-toggle-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.stuck-toggle-label {
+  flex: 1;
+}
+
+.stuck-toggle-chevron {
+  font-size: 0.65rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* Body */
+.stuck-body {
+  padding: 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Type buttons */
+.stuck-type-row {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  padding-top: 0.85rem;
+}
+
+.stuck-type-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+  color: var(--text);
+  font: inherit;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, transform 0.1s;
+  min-height: 2.2rem;
+}
+
+.stuck-type-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+
+.stuck-type-btn.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
+}
+
+.stuck-type-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.stuck-type-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.stuck-type-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+/* Context input */
+.stuck-context-input {
+  width: 100%;
+  padding: 0.45rem 0.7rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.stuck-context-input::placeholder {
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.stuck-context-input:focus {
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Loading state */
+.stuck-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0.3rem 0;
+}
+
+@keyframes stuck-spin {
+  to { transform: rotate(360deg); }
+}
+
+.stuck-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: stuck-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Error */
+.stuck-error {
+  font-size: 0.83rem;
+  color: var(--ai-score-low, #d95f5f);
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ai-score-low, #d95f5f) 30%, transparent);
+}
+
+/* Results */
+.stuck-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.stuck-rhymes-label {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.stuck-rhymes-label strong {
+  color: var(--text);
+}
+
+.stuck-suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.stuck-suggestion {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+}
+
+.stuck-suggestion:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
+}
+
+.stuck-suggestion-text {
+  flex: 1;
+  font-size: 0.87rem;
+  line-height: 1.55;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Copy button */
+.stuck-copy-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.13s, color 0.13s, border-color 0.13s;
+  margin-top: 0.05rem;
+}
+
+.stuck-copy-btn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stuck-copy-btn.is-copied {
+  color: var(--ai-score-high, #5fba7d);
+  border-color: var(--ai-score-high, #5fba7d);
+}
+
+/* Regenerate hint */
+.stuck-regenerate-hint {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+  text-align: center;
+  padding-top: 0.1rem;
+}
+
+/* Mobile tweaks */
+@media (max-width: 899px) {
+  .stuck-type-btn {
+    min-height: 2.75rem;
+    font-size: 0.88rem;
+    padding: 0.55rem 1rem;
+  }
+  .stuck-copy-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1rem;
+  }
+}
