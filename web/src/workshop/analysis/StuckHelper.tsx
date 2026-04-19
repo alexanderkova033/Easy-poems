@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import "./StuckHelper.css";
 
 type SuggestType = "continue" | "words" | "rhyme" | "spark" | "line";
@@ -14,11 +14,11 @@ const TYPE_CONFIG: {
   label: string;
   desc: string;
 }[] = [
-  { id: "continue", icon: "→",  label: "Continue",     desc: "What comes next"        },
-  { id: "words",    icon: "✦",  label: "Better words", desc: "Vivid alternatives"      },
-  { id: "rhyme",    icon: "♪",  label: "Rhymes",       desc: "For your last line"      },
-  { id: "spark",    icon: "⚡", label: "New angle",    desc: "Break out of a rut"      },
-  { id: "line",     icon: "✏",  label: "Fix a line",   desc: "Rewrite a specific line" },
+  { id: "continue", icon: "→",  label: "Continue",     desc: "What could come next"      },
+  { id: "words",    icon: "✦",  label: "Better words", desc: "Vivid alternatives"         },
+  { id: "rhyme",    icon: "♪",  label: "Rhymes",       desc: "For your last line"         },
+  { id: "spark",    icon: "⚡", label: "New angle",    desc: "Break out of a rut"         },
+  { id: "line",     icon: "✏",  label: "Fix a line",   desc: "Rewrite a specific line"    },
 ];
 
 async function fetchSuggestions(
@@ -40,69 +40,48 @@ async function fetchSuggestions(
   return res.json() as Promise<SuggestResult>;
 }
 
-function SuggestionCard({
-  text,
-  onInsert,
-}: {
-  text: string;
-  onInsert?: (text: string) => void;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch { /* ignore */ }
-  }, [text]);
-
-  return (
-    <div className="sh-suggestion">
-      <p className="sh-suggestion-text">{text}</p>
-      <div className="sh-suggestion-actions">
-        <button
-          type="button"
-          className={`sh-action-btn${copied ? " is-copied" : ""}`}
-          onClick={handleCopy}
-          aria-label={copied ? "Copied!" : "Copy to clipboard"}
-          title={copied ? "Copied!" : "Copy"}
-        >
-          {copied ? "✓" : "⎘"}
-        </button>
-        {onInsert && (
-          <button
-            type="button"
-            className="sh-action-btn sh-insert-btn"
-            onClick={() => onInsert(text)}
-            aria-label="Insert into poem"
-            title="Append to poem"
-          >
-            ↓
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
 export interface StuckHelperProps {
   title: string;
   lines: string[];
-  /** Called when user clicks Insert on a suggestion — appends text to poem. */
   onInsert?: (text: string) => void;
+  onReplaceLine?: (lineNum: number, text: string) => void;
 }
 
-export function StuckHelper({ title, lines, onInsert }: StuckHelperProps) {
+export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelperProps) {
   const [activeType, setActiveType] = useState<SuggestType | null>(null);
   const [context, setContext] = useState("");
-  const [targetLine, setTargetLine] = useState("");
+  const [targetLineNum, setTargetLineNum] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<SuggestResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showContext, setShowContext] = useState(false);
+  const contextRef = useRef<HTMLInputElement>(null);
 
-  const handleGenerate = useCallback(async (type: SuggestType) => {
+  const nonEmptyLines = lines
+    .map((text, i) => ({ text, num: i + 1 }))
+    .filter(({ text }) => text.trim().length > 0);
+
+  const targetLineText = targetLineNum != null
+    ? (lines[targetLineNum - 1] ?? "")
+    : "";
+
+  const hasPoem = nonEmptyLines.length > 0;
+
+  // When switching to "line" mode, auto-select last non-empty line if none picked
+  useEffect(() => {
+    if (activeType === "line" && targetLineNum == null && nonEmptyLines.length > 0) {
+      setTargetLineNum(nonEmptyLines[nonEmptyLines.length - 1]!.num);
+    }
+  }, [activeType]); // eslint-disable-line
+
+  const handleSelectMode = useCallback((type: SuggestType) => {
     setActiveType(type);
+    setResult(null);
+    setError(null);
+  }, []);
+
+  const handleGenerate = useCallback(async () => {
+    if (!activeType) return;
     setLoading(true);
     setResult(null);
     setError(null);
@@ -110,9 +89,9 @@ export function StuckHelper({ title, lines, onInsert }: StuckHelperProps) {
       const data = await fetchSuggestions(
         title,
         lines,
-        type,
+        activeType,
         context,
-        type === "line" ? targetLine : undefined,
+        activeType === "line" ? targetLineText : undefined,
       );
       setResult(data);
     } catch (err) {
@@ -120,83 +99,108 @@ export function StuckHelper({ title, lines, onInsert }: StuckHelperProps) {
     } finally {
       setLoading(false);
     }
-  }, [title, lines, context, targetLine]);
-
-  const hasPoem = lines.some(l => l.trim().length > 0);
+  }, [activeType, title, lines, context, targetLineText]);
 
   const resultLabel = () => {
     if (!activeType) return "";
-    if (activeType === "words") return "Word suggestions";
+    if (activeType === "words") return "Word alternatives";
     if (activeType === "rhyme") return result?.rhymes_with ? `Rhymes for "${result.rhymes_with}"` : "Rhyme suggestions";
-    if (activeType === "spark") return "Creative directions";
+    if (activeType === "spark") return "New directions";
     if (activeType === "line") return "Line rewrites";
-    return "Continue with\u2026";
+    return "Continue with…";
   };
 
   return (
     <div className="sh-root">
-      {/* Mode cards */}
-      <div className="sh-modes">
-        {TYPE_CONFIG.map(({ id, icon, label, desc }) => {
-          const isActive = activeType === id && !loading && result !== null;
-          const isLoading = loading && activeType === id;
-          return (
-            <button
-              key={id}
-              type="button"
-              className={`sh-mode-card${isActive ? " is-active" : ""}${isLoading ? " is-loading" : ""}`}
-              onClick={() => handleGenerate(id)}
-              disabled={loading}
-              title={desc}
-            >
-              <span className="sh-mode-icon" aria-hidden>
-                {isLoading ? "" : icon}
-              </span>
-              {isLoading && <span className="sh-spinner" aria-hidden />}
-              <span className="sh-mode-label">{label}</span>
-              <span className="sh-mode-desc">{desc}</span>
-            </button>
-          );
-        })}
+      {/* Mode tab strip */}
+      <div className="sh-tabs" role="tablist" aria-label="Suggestion mode">
+        {TYPE_CONFIG.map(({ id, icon, label, desc }) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={activeType === id}
+            className={`sh-tab${activeType === id ? " is-active" : ""}`}
+            onClick={() => handleSelectMode(id)}
+            title={desc}
+          >
+            <span className="sh-tab-icon" aria-hidden>{icon}</span>
+            <span className="sh-tab-label">{label}</span>
+          </button>
+        ))}
       </div>
 
-      {/* "Fix a line" target input — shown when that mode is selected */}
-      {(activeType === "line" || result?.suggestions.length === 0) && (
-        <div className="sh-line-input-wrap">
-          <label className="sh-line-input-label" htmlFor="sh-target-line">
-            Line to fix
-          </label>
-          <input
-            id="sh-target-line"
-            type="text"
-            className="sh-context-input"
-            value={targetLine}
-            onChange={e => setTargetLine(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") void handleGenerate("line"); }}
-            placeholder="Paste the line you want to rewrite…"
-            autoComplete="off"
-            spellCheck={false}
-          />
+      {/* Active mode body */}
+      {activeType && (
+        <div className="sh-body">
+          {/* Line picker for "Fix a line" */}
+          {activeType === "line" && (
+            <div className="sh-line-picker">
+              <p className="sh-section-label">Which line?</p>
+              <div className="sh-line-list">
+                {nonEmptyLines.length === 0 ? (
+                  <p className="sh-empty-hint">Write a few lines first.</p>
+                ) : (
+                  nonEmptyLines.map(({ text, num }) => (
+                    <button
+                      key={num}
+                      type="button"
+                      className={`sh-line-item${targetLineNum === num ? " is-selected" : ""}`}
+                      onClick={() => setTargetLineNum(num)}
+                      title={`Line ${num}`}
+                    >
+                      <span className="sh-line-num">{num}</span>
+                      <span className="sh-line-text">{text}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Optional context toggle */}
+          <button
+            type="button"
+            className="sh-context-toggle"
+            onClick={() => {
+              setShowContext((v) => !v);
+              if (!showContext) setTimeout(() => contextRef.current?.focus(), 50);
+            }}
+          >
+            <span className="sh-context-toggle-icon" aria-hidden>{showContext ? "▾" : "›"}</span>
+            {showContext ? "Hide note" : "Add a note"}<span className="sh-context-toggle-hint"> — optional, e.g. "wants to feel hopeful"</span>
+          </button>
+          {showContext && (
+            <input
+              ref={contextRef}
+              type="text"
+              className="sh-context-input"
+              placeholder='e.g. "wants to feel hopeful" or "more concrete imagery"'
+              value={context}
+              onChange={(e) => setContext(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") void handleGenerate(); }}
+              maxLength={200}
+              aria-label="Optional context note"
+            />
+          )}
+
+          {/* Generate button */}
+          <button
+            type="button"
+            className="sh-generate-btn"
+            onClick={() => void handleGenerate()}
+            disabled={loading || (activeType === "line" && !targetLineText.trim())}
+          >
+            {loading ? (
+              <><span className="sh-btn-spinner" aria-hidden /> Generating…</>
+            ) : (
+              <>
+                {activeType === "line" ? "↺ Rewrite this line" : "✦ Generate suggestions"}
+              </>
+            )}
+          </button>
         </div>
       )}
-
-      {/* Context / optional note */}
-      <input
-        type="text"
-        className="sh-context-input"
-        placeholder={
-          activeType === "line"
-            ? "Optional note — e.g. \u201cwant it to feel more vivid\u201d"
-            : hasPoem
-              ? "Optional note\u2009\u2014\u2009e.g. \u201cwants to feel hopeful\u201d"
-              : "Paste a line or describe your poem idea\u2026"
-        }
-        value={context}
-        onChange={e => setContext(e.target.value)}
-        onKeyDown={e => { if (e.key === "Enter" && activeType) void handleGenerate(activeType); }}
-        maxLength={200}
-        aria-label="Optional context note"
-      />
 
       {/* Error */}
       {error && (
@@ -211,7 +215,7 @@ export function StuckHelper({ title, lines, onInsert }: StuckHelperProps) {
             <button
               type="button"
               className="sh-regenerate-btn"
-              onClick={() => activeType && void handleGenerate(activeType)}
+              onClick={() => void handleGenerate()}
               title="Generate again"
             >
               ↺ Again
@@ -219,23 +223,92 @@ export function StuckHelper({ title, lines, onInsert }: StuckHelperProps) {
           </div>
           <div className="sh-suggestions">
             {result.suggestions.map((s, i) => (
-              <SuggestionCard key={i} text={s} onInsert={onInsert} />
+              <SuggestionCard
+                key={i}
+                text={s}
+                onInsert={onInsert}
+                onReplace={
+                  activeType === "line" && targetLineNum != null && onReplaceLine
+                    ? () => onReplaceLine(targetLineNum, s)
+                    : undefined
+                }
+              />
             ))}
           </div>
         </div>
       )}
 
       {/* Idle state */}
-      {!result && !loading && !error && (
+      {!activeType && (
         <div className="sh-idle">
-          <span className="sh-idle-icon" aria-hidden>💡</span>
           <p className="sh-idle-hint">
             {hasPoem
-              ? "Pick a mode to get suggestions based on your poem."
+              ? "Pick a mode above to get AI suggestions based on your poem."
               : "Write a few lines first, then come back for suggestions."}
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function SuggestionCard({
+  text,
+  onInsert,
+  onReplace,
+}: {
+  text: string;
+  onInsert?: (text: string) => void;
+  onReplace?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const [applied, setApplied] = useState(false);
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  }, [text]);
+
+  const handleApply = useCallback(() => {
+    if (onReplace) {
+      onReplace();
+    } else if (onInsert) {
+      onInsert(text);
+    }
+    setApplied(true);
+    setTimeout(() => setApplied(false), 1800);
+  }, [onReplace, onInsert, text]);
+
+  const canApply = Boolean(onReplace || onInsert);
+  const applyLabel = onReplace ? "Replace" : "↓ Use";
+  const applyTitle = onReplace ? "Replace the selected line in the poem" : "Append to poem";
+
+  return (
+    <div className="sh-suggestion">
+      <p className="sh-suggestion-text">{text}</p>
+      <div className="sh-suggestion-footer">
+        <button
+          type="button"
+          className={`sh-copy-btn${copied ? " is-copied" : ""}`}
+          onClick={handleCopy}
+          title={copied ? "Copied!" : "Copy to clipboard"}
+        >
+          {copied ? "✓ Copied" : "⎘ Copy"}
+        </button>
+        {canApply && (
+          <button
+            type="button"
+            className={`sh-apply-btn${applied ? " is-applied" : ""}${onReplace ? " sh-replace-btn" : ""}`}
+            onClick={handleApply}
+            title={applyTitle}
+          >
+            {applied ? "✓ Done" : applyLabel}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

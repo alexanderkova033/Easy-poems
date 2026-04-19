@@ -229,6 +229,7 @@ export interface WorkshopToolPanelsProps {
   poemTitle: string;
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
+  onReplaceLine?: (lineNum: number, text: string) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -285,6 +286,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     poemTitle,
     poemLines,
     onInsertSuggestion,
+    onReplaceLine,
   } = props;
 
   const vocabStats = useMemo(() => computeVocabStats(poemLines), [poemLines]);
@@ -1744,7 +1746,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-suggest"
         >
-          <StuckHelper title={poemTitle} lines={poemLines} onInsert={onInsertSuggestion} />
+          <StuckHelper title={poemTitle} lines={poemLines} onInsert={onInsertSuggestion} onReplaceLine={onReplaceLine} />
         </div>
       ) : null}
 

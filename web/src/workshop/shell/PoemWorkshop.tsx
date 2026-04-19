@@ -1760,24 +1760,6 @@ export function PoemWorkshop() {
 
           <button
             type="button"
-            className="rail-btn rail-btn-scene"
-            onClick={() => { setStyleTab("background"); setIsStyleOpen(true); }}
-            aria-haspopup="dialog"
-            aria-expanded={isStyleOpen && styleTab === "background"}
-            {...hint("Background — choose a scene behind the page")}
-          >
-            <RailIcon>
-              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
-                <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
-                <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M3 15l4.5-4.5 3 3 3-3 4.5 4.5" />
-                <circle cx="8" cy="9.5" r="1.25" fill="currentColor" />
-              </svg>
-            </RailIcon>
-            <span className="rail-label">Background</span>
-          </button>
-
-          <button
-            type="button"
             className="rail-btn rail-btn-primary"
             onClick={() => setIsExportOpen(true)}
             aria-haspopup="dialog"
@@ -2181,6 +2163,7 @@ export function PoemWorkshop() {
             poemTitle={m.title}
             poemLines={m.lines}
             onInsertSuggestion={m.insertTextAtEnd}
+            onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
           />
         </aside>
       </div>
