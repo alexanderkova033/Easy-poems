@@ -205,6 +205,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
   const [spellNavIndex, setSpellNavIndex] = useState(0);
   const [revisions, setRevisions] = useState<RevisionSnapshot[]>([]);
   const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [lastAiScore, setLastAiScore] = useState<number | null>(null);
   const [compareLeftId, setCompareLeftId] = useState(COMPARE_CURRENT_ID);
   const [compareRightId, setCompareRightId] = useState(COMPARE_CURRENT_ID);
   const [compareViewMode, setCompareViewMode] = useState<"side" | "diff">(
@@ -817,6 +818,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
       body: bodyLiveRef.current,
       form: formNote.trim() || undefined,
       label: snapshotLabel.trim() || undefined,
+      aiScore: lastAiScore ?? undefined,
     });
     if (!result.ok) {
       setPersistenceError(SNAPSHOT_SAVE_MSG);
@@ -844,7 +846,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
       if (right && next.some((s) => s.id === right)) return right;
       return next[0]?.id ?? COMPARE_CURRENT_ID;
     });
-  }, [activePoemId, revisions, title, formNote, snapshotLabel]);
+  }, [activePoemId, revisions, title, formNote, snapshotLabel, lastAiScore]);
 
   // Auto-snapshot every 10 minutes when the poem body has actually changed
   const lastAutoSnapshotBodyRef = useRef<string>("");
@@ -880,6 +882,34 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     bodyLiveRef.current = body;
     setHeavyBody(body);
     if (form) setFormNote(form);
+    setBodySyncNonce((n) => n + 1);
+  }, []);
+
+  const applyLineRewrite = useCallback((lineStart: number, lineEnd: number, text: string) => {
+    if (bodyToReactTimer.current) {
+      clearTimeout(bodyToReactTimer.current);
+      bodyToReactTimer.current = null;
+    }
+    const currentLines = bodyLiveRef.current.split("\n");
+    const textLines = text.split("\n");
+    currentLines.splice(lineStart - 1, lineEnd - lineStart + 1, ...textLines);
+    const newBody = currentLines.join("\n");
+    setBody(newBody);
+    bodyLiveRef.current = newBody;
+    setHeavyBody(newBody);
+    setBodySyncNonce((n) => n + 1);
+  }, []);
+
+  const insertTextAtEnd = useCallback((text: string) => {
+    if (bodyToReactTimer.current) {
+      clearTimeout(bodyToReactTimer.current);
+      bodyToReactTimer.current = null;
+    }
+    const current = bodyLiveRef.current;
+    const newBody = (current.trimEnd() ? current.trimEnd() + "\n" : "") + text;
+    setBody(newBody);
+    bodyLiveRef.current = newBody;
+    setHeavyBody(newBody);
     setBodySyncNonce((n) => n + 1);
   }, []);
 
@@ -1181,5 +1211,8 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     onImportBackupFile,
     importInputRef,
     applyTemplate,
+    applyLineRewrite,
+    insertTextAtEnd,
+    setLastAiScore,
   };
 }

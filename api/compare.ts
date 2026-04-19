@@ -1,8 +1,8 @@
 /**
  * Vercel serverless function — POST /api/compare
  *
- * Receives { title, lines, previousLines, previousScores } and asks the model
- * to analyse the current poem AND compare it to the previous version.
+ * Receives { title, lines, previousLines, previousScores, localAnalysis?, goals? }
+ * and asks the model to analyse the current poem AND compare it to the previous version.
  */
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
@@ -31,7 +31,8 @@ Return valid JSON with this exact shape:
       "excerpt": "<short quote, optional>",
       "problem_words": ["<specific weak word or phrase>"],
       "rationale": "<polite, specific — mention exact weak words when relevant>",
-      "improvements": ["<direction>"]
+      "improvements": ["<direction>"],
+      "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling>"
     }
   ],
   "comparison": {
@@ -49,10 +50,74 @@ Rules:
 - problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
 - improvements/regressions/unchanged: 1-4 items each, or empty arrays.
 - issues: 3-6 most actionable, or fewer for strong poems.
+- rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction.
+- If local analysis context is provided, use it to make feedback more precise.
 - Return ONLY the JSON object, no markdown fences.`;
+
+interface LocalAnalysis {
+  cliches?: Array<{ phrase: string; lineNumber: number }>;
+  rhymeScheme?: string[];
+  syllablesPerLine?: number[];
+  repeatedWords?: Array<{ word: string; count: number }>;
+  form?: string;
+}
+
+interface GoalsContext {
+  minLines?: number;
+  maxLines?: number;
+  minWords?: number;
+  maxWords?: number;
+  minStanzas?: number;
+  maxStanzas?: number;
+  maxSyllablesPerLine?: number;
+}
 
 function numbered(lines: string[]): string {
   return lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
+}
+
+function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext): string {
+  const hints: string[] = [];
+
+  if (local?.form && local.form !== "free") hints.push(`Detected form: ${local.form}`);
+
+  if (local?.syllablesPerLine && local.syllablesPerLine.length > 0) {
+    const syllLines = local.syllablesPerLine
+      .map((s, i) => lines[i]?.trim() ? `${i + 1}:${s}` : null)
+      .filter((x): x is string => x !== null);
+    if (syllLines.length > 0) hints.push(`Syllables per line: ${syllLines.join(" ")}`);
+  }
+
+  if (local?.rhymeScheme && local.rhymeScheme.some((s) => s)) {
+    const scheme = local.rhymeScheme
+      .map((s, i) => (s ? `${i + 1}:${s}` : null))
+      .filter((x): x is string => x !== null)
+      .join(" ");
+    hints.push(`Rhyme scheme: ${scheme}`);
+  }
+
+  if (local?.cliches && local.cliches.length > 0) {
+    hints.push(`Detected clichés: ${local.cliches.map((c) => `L${c.lineNumber}: "${c.phrase}"`).join("; ")}`);
+  }
+
+  if (local?.repeatedWords && local.repeatedWords.length > 0) {
+    const top = local.repeatedWords.slice(0, 6);
+    hints.push(`Repeated words: ${top.map((r) => `"${r.word}" ×${r.count}`).join(", ")}`);
+  }
+
+  if (goals) {
+    const goalParts: string[] = [];
+    if (goals.minLines) goalParts.push(`min ${goals.minLines} lines`);
+    if (goals.maxLines) goalParts.push(`max ${goals.maxLines} lines`);
+    if (goals.minWords) goalParts.push(`min ${goals.minWords} words`);
+    if (goals.maxWords) goalParts.push(`max ${goals.maxWords} words`);
+    if (goals.minStanzas) goalParts.push(`min ${goals.minStanzas} stanzas`);
+    if (goals.maxStanzas) goalParts.push(`max ${goals.maxStanzas} stanzas`);
+    if (goals.maxSyllablesPerLine) goalParts.push(`max ${goals.maxSyllablesPerLine} syllables/line`);
+    if (goalParts.length > 0) hints.push(`Author's constraints: ${goalParts.join(", ")}`);
+  }
+
+  return hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -75,6 +140,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     previousLines?: unknown;
     previousScores?: unknown;
     model?: unknown;
+    localAnalysis?: unknown;
+    goals?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -89,13 +156,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const prevLines = (body.previousLines as unknown[]).map((l) => String(l ?? ""));
   const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
   const prevScores = body.previousScores ?? null;
+  const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
+  const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
 
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
-  const prevScoreText = prevScores
-    ? `\nPrevious scores: ${JSON.stringify(prevScores)}\n`
-    : "";
+  const prevScoreText = prevScores ? `\nPrevious scores: ${JSON.stringify(prevScores)}\n` : "";
+  const contextBlock = buildContextHints(lines, local, goals);
 
-  const userMessage = `${titlePart}=== PREVIOUS VERSION ===\n${numbered(prevLines)}\n${prevScoreText}\n=== CURRENT VERSION ===\n${numbered(lines)}`;
+  const userMessage = `${titlePart}=== PREVIOUS VERSION ===\n${numbered(prevLines)}\n${prevScoreText}\n=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}`;
 
   const result = await callOpenAI(
     apiKey,
@@ -105,7 +173,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userMessage },
       ],
-      max_tokens: 2400,
+      max_tokens: 2600,
       temperature: 0.4,
     },
     res,

@@ -138,6 +138,23 @@
   width: 100%;
 }
 
+/* Copy button: hidden until editor is hovered or focused */
+.poem-editor-shell .poem-editor-copy-box {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.18s ease,
+    width var(--quick-copy-duration, 0.48s) var(--quick-copy-ease, cubic-bezier(0.33,1,0.32,1)),
+    box-shadow 0.4s ease;
+}
+
+.poem-editor-shell:hover .poem-editor-copy-box,
+.poem-editor-shell:focus-within .poem-editor-copy-box,
+.poem-editor-shell .poem-editor-copy-box.is-copied {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Floating box bottom-right of editor; smooth crossfade icon → Copied */
 .poem-editor-copy-box {
   --quick-copy-ease: cubic-bezier(0.33, 1, 0.32, 1);

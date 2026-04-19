@@ -23,7 +23,7 @@ export const TOOL_BUCKET_ORDER: ToolBucket[] = ["overview", "sound", "ideas"];
 export const TOOL_BUCKET_LABEL: Record<ToolBucket, string> = {
   overview: "Overview",
   sound: "Sound",
-  ideas: "Ideas",
+  ideas: "Suggest",
 };
 
 export function toolTabBucket(tab: ToolTab): ToolBucket {

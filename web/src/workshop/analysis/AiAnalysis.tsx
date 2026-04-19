@@ -6,14 +6,34 @@ import {
   type AnalysisDimensions,
   type AnalysisIssue,
   type ComparisonChanges,
+  type LocalAnalysisContext,
   type PoemAnalysis,
   type PoemComparison,
 } from "@/workshop/analysis/ai-analyze";
+import type { WorkshopGoals } from "@/workshop/library/workshop-goals";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
 
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-4o-mini";
+
+// ---- last analysis per poem ---- //
+const LS_LAST_ANALYSIS_PREFIX = "easy-poems:ai-last:";
+
+function loadLastAnalysis(poemId?: string): PoemAnalysis | null {
+  if (!poemId) return null;
+  try {
+    const raw = localStorage.getItem(LS_LAST_ANALYSIS_PREFIX + poemId);
+    if (!raw) return null;
+    return JSON.parse(raw) as PoemAnalysis;
+  } catch { return null; }
+}
+
+function saveLastAnalysis(poemId: string | undefined, analysis: PoemAnalysis) {
+  if (!poemId) return;
+  try { localStorage.setItem(LS_LAST_ANALYSIS_PREFIX + poemId, JSON.stringify(analysis)); }
+  catch { /* storage full */ }
+}
 
 // ---- score history ---- //
 const LS_SCORE_HISTORY = "easy-poems:ai-score-history";
@@ -147,7 +167,7 @@ function ScoreSparkline({ history }: { history: number[] }) {
   const lastX = W;
   const lastY = H - 2 - ((lastScore - min) / range) * (H - 6);
   return (
-    <div className="ai-sparkline-wrap" title={`Score history (last ${history.length} runs)`}>
+    <div className="ai-sparkline-wrap" title={`Last ${history.length} scores: ${history.join(" → ")}${history.length >= 2 ? (history[history.length-1]! > history[0]! ? " ↑" : history[history.length-1]! < history[0]! ? " ↓" : "") : ""}`}>
       <svg className="ai-sparkline" viewBox={`0 0 ${W} ${H}`} aria-hidden>
         <polyline points={pts} fill="none"
           stroke="var(--accent)" strokeWidth="1.5"
@@ -179,7 +199,7 @@ function DimensionBar({
 
 function IssueCard({
   issue, index, isOpen, onOpenChange, isResolved, onResolve, onIgnore,
-  onJump, onHighlight, onClearHighlight,
+  onJump, onHighlight, onClearHighlight, onApplyLine,
 }: {
   issue: AnalysisIssue;
   index: number;
@@ -191,6 +211,7 @@ function IssueCard({
   onJump?: (line: number) => void;
   onHighlight?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
+  onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
 }) {
   const rangeLabel = issue.line_start === issue.line_end
     ? `Line ${issue.line_start}`
@@ -306,6 +327,36 @@ function IssueCard({
               ))}
             </ul>
           )}
+          {issue.rewrite && (
+            <div className="ai-issue-rewrite">
+              <span className="ai-rewrite-label">Suggested rewrite</span>
+              <blockquote className="ai-rewrite-text">{issue.rewrite}</blockquote>
+              <div className="ai-rewrite-actions">
+                <button
+                  type="button"
+                  className={`ai-copy-btn${copiedIdx === 99 ? " is-copied" : ""}`}
+                  title="Copy rewrite"
+                  onClick={() => copy(issue.rewrite!, 99)}
+                  aria-label="Copy rewrite to clipboard"
+                >
+                  {copiedIdx === 99 ? "✓" : "⎘"}
+                </button>
+                {onApplyLine && (
+                  <button
+                    type="button"
+                    className="small-btn ai-apply-rewrite-btn"
+                    title="Replace the line with this rewrite"
+                    onClick={() => {
+                      onApplyLine(issue.line_start, issue.line_end, issue.rewrite!);
+                      onResolve(true);
+                    }}
+                  >
+                    Apply
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -341,7 +392,7 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 type SeverityFilter = "all" | "high" | "medium" | "low";
 
 function AnalysisResults({
-  result, previous, onJump, onHighlight, onClearHighlight, scoreHistory,
+  result, previous, onJump, onHighlight, onClearHighlight, scoreHistory, onApplyLine,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -349,6 +400,7 @@ function AnalysisResults({
   onHighlight?: (start: number, end: number) => void;
   onClearHighlight?: () => void;
   scoreHistory?: number[];
+  onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
 }) {
   const isCompare = "comparison" in result;
   const deltas = previous
@@ -502,6 +554,15 @@ function AnalysisResults({
       {result.issues.length > 0 ? (
         <div className="ai-issues-section">
 
+          {/* What to do next */}
+          {resolvedCount < totalIssues && (
+            <div className="ai-next-steps">
+              {sevCounts.high > 0
+                ? <>Fix the <strong>{sevCounts.high} high-priority</strong> issue{sevCounts.high > 1 ? "s" : ""} first — then re-analyse to track improvement.</>
+                : <>Pick an issue below, edit that line, and re-analyse to see your score move.</>}
+            </div>
+          )}
+
           {/* Header row: title + progress + expand-all */}
           <div className="ai-issues-toolbar">
             <div className="ai-issues-toolbar-left">
@@ -611,6 +672,7 @@ function AnalysisResults({
                   onJump={onJump}
                   onHighlight={onHighlight}
                   onClearHighlight={onClearHighlight}
+                  onApplyLine={onApplyLine}
                 />
               ))}
             </div>
@@ -691,24 +753,48 @@ function buildProseSummary(dims: AnalysisDimensions): string {
 export interface AiAnalysisProps {
   title: string;
   lines: string[];
+  poemId?: string;
+  localAnalysis?: LocalAnalysisContext;
+  goals?: WorkshopGoals;
   onJumpToLine?: (line: number) => void;
   onHighlightLines?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
-  onAnalysisDone?: (issues: AnalysisIssue[]) => void;
+  onAnalysisDone?: (issues: AnalysisIssue[], score: number) => void;
+  onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
 }
 
-export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
-  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
-  const [result, setResult] = useState<PoemAnalysis | PoemComparison | null>(null);
-  const [savedResult, setSavedResult] = useState<PoemAnalysis | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
+    () => loadLastAnalysis(poemId) ? "done" : "idle",
+  );
+  const [result, setResult] = useState<PoemAnalysis | PoemComparison | null>(
+    () => loadLastAnalysis(poemId),
+  );
+  const [savedResult, setSavedResult] = useState<PoemAnalysis | null>(
+    () => loadLastAnalysis(poemId),
+  );
   const [savedLines, setSavedLines] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [isUnconfigured, setIsUnconfigured] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory());
   const abortRef = useRef<AbortController | null>(null);
+  const prevPoemId = useRef(poemId);
+
+  useEffect(() => {
+    if (poemId !== prevPoemId.current) {
+      prevPoemId.current = poemId;
+      abortRef.current?.abort();
+      setResult(null);
+      setSavedResult(null);
+      setSavedLines([]);
+      setStatus("idle");
+      setErrorMsg("");
+      setIsUnconfigured(false);
+    }
+  }, [poemId]);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
 
@@ -731,24 +817,33 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
     setErrorMsg("");
     setIsUnconfigured(false);
 
+    const goalsPlain = goals
+      ? Object.fromEntries(Object.entries(goals).filter(([, v]) => v != null)) as Record<string, number>
+      : undefined;
+
     try {
       if (mode === "compare" && canCompare) {
         const res = await comparePoem(
-          { title, lines, previousLines: savedLines,
-            previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions } },
+          {
+            title, lines, previousLines: savedLines,
+            previousScores: { overall_score: savedResult!.overall_score, dimensions: savedResult!.dimensions },
+            localAnalysis, goals: goalsPlain,
+          },
           model, ctrl.signal,
         );
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
-        onAnalysisDone?.(res.issues);
+        saveLastAnalysis(poemId, res);
+        onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(res.overall_score));
       } else {
-        const res = await analyzePoem({ title, lines }, model, ctrl.signal);
+        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
-        onAnalysisDone?.(res.issues);
+        saveLastAnalysis(poemId, res);
+        onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(res.overall_score));
       }
       setStatus("done");
@@ -827,15 +922,19 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
             </button>
           </div>
 
-          {/* Word count hint */}
-          {hasPoem && status !== "loading" && (
-            <p className="ai-word-hint muted small">
-              {wordCount} word{wordCount !== 1 ? "s" : ""} ·{" "}
-              {effectiveMode === "compare" && canCompare
-                ? "will compare to your saved baseline"
-                : "fresh analysis against four dimensions"}
-            </p>
-          )}
+          {/* Word count + form hint */}
+          {hasPoem && status !== "loading" && (() => {
+            const form = localAnalysis?.form && localAnalysis.form !== "free" ? localAnalysis.form : null;
+            return (
+              <p className="ai-word-hint muted small">
+                {wordCount} word{wordCount !== 1 ? "s" : ""}
+                {form ? <> · <span className="ai-form-badge">{form}</span></> : null}
+                {" · "}{effectiveMode === "compare" && canCompare
+                  ? "will compare to your saved baseline"
+                  : "analysis with local context"}
+              </p>
+            );
+          })()}
 
           {effectiveMode === "compare" && canCompare && (
             <p className="ai-compare-hint muted small">
@@ -899,6 +998,7 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
                 onHighlight={onHighlightLines}
                 onClearHighlight={onClearHighlight}
                 scoreHistory={scoreHistory}
+                onApplyLine={onApplyLine}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"

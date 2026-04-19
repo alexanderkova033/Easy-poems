@@ -4,6 +4,7 @@ import { PoemWorkshop } from "@/workshop/shell/PoemWorkshop";
 import { LandingPage } from "@/landing/LandingPage";
 import { applyAppearance, loadAppearance } from "@/workshop/appearance/appearance";
 import { HoverHintsProvider } from "@/workshop/hints/HoverHintsContext";
+import { ToastProvider } from "@/shared/toast/ToastContext";
 import { ErrorBoundary } from "@/app/ErrorBoundary";
 import { STORAGE_KEY_LANDING_DISMISSED } from "@/shared/storage-keys";
 import "@/app/index.css";
@@ -28,9 +29,11 @@ function App() {
   }
 
   return (
-    <HoverHintsProvider>
-      <PoemWorkshop />
-    </HoverHintsProvider>
+    <ToastProvider>
+      <HoverHintsProvider>
+        <PoemWorkshop />
+      </HoverHintsProvider>
+    </ToastProvider>
   );
 }
 

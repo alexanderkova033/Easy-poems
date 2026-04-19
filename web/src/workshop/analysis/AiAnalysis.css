@@ -588,6 +588,21 @@
   opacity: 0.75;
 }
 
+/* What's next hint */
+.ai-next-steps {
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+}
+
+.ai-next-steps strong {
+  color: var(--text);
+}
+
 /* All-done celebration */
 .ai-all-done {
   display: flex;
@@ -928,6 +943,62 @@
   margin: 0;
   padding-top: 0.2rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+/* ---- Rewrite suggestion ---- */
+.ai-issue-rewrite {
+  margin-top: 0.55rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ai-rewrite-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.ai-rewrite-text {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--text);
+  border-left: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  padding-left: 0.6rem;
+}
+
+.ai-rewrite-actions {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.ai-apply-rewrite-btn {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.5rem;
+  line-height: 1.4;
+}
+
+/* ---- Form badge ---- */
+.ai-form-badge {
+  display: inline-block;
+  padding: 0.05em 0.45em;
+  border-radius: 4px;
+  font-size: 0.78em;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  text-transform: capitalize;
 }
 
 /* Focus mode: hide AI section */

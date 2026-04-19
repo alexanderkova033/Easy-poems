@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { LineDiffRow } from "@/workshop/library/diff-lines";
 import type { RevisionSnapshot } from "@/workshop/library/revision-snapshots";
 import {
+  COMPARE_CURRENT_ID,
   formatRelativeSnapshotWhen,
   formatSnapshotWhen,
 } from "@/workshop/shell/workshop-helpers";
@@ -121,6 +122,18 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
                 <div className="revision-actions">
                   <button
                     type="button"
+                    className="small-btn revision-compare-quick-btn"
+                    title="Compare this snapshot against the current draft"
+                    onClick={() => {
+                      onCompareLeftChange(s.id);
+                      onCompareRightChange(COMPARE_CURRENT_ID);
+                      onCompareViewModeChange("diff");
+                    }}
+                  >
+                    Diff
+                  </button>
+                  <button
+                    type="button"
                     className="linkish"
                     onClick={() => {
                       setPendingDeleteId(null);
@@ -215,14 +228,13 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
         <>
           <div className="compare-select-row">
             <label className="compare-select">
-              <span className="sr-only">Left version</span>
               <span className="compare-select-label" aria-hidden>
-                A
+                From
               </span>
               <select
                 value={compareLeftId}
                 onChange={(e) => onCompareLeftChange(e.target.value)}
-                aria-label="Left version for compare"
+                aria-label="Older version (From)"
               >
                 {compareSnapshotOptions.map((o) => (
                   <option
@@ -235,15 +247,15 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
                 ))}
               </select>
             </label>
+            <span className="compare-select-arrow" aria-hidden>→</span>
             <label className="compare-select">
-              <span className="sr-only">Right version</span>
               <span className="compare-select-label" aria-hidden>
-                B
+                To
               </span>
               <select
                 value={compareRightId}
                 onChange={(e) => onCompareRightChange(e.target.value)}
-                aria-label="Right version for compare"
+                aria-label="Newer version (To)"
               >
                 {compareSnapshotOptions.map((o) => (
                   <option
@@ -278,15 +290,15 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
             </button>
           </div>
           {compareLeftId === compareRightId ? (
-            <p className="muted small">Pick two different versions.</p>
+            <p className="muted small">Choose two different versions to compare.</p>
           ) : compareViewMode === "side" ? (
             <div className="compare-panels" aria-label="Compared poem text">
               <div className="compare-panel">
-                <div className="compare-panel-head">A</div>
+                <div className="compare-panel-head">From</div>
                 <pre className="compare-pre">{compareLeftBody}</pre>
               </div>
               <div className="compare-panel">
-                <div className="compare-panel-head">B</div>
+                <div className="compare-panel-head">To</div>
                 <pre className="compare-pre">{compareRightBody}</pre>
               </div>
             </div>
@@ -295,9 +307,9 @@ export function RevisionCompareSection(props: RevisionCompareSectionProps) {
               <table className="compare-diff-table">
                 <thead>
                   <tr>
-                    <th scope="col">Change</th>
-                    <th scope="col">A</th>
-                    <th scope="col">B</th>
+                    <th scope="col" className="diff-th-tag"></th>
+                    <th scope="col" className="diff-th-from">From</th>
+                    <th scope="col" className="diff-th-to">To</th>
                   </tr>
                 </thead>
                 <tbody>

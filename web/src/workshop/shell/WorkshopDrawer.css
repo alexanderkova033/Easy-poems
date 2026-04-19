@@ -634,36 +634,51 @@
   line-height: 1.5;
 }
 
-.appearance-modal .modal-head {
+.appearance-modal .modal-head,
+.style-modal .modal-head {
   border-bottom-width: 2px;
   border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
-}
-
-.appearance-modal-lead {
-  margin-top: 0.5rem;
-  font-weight: 500;
-  color: var(--text);
-  opacity: 0.92;
 }
 
 .appearance-modal .appearance-fields {
   margin-top: 0.75rem;
 }
 
-.background-modal .modal-head {
-  border-bottom-width: 2px;
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
-}
-
-.background-modal-lead {
-  margin-top: 0.5rem;
-  font-weight: 500;
-  color: var(--text);
-  opacity: 0.92;
-}
-
 .background-modal .bg-picker {
   margin-top: 0.65rem;
+}
+
+/* ---- Combined Style modal tabs ---- */
+.style-modal-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  margin: 0.5rem -1.25rem 0;
+  padding: 0 1.25rem;
+}
+
+.style-modal-tab {
+  appearance: none;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 0.55rem 0.9rem;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.13s, border-color 0.13s;
+}
+
+.style-modal-tab:hover {
+  color: var(--text);
+}
+
+.style-modal-tab.is-active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
 }
 
 /* ---- Meter table: fit width, no horizontal scroll ---- */

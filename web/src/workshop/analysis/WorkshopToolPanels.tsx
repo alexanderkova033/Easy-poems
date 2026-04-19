@@ -32,6 +32,7 @@ import {
   RevisionCompareSection,
   type CompareSnapshotOption,
 } from "./RevisionCompareSection";
+import { computeVocabStats, ttrLabel } from "@/workshop/analysis/vocab-richness";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 
 const LINES_TABLE_MAX = 400;
@@ -227,6 +228,7 @@ export interface WorkshopToolPanelsProps {
   meterCoverageSummary: MeterCoverageSummary;
   poemTitle: string;
   poemLines: string[];
+  onInsertSuggestion?: (text: string) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -282,7 +284,10 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     meterCoverageSummary,
     poemTitle,
     poemLines,
+    onInsertSuggestion,
   } = props;
+
+  const vocabStats = useMemo(() => computeVocabStats(poemLines), [poemLines]);
 
   const [hideEmptyLines, setHideEmptyLines] = useState(false);
   const [rhymeVisibleCap, setRhymeVisibleCap] = useState(10);
@@ -649,6 +654,29 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
             Read-aloud time assumes ~{POETRY_READING_WPM} words/min (performance
             poetry varies).
           </p>
+          {vocabStats && (
+            <div className="vocab-richness-block">
+              <h4 className="tool-subheading">Vocabulary richness</h4>
+              <ul className="stat-chips stat-chips-draft">
+                <li title="Unique words divided by total words — higher means more variety">
+                  <span className="chip-label">Variety (TTR)</span>
+                  <span className="chip-val">{ttrLabel(vocabStats.ttr)}</span>
+                </li>
+                <li title="Unique distinct words used">
+                  <span className="chip-label">Unique words</span>
+                  <span className="chip-val">{vocabStats.uniqueWords}</span>
+                </li>
+                <li title="Fraction of non-stopwords — measures content density">
+                  <span className="chip-label">Lexical density</span>
+                  <span className="chip-val">{Math.round(vocabStats.lexicalDensity * 100)}%</span>
+                </li>
+                <li title="Average word length in characters">
+                  <span className="chip-label">Avg word length</span>
+                  <span className="chip-val">{vocabStats.avgWordLength}</span>
+                </li>
+              </ul>
+            </div>
+          )}
           {docStats.stanzaStats.length > 0 ? (
             <>
               <h4 className="tool-subheading">Stanza breakdown</h4>
@@ -1716,7 +1744,7 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           role="tabpanel"
           aria-labelledby="tool-tab-suggest"
         >
-          <StuckHelper title={poemTitle} lines={poemLines} />
+          <StuckHelper title={poemTitle} lines={poemLines} onInsert={onInsertSuggestion} />
         </div>
       ) : null}
 

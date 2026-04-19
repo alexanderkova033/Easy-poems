@@ -1426,6 +1426,14 @@
   gap: 0.35rem;
 }
 
+.snapshot-ai-score {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.8;
+  margin-left: 0.25rem;
+}
+
 .linkish {
   border: none;
   background: none;
@@ -1816,6 +1824,13 @@
   display: flex;
   gap: 0.65rem;
   align-items: center;
+  flex-shrink: 0;
+}
+
+.revision-compare-quick-btn {
+  font-size: 0.7rem;
+  padding: 0.18rem 0.45rem;
+  line-height: 1.4;
 }
 
 .danger-link {
@@ -1825,8 +1840,16 @@
 .compare-select-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 0.75rem;
+  align-items: center;
+  gap: 0.5rem 0.5rem;
   margin-bottom: 0.5rem;
+}
+
+.compare-select-arrow {
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .compare-select {
@@ -2084,13 +2107,26 @@
   z-index: 1;
 }
 
+.diff-th-tag {
+  width: 1.75rem;
+}
+
+.diff-th-from,
+.diff-th-to {
+  width: 50%;
+}
+
 .diff-tag {
   width: 1.75rem;
   text-align: center;
   font-weight: 700;
-  color: var(--muted);
   font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
+
+.diff-remove-row .diff-tag { color: var(--danger); }
+.diff-add-row .diff-tag    { color: var(--accent); }
+.diff-change .diff-tag     { color: color-mix(in srgb, var(--text) 50%, transparent); }
 
 .diff-cell {
   font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
@@ -2102,12 +2138,20 @@
   color: var(--muted);
 }
 
+.diff-remove-row {
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.diff-add-row {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
 .diff-removed {
-  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
 }
 
 .diff-added {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .goal-grid {

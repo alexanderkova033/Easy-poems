@@ -1,5 +1,5 @@
 /**
- * Browser-side call to the /api/analyze serverless endpoint.
+ * Browser-side calls to the /api/* serverless endpoints.
  * The OpenAI key lives on the server — the browser never touches it.
  */
 
@@ -24,6 +24,8 @@ export interface AnalysisIssue {
   problem_words?: string[];
   rationale: string;
   improvements: string[];
+  /** Concrete rewritten version of the line(s), when provided by the model. */
+  rewrite?: string;
 }
 
 export interface PoemAnalysis {
@@ -32,6 +34,35 @@ export interface PoemAnalysis {
   summary?: string;
   dimensions: AnalysisDimensions;
   issues: AnalysisIssue[];
+}
+
+export interface LocalAnalysisContext {
+  cliches: Array<{ phrase: string; lineNumber: number }>;
+  rhymeScheme: string[];
+  syllablesPerLine: number[];
+  repeatedWords: Array<{ word: string; count: number; lines: number[] }>;
+  form: string;
+}
+
+/** Heuristic poem-form detection based on line count and syllable counts. */
+export function detectPoemForm(lines: string[], syllablesPerLine: number[]): string {
+  const nonEmpty = lines.filter((l) => l.trim());
+  if (nonEmpty.length === 3) {
+    const nonEmptySyl = lines
+      .map((l, i) => (l.trim() ? (syllablesPerLine[i] ?? 0) : null))
+      .filter((s): s is number => s !== null);
+    if (
+      nonEmptySyl.length === 3 &&
+      Math.abs(nonEmptySyl[0]! - 5) <= 1 &&
+      Math.abs(nonEmptySyl[1]! - 7) <= 1 &&
+      Math.abs(nonEmptySyl[2]! - 5) <= 1
+    ) {
+      return "haiku";
+    }
+  }
+  if (nonEmpty.length === 14) return "sonnet";
+  if (nonEmpty.length === 19) return "villanelle";
+  return "free";
 }
 
 function clampScore(n: unknown): number {
@@ -83,6 +114,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
               .filter((s): s is string => typeof s === "string")
               .slice(0, 3)
           : [],
+        rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
       })),
   };
 }
@@ -120,11 +152,15 @@ export async function comparePoem(
     lines,
     previousLines,
     previousScores,
+    localAnalysis,
+    goals,
   }: {
     title: string;
     lines: string[];
     previousLines: string[];
     previousScores: { overall_score: number; dimensions: AnalysisDimensions };
+    localAnalysis?: LocalAnalysisContext;
+    goals?: Record<string, number>;
   },
   model = "gpt-4o-mini",
   signal?: AbortSignal,
@@ -133,7 +169,7 @@ export async function comparePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, previousLines, previousScores, model }),
+    body: JSON.stringify({ title, lines, previousLines, previousScores, model, localAnalysis, goals }),
   });
 
   if (!response.ok) {
@@ -150,7 +186,17 @@ export async function comparePoem(
 }
 
 export async function analyzePoem(
-  { title, lines }: { title: string; lines: string[] },
+  {
+    title,
+    lines,
+    localAnalysis,
+    goals,
+  }: {
+    title: string;
+    lines: string[];
+    localAnalysis?: LocalAnalysisContext;
+    goals?: Record<string, number>;
+  },
   model = "gpt-4o-mini",
   signal?: AbortSignal,
 ): Promise<PoemAnalysis> {
@@ -158,7 +204,7 @@ export async function analyzePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, model }),
+    body: JSON.stringify({ title, lines, model, localAnalysis, goals }),
   });
 
   if (!response.ok) {

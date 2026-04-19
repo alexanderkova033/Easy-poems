@@ -22,7 +22,11 @@ import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
+import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
+import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
+import { ShareModal, ViewSharedPoem } from "@/workshop/sharing/ShareModal";
+import { checkShareHash } from "@/workshop/sharing/sharing";
 import { WordLookupPopup } from "@/workshop/vocabulary/WordLookupPopup";
 import { TemplatesModal } from "./TemplatesModal";
 import { ReadingModeModal } from "@/workshop/reading/ReadingModeModal";
@@ -74,8 +78,13 @@ export function PoemWorkshop() {
   useWorkshopToolHotkeys(m.toolTab, m.setToolTab);
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
-  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
-  const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
+  const [isStyleOpen, setIsStyleOpen] = useState(false);
+  const [styleTab, setStyleTab] = useState<"typography" | "background">("typography");
+  // Legacy aliases kept for command-palette + any remaining refs
+  const setIsAppearanceOpen = (v: boolean) => { if (v) { setStyleTab("typography"); setIsStyleOpen(true); } else setIsStyleOpen(false); };
+  const setIsBackgroundOpen = (v: boolean) => { if (v) { setStyleTab("background"); setIsStyleOpen(true); } else setIsStyleOpen(false); };
+  const isAppearanceOpen = isStyleOpen && styleTab === "typography";
+  const isBackgroundOpen = isStyleOpen && styleTab === "background";
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
@@ -93,6 +102,29 @@ export function PoemWorkshop() {
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
+  const [selectionText, setSelectionText] = useState<string | null>(null);
+  const [selectionRect, setSelectionRect] = useState<DOMRect | null>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [sharedPoemView, setSharedPoemView] = useState(() => checkShareHash());
+
+  const localAnalysis = useMemo<LocalAnalysisContext>(() => {
+    const syllablesPerLine = m.lines.map((_, i) => m.docStats.lines[i]?.syllables ?? 0);
+    return {
+      cliches: m.clicheHits,
+      rhymeScheme: m.rhymeScheme,
+      syllablesPerLine,
+      repeatedWords: m.repeated,
+      form: detectPoemForm(m.lines, syllablesPerLine),
+    };
+  }, [m.clicheHits, m.rhymeScheme, m.docStats.lines, m.repeated, m.lines]);
+  const prevActivePoemIdRef = useRef(m.activePoemId);
+  useEffect(() => {
+    if (m.activePoemId !== prevActivePoemIdRef.current) {
+      prevActivePoemIdRef.current = m.activePoemId;
+      setIssueHighlight(null);
+      setPersistentIssueHighlights([]);
+    }
+  }, [m.activePoemId]);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
   const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
@@ -139,8 +171,7 @@ export function PoemWorkshop() {
   const overlayOpenCount =
     Number(isLibraryOpen) +
     Number(isExportOpen) +
-    Number(isAppearanceOpen) +
-    Number(isBackgroundOpen) +
+    Number(isStyleOpen) +
     Number(isCmdkOpen) +
     Number(isFindOpen) +
     Number(isShortcutsOpen) +
@@ -279,8 +310,7 @@ export function PoemWorkshop() {
   useEffect(() => {
     const lockScroll =
       isLibraryOpen ||
-      isAppearanceOpen ||
-      isBackgroundOpen ||
+      isStyleOpen ||
       isExportOpen ||
       isCmdkOpen ||
       isShortcutsOpen ||
@@ -291,7 +321,7 @@ export function PoemWorkshop() {
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isLibraryOpen, isAppearanceOpen, isBackgroundOpen, isExportOpen, isCmdkOpen, isShortcutsOpen, isGuideOpen]);
+  }, [isLibraryOpen, isStyleOpen, isExportOpen, isCmdkOpen, isShortcutsOpen, isGuideOpen]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -319,8 +349,7 @@ export function PoemWorkshop() {
       }
       if (e.key !== "Escape") return;
       setIsLibraryOpen(false);
-      setIsAppearanceOpen(false);
-      setIsBackgroundOpen(false);
+      setIsStyleOpen(false);
       setIsExportOpen(false);
       setIsCmdkOpen(false);
       setIsFindOpen(false);
@@ -882,6 +911,17 @@ export function PoemWorkshop() {
             >
               <span className="topbar-quick-label">Shortcuts</span>
             </button>
+            <button
+              type="button"
+              className="topbar-quick-btn"
+              onClick={() => setIsShareOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={isShareOpen}
+              aria-label="Share poem"
+              {...hint("Share — generate a link to this poem (encoded in URL, no server)")}
+            >
+              <span className="topbar-quick-label">Share</span>
+            </button>
           </nav>
         ) : null}
       </header>
@@ -1327,6 +1367,11 @@ export function PoemWorkshop() {
                           {snap.title && (
                             <span className="snapshot-history-title">{snap.title}</span>
                           )}
+                          {snap.aiScore != null && (
+                            <span className="snapshot-ai-score" title="AI score at time of snapshot">
+                              ✦ {snap.aiScore}
+                            </span>
+                          )}
                         </div>
                         <div className="snapshot-history-actions">
                           <button
@@ -1578,94 +1623,71 @@ export function PoemWorkshop() {
         <SpotlightTour onClose={() => setIsGuideOpen(false)} />
       ) : null}
 
-      {isAppearanceOpen ? (
+      {isStyleOpen ? (
         <div
           className="overlay"
           role="presentation"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setIsAppearanceOpen(false);
+            if (e.target === e.currentTarget) setIsStyleOpen(false);
           }}
         >
           <section
-            className="modal appearance-modal"
+            className="modal style-modal"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="appearance-modal-title"
+            aria-labelledby="style-modal-title"
           >
             <div className="modal-head">
-              <h2 id="appearance-modal-title" className="modal-title">
-                Fonts
-              </h2>
-              <button
-                type="button"
-                className="small-btn"
-                onClick={() => setIsAppearanceOpen(false)}
-              >
+              <h2 id="style-modal-title" className="modal-title">Style</h2>
+              <button type="button" className="small-btn" onClick={() => setIsStyleOpen(false)}>
                 Close
               </button>
             </div>
-            <p className="modal-note appearance-modal-lead">
-              Poem and interface fonts are saved in this browser only. Background lives
-              under <strong>Background</strong> in the header.
-            </p>
-            <AppearanceFormFields
-              appearance={appearance}
-              onChange={setAppearance}
-            />
-            <label className="appearance-hints-toggle">
-              <input
-                type="checkbox"
-                checked={hoverHintsEnabled}
-                onChange={(e) => setHoverHintsEnabled(e.target.checked)}
-              />
-              <span>
-                After hovering a moment, show what buttons do (hover devices
-                only). Turn off here or via Commands: "delayed hover".
-              </span>
-            </label>
-          </section>
-        </div>
-      ) : null}
-
-      {isBackgroundOpen ? (
-        <div
-          className="overlay"
-          role="presentation"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setIsBackgroundOpen(false);
-          }}
-        >
-          <section
-            className="modal background-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="background-modal-title"
-          >
-            <div className="modal-head">
-              <h2 id="background-modal-title" className="modal-title">
-                Page background
-              </h2>
+            <div className="style-modal-tabs" role="tablist">
               <button
                 type="button"
-                className="small-btn"
-                onClick={() => setIsBackgroundOpen(false)}
+                role="tab"
+                aria-selected={styleTab === "typography"}
+                className={`style-modal-tab ${styleTab === "typography" ? "is-active" : ""}`}
+                onClick={() => setStyleTab("typography")}
               >
-                Close
+                Typography
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={styleTab === "background"}
+                className={`style-modal-tab ${styleTab === "background" ? "is-active" : ""}`}
+                onClick={() => setStyleTab("background")}
+              >
+                Background
               </button>
             </div>
-            <p className="modal-note background-modal-lead">
-              Symbol layers and tints sit behind your draft—pick a mood without
-              touching typography.
-            </p>
-            <BackgroundPicker
-              appearance={appearance}
-              background={appearance.background}
-              onChange={setAppearance}
-            />
-            <div className="modal-note">
-              <strong>Background settings</strong> (strength + motion + low‑power)
-            </div>
-            <BackdropFormFields appearance={appearance} onChange={setAppearance} />
+            {styleTab === "typography" ? (
+              <>
+                <AppearanceFormFields appearance={appearance} onChange={setAppearance} />
+                <label className="appearance-hints-toggle">
+                  <input
+                    type="checkbox"
+                    checked={hoverHintsEnabled}
+                    onChange={(e) => setHoverHintsEnabled(e.target.checked)}
+                  />
+                  <span>Show button hints on hover (hover devices only).</span>
+                </label>
+              </>
+            ) : (
+              <>
+                <BackgroundPicker
+                  appearance={appearance}
+                  background={appearance.background}
+                  onChange={setAppearance}
+                />
+                <div className="modal-note">
+                  <strong>Background settings</strong> (strength + motion + low‑power)
+                </div>
+                <BackdropFormFields appearance={appearance} onChange={setAppearance} />
+              </>
+            )}
           </section>
         </div>
       ) : null}
@@ -1722,10 +1744,10 @@ export function PoemWorkshop() {
           <button
             type="button"
             className="rail-btn rail-btn-fonts"
-            onClick={() => setIsAppearanceOpen(true)}
+            onClick={() => { setStyleTab("typography"); setIsStyleOpen(true); }}
             aria-haspopup="dialog"
-            aria-expanded={isAppearanceOpen}
-            {...hint("Fonts — poem and UI typefaces")}
+            aria-expanded={isStyleOpen}
+            {...hint("Style — fonts, background and appearance")}
           >
             <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
@@ -1733,15 +1755,15 @@ export function PoemWorkshop() {
                 <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M17 19v-5.5a2.5 2.5 0 0 1 5 0V19M15.5 16h4" />
               </svg>
             </RailIcon>
-            <span className="rail-label">Fonts</span>
+            <span className="rail-label">Style</span>
           </button>
 
           <button
             type="button"
             className="rail-btn rail-btn-scene"
-            onClick={() => setIsBackgroundOpen(true)}
+            onClick={() => { setStyleTab("background"); setIsStyleOpen(true); }}
             aria-haspopup="dialog"
-            aria-expanded={isBackgroundOpen}
+            aria-expanded={isStyleOpen && styleTab === "background"}
             {...hint("Background — choose a scene behind the page")}
           >
             <RailIcon>
@@ -1919,6 +1941,10 @@ export function PoemWorkshop() {
                       issueHighlight={issueHighlight}
                       persistentIssueHighlights={persistentIssueHighlights}
                       showLineSyllables={showLineSyllables}
+                      onSelectionText={(text, rect) => {
+                        setSelectionText(text);
+                        setSelectionRect(rect);
+                      }}
                     />
                     <WordLookupPopup
                       editorViewRef={m.editorViewRef}
@@ -1928,6 +1954,22 @@ export function PoemWorkshop() {
                         try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, "0"); } catch { /* ignore */ }
                       }}
                     />
+                    {selectionText && selectionRect && (
+                      <SelectionSuggestPopover
+                        anchorRect={selectionRect}
+                        selectedText={selectionText}
+                        poemTitle={m.title}
+                        poemLines={m.lines}
+                        onApply={(text) => {
+                          const view = m.editorViewRef.current;
+                          if (!view) return;
+                          const { from, to } = view.state.selection.main;
+                          view.dispatch({ changes: { from, to, insert: text }, selection: { anchor: from + text.length } });
+                          m.onEditorBody(view.state.doc.toString());
+                        }}
+                        onClose={() => { setSelectionText(null); setSelectionRect(null); }}
+                      />
+                    )}
                     <div
                       className={`poem-editor-copy-box ${m.quickCopyFlash ? "is-copied" : ""}`}
                     >
@@ -2065,7 +2107,7 @@ export function PoemWorkshop() {
               onKeyDown={onToolTabKeyDown}
             >
               {TOOL_TABS.filter((t) => bucketTabs.includes(t.id)).map(
-                ({ id, label, Icon }) => (
+                ({ id, label, desc, Icon }) => (
                   <button
                     key={id}
                     type="button"
@@ -2076,6 +2118,7 @@ export function PoemWorkshop() {
                     tabIndex={m.toolTab === id ? 0 : -1}
                     className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
                     onClick={() => m.setToolTab(id)}
+                    title={desc}
                   >
                     <Icon />
                     <span className="tool-tab-label">{label}</span>
@@ -2137,6 +2180,7 @@ export function PoemWorkshop() {
             clicheHits={m.clicheHits}
             poemTitle={m.title}
             poemLines={m.lines}
+            onInsertSuggestion={m.insertTextAtEnd}
           />
         </aside>
       </div>
@@ -2182,16 +2226,22 @@ export function PoemWorkshop() {
       </nav>
 
       <AiAnalysis
+        key={m.activePoemId}
+        poemId={m.activePoemId}
         title={m.title}
         lines={m.lines}
+        localAnalysis={localAnalysis}
+        goals={m.goals}
         onJumpToLine={m.goToLine}
         onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
         onClearHighlight={() => setIssueHighlight(null)}
-        onAnalysisDone={(issues) => {
+        onAnalysisDone={(issues, score) => {
           setPersistentIssueHighlights(
             issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
           );
+          m.setLastAiScore(score);
         }}
+        onApplyLine={m.applyLineRewrite}
       />
 
       {isTemplatesOpen && (
@@ -2210,6 +2260,32 @@ export function PoemWorkshop() {
           formNote={m.formNote}
           body={m.body}
           onClose={() => setIsReadingMode(false)}
+        />
+      )}
+
+      {isShareOpen && (
+        <ShareModal
+          poem={{ title: m.title, body: m.body }}
+          onClose={() => setIsShareOpen(false)}
+        />
+      )}
+
+      {sharedPoemView && (
+        <ViewSharedPoem
+          poem={sharedPoemView}
+          onDismiss={() => {
+            setSharedPoemView(null);
+            window.location.hash = "";
+          }}
+          onAddToDrafts={() => {
+            m.newPoem();
+            setTimeout(() => {
+              m.setTitle(sharedPoemView.title);
+              m.setBody(sharedPoemView.body);
+            }, 50);
+            setSharedPoemView(null);
+            window.location.hash = "";
+          }}
         />
       )}
 

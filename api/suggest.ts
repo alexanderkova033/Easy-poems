@@ -1,15 +1,14 @@
 /**
  * Vercel serverless function — POST /api/suggest
  *
- * Receives { title, lines, type, context? } and returns writing suggestions
- * when the user is stuck.
+ * Receives { title, lines, type, context?, targetLine?, model? } and returns writing suggestions.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
 
-type SuggestType = "continue" | "words" | "rhyme" | "spark";
+type SuggestType = "continue" | "words" | "rhyme" | "spark" | "line";
 
 const PROMPTS: Record<SuggestType, string> = {
   continue: `The user is writing a poem and is stuck on what comes next. Study the poem's tone, imagery, and direction, then suggest 3 possible next lines or short stanzas that feel natural and continue the poem. Each suggestion should be distinct in approach. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each suggestion is 1-2 lines of verse. No markdown fences.`,
@@ -19,14 +18,17 @@ const PROMPTS: Record<SuggestType, string> = {
   rhyme: `The user needs rhyme suggestions for their poem. Look at the last word of the final line and suggest 6 words that rhyme with it (exact or near-rhyme), preferably fitting the poem's subject and tone. Return valid JSON: { "suggestions": ["word1", "word2", "word3", "word4", "word5", "word6"], "rhymes_with": "<the word you found>" }. No markdown fences.`,
 
   spark: `The user needs a creative spark to break out of a rut. Based on the poem's existing theme and mood, suggest 3 unexpected creative directions, images, or "what if" prompts that could take the poem somewhere surprising and memorable. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each is 1 sentence. No markdown fences.`,
+
+  line: `The user wants to improve a specific line in their poem. Study the poem's full context — its tone, imagery, rhythm, and voice — then suggest 4 distinct rewrites of the target line. Each rewrite should take a different approach: vary the imagery, rhythm, or angle while staying true to the poem's overall voice. Keep each to 1-2 lines. Return valid JSON: { "suggestions": ["...", "...", "...", "..."] }. No markdown fences.`,
 };
 
-function buildPrompt(title: string, lines: string[], context: string): string {
+function buildPrompt(title: string, lines: string[], context: string, targetLine?: string): string {
   const parts: string[] = [];
   if (title.trim()) parts.push(`Title: ${title.trim()}`);
   if (lines.length > 0) {
     parts.push("Poem so far:\n" + lines.map((l, i) => `${i + 1}: ${l}`).join("\n"));
   }
+  if (targetLine) parts.push(`Line to rewrite: "${targetLine}"`);
   if (context.trim()) parts.push(`User note: ${context.trim()}`);
   return parts.join("\n\n");
 }
@@ -45,7 +47,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
   }
 
-  const body = req.body as { title?: unknown; lines?: unknown; type?: unknown; context?: unknown; model?: unknown };
+  const body = req.body as {
+    title?: unknown;
+    lines?: unknown;
+    type?: unknown;
+    context?: unknown;
+    targetLine?: unknown;
+    model?: unknown;
+  };
 
   const suggestType = (typeof body.type === "string" ? body.type : "continue") as SuggestType;
   if (!PROMPTS[suggestType]) {
@@ -55,6 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const title = typeof body.title === "string" ? body.title : "";
   const lines = Array.isArray(body.lines) ? (body.lines as unknown[]).map((l) => String(l ?? "")) : [];
   const context = typeof body.context === "string" ? body.context : "";
+  const targetLine = typeof body.targetLine === "string" ? body.targetLine : undefined;
   const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
 
   const result = await callOpenAI(
@@ -63,9 +73,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       messages: [
         { role: "system", content: PROMPTS[suggestType] },
-        { role: "user", content: buildPrompt(title, lines, context) },
+        { role: "user", content: buildPrompt(title, lines, context, targetLine) },
       ],
-      max_tokens: 600,
+      max_tokens: suggestType === "line" ? 700 : 600,
       temperature: 0.85,
     },
     res,

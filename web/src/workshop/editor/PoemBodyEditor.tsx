@@ -1,4 +1,4 @@
-import { EditorView, ViewPlugin, WidgetType } from "@codemirror/view";
+import { EditorView, ViewPlugin, WidgetType, placeholder } from "@codemirror/view";
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
 import { highlightSelectionMatches, search } from "@codemirror/search";
@@ -128,6 +128,8 @@ export interface PoemBodyEditorProps {
   persistentIssueHighlights?: Array<[number, number, string?]>;
   /** Per-line syllable counts at end of each line (CodeMirror widgets). */
   showLineSyllables?: boolean;
+  /** Called when user selects text; null means selection cleared. */
+  onSelectionText?: (text: string | null, rect: DOMRect | null) => void;
   id?: string;
   "aria-describedby"?: string;
 }
@@ -248,6 +250,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       lineFlashField,
       issueHighlightField,
       persistentIssueDecosField,
+      placeholder("Write your poem here — one line per line break…"),
       ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,
       formatMarksExtension,
@@ -257,6 +260,9 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     ],
     [props.spellBump, props.spellMode, showSyllables],
   );
+
+  const selectionCallbackRef = useRef(props.onSelectionText);
+  selectionCallbackRef.current = props.onSelectionText;
 
   return (
     <div className="poem-cm-wrap" id={props.id}>
@@ -272,6 +278,22 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         }}
         onCreateEditor={(view) => {
           props.editorViewRef.current = view;
+        }}
+        onUpdate={(update) => {
+          if (!selectionCallbackRef.current) return;
+          const sel = update.state.selection.main;
+          if (!sel.empty) {
+            const text = update.state.sliceDoc(sel.from, sel.to).trim();
+            if (text.length >= 3 && update.selectionSet) {
+              const coords = update.view.coordsAtPos(sel.head);
+              if (coords) {
+                const rect = new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);
+                selectionCallbackRef.current(text, rect);
+              }
+            }
+          } else if (update.selectionSet) {
+            selectionCallbackRef.current(null, null);
+          }
         }}
       />
     </div>

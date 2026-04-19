@@ -1,11 +1,8 @@
 /**
  * Vercel serverless function — POST /api/analyze
  *
- * Receives { title, lines } from the browser, forwards to OpenAI, and returns
- * the analysis JSON.  The OPENAI_API_KEY env-var lives only on the server;
- * the browser never sees it.
- *
- * Runtime: Node.js (Vercel default for TypeScript in /api)
+ * Receives { title, lines, localAnalysis?, goals? } from the browser,
+ * forwards to OpenAI, and returns the analysis JSON.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -32,7 +29,8 @@ const SYSTEM_PROMPT = `You are a skilled, encouraging poetry editor. Analyze the
       "excerpt": "<short quote, optional>",
       "problem_words": ["<specific weak word or phrase>"],
       "rationale": "<polite, specific reason — mention the exact words or phrases that are weak when relevant>",
-      "improvements": ["<direction 1>", "<optional direction 2>"]
+      "improvements": ["<direction 1>", "<optional direction 2>"],
+      "rewrite": "<a specific rewritten version of the problematic line(s) — include only when showing is clearer than telling; omit for structural issues or when directions suffice>"
     }
   ]
 }
@@ -41,19 +39,84 @@ Rules:
 - summary: always present, 2-3 sentences, honest and specific — not generic praise.
 - Limit issues to the 3-6 most actionable ones; fewer is fine for strong poems.
 - severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
-- problem_words: 0-3 specific words or short phrases from the line that are weak (clichés, vague words, rhythm breakers). Omit the field if no specific words stand out.
+- problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
 - improvements: 1-3 strings per issue.
+- rewrite: include only for word-choice or imagery issues where a concrete example is more helpful than a direction. Keep it as 1-2 lines max.
+- If local analysis context is provided (syllables, rhyme scheme, clichés, goals), use it to make your feedback more precise and specific. Reference detected clichés directly.
 - line_start / line_end are 1-based indexes into the numbered lines you receive.
 - Return ONLY the JSON object, no markdown fences.`;
 
-function buildPrompt(title: string, lines: string[]): string {
+interface LocalAnalysis {
+  cliches?: Array<{ phrase: string; lineNumber: number }>;
+  rhymeScheme?: string[];
+  syllablesPerLine?: number[];
+  repeatedWords?: Array<{ word: string; count: number }>;
+  form?: string;
+}
+
+interface GoalsContext {
+  minLines?: number;
+  maxLines?: number;
+  minWords?: number;
+  maxWords?: number;
+  minStanzas?: number;
+  maxStanzas?: number;
+  maxSyllablesPerLine?: number;
+}
+
+function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: GoalsContext): string {
+  const hints: string[] = [];
+
+  if (local?.form && local.form !== "free") {
+    hints.push(`Detected form: ${local.form}`);
+  }
+
+  if (local?.syllablesPerLine && local.syllablesPerLine.length > 0) {
+    const syllLines = local.syllablesPerLine
+      .map((s, i) => lines[i]?.trim() ? `${i + 1}:${s}` : null)
+      .filter((x): x is string => x !== null);
+    if (syllLines.length > 0) hints.push(`Syllables per line: ${syllLines.join(" ")}`);
+  }
+
+  if (local?.rhymeScheme && local.rhymeScheme.some((s) => s)) {
+    const scheme = local.rhymeScheme
+      .map((s, i) => (s ? `${i + 1}:${s}` : null))
+      .filter((x): x is string => x !== null)
+      .join(" ");
+    hints.push(`Rhyme scheme: ${scheme}`);
+  }
+
+  if (local?.cliches && local.cliches.length > 0) {
+    hints.push(`Detected clichés: ${local.cliches.map((c) => `L${c.lineNumber}: "${c.phrase}"`).join("; ")}`);
+  }
+
+  if (local?.repeatedWords && local.repeatedWords.length > 0) {
+    const top = local.repeatedWords.slice(0, 6);
+    hints.push(`Repeated words: ${top.map((r) => `"${r.word}" ×${r.count}`).join(", ")}`);
+  }
+
+  if (goals) {
+    const goalParts: string[] = [];
+    if (goals.minLines) goalParts.push(`min ${goals.minLines} lines`);
+    if (goals.maxLines) goalParts.push(`max ${goals.maxLines} lines`);
+    if (goals.minWords) goalParts.push(`min ${goals.minWords} words`);
+    if (goals.maxWords) goalParts.push(`max ${goals.maxWords} words`);
+    if (goals.minStanzas) goalParts.push(`min ${goals.minStanzas} stanzas`);
+    if (goals.maxStanzas) goalParts.push(`max ${goals.maxStanzas} stanzas`);
+    if (goals.maxSyllablesPerLine) goalParts.push(`max ${goals.maxSyllablesPerLine} syllables/line`);
+    if (goalParts.length > 0) hints.push(`Author's constraints: ${goalParts.join(", ")}`);
+  }
+
+  return hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
+}
+
+function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}`;
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -67,7 +130,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
   }
 
-  const body = req.body as { title?: unknown; lines?: unknown; model?: unknown };
+  const body = req.body as {
+    title?: unknown;
+    lines?: unknown;
+    model?: unknown;
+    localAnalysis?: unknown;
+    goals?: unknown;
+  };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
     return res.status(400).json({ error: "Missing or empty `lines` array in request body." });
@@ -76,6 +145,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const title = typeof body.title === "string" ? body.title : "";
   const lines = (body.lines as unknown[]).map((l) => String(l ?? ""));
   const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
+  const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
+  const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -88,9 +159,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: buildPrompt(title, lines) },
+        { role: "user", content: buildPrompt(title, lines, local, goals) },
       ],
-      max_tokens: 2000,
+      max_tokens: 2200,
       temperature: 0.4,
     },
     res,

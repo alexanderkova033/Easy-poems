@@ -161,19 +161,20 @@ function IconTabSuggest() {
 export const TOOL_TABS: {
   id: ToolTab;
   label: string;
+  desc: string;
   Icon: () => JSX.Element;
 }[] = [
-  { id: "issues", label: "Issues", Icon: IconTabIssues },
-  { id: "totals", label: "Totals", Icon: IconTabTotals },
-  { id: "spell", label: "Spell", Icon: IconTabSpell },
-  { id: "lines", label: "Lines", Icon: IconTabLines },
-  { id: "meter", label: "Meter", Icon: IconTabMeter },
-  { id: "rhyme", label: "Rhyme", Icon: IconTabRhyme },
-  { id: "repeat", label: "Repeats", Icon: IconTabRepeat },
-  { id: "goals", label: "Goals", Icon: IconTabGoals },
-  { id: "checklist", label: "Ready", Icon: IconTabChecklist },
-  { id: "snapshots", label: "Snapshots", Icon: IconTabSnapshots },
-  { id: "suggest", label: "Stuck?", Icon: IconTabSuggest },
+  { id: "issues",    label: "Queue",     desc: "Spelling flags, checklist gaps & goal warnings in one list",   Icon: IconTabIssues },
+  { id: "totals",    label: "Stats",     desc: "Word, line, syllable & stanza counts",                         Icon: IconTabTotals },
+  { id: "spell",     label: "Spell",     desc: "Find and fix misspelled words",                                Icon: IconTabSpell },
+  { id: "lines",     label: "Lines",     desc: "Per-line syllable, word & character counts",                   Icon: IconTabLines },
+  { id: "meter",     label: "Meter",     desc: "Stress patterns and iambic-fit per line",                      Icon: IconTabMeter },
+  { id: "rhyme",     label: "Rhyme",     desc: "End-rhyme clusters and sound patterns",                        Icon: IconTabRhyme },
+  { id: "repeat",    label: "Echoes",    desc: "Words that appear more than once",                             Icon: IconTabRepeat },
+  { id: "goals",     label: "Goals",     desc: "Set targets for line, word & syllable counts",                 Icon: IconTabGoals },
+  { id: "checklist", label: "Ready",     desc: "Publication readiness checklist",                              Icon: IconTabChecklist },
+  { id: "snapshots", label: "Versions",  desc: "Save and compare draft snapshots",                             Icon: IconTabSnapshots },
+  { id: "suggest",   label: "Ideas",     desc: "AI suggestions when you\u2019re stuck",                        Icon: IconTabSuggest },
 ];
 
 export function LiveSectionTitle({ children }: { children: ReactNode }) {

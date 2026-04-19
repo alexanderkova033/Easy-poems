@@ -18,6 +18,8 @@ export interface RevisionSnapshot {
   title: string;
   body: string;
   form?: string;
+  /** AI overall score at time of snapshot, if analysis was run. */
+  aiScore?: number;
 }
 
 function parseSnapshotItem(item: unknown): RevisionSnapshot | null {
@@ -32,6 +34,7 @@ function parseSnapshotItem(item: unknown): RevisionSnapshot | null {
     title: o.title,
     body: o.body,
     ...(typeof o.form === "string" ? { form: o.form } : {}),
+    ...(typeof o.aiScore === "number" ? { aiScore: o.aiScore } : {}),
   };
 }
 
@@ -127,6 +130,7 @@ export function addRevision(
     body: string;
     form?: string;
     label?: string;
+    aiScore?: number;
   },
 ): { ok: boolean; revisions: RevisionSnapshot[] } {
   const snap: RevisionSnapshot = {
@@ -139,6 +143,7 @@ export function addRevision(
     body: draft.body,
     ...(draft.form ? { form: draft.form } : {}),
     ...(draft.label?.trim() ? { label: draft.label.trim() } : {}),
+    ...(draft.aiScore != null ? { aiScore: draft.aiScore } : {}),
   };
   const next = [snap, ...current].slice(0, MAX_SNAPSHOTS);
   if (!saveRevisionsForPoem(poemId, next)) return { ok: false, revisions: current };
