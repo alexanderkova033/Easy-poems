@@ -529,6 +529,65 @@
   color: var(--ai-score-mid);
 }
 
+/* Sparkline */
+.ai-overall-verdict-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ai-sparkline-wrap {
+  flex-shrink: 0;
+}
+
+.ai-sparkline {
+  display: block;
+  width: 56px;
+  height: 18px;
+  overflow: visible;
+}
+
+/* Category filter chips */
+.ai-cat-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.1rem;
+}
+
+.ai-cat-chip {
+  appearance: none;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.22rem 0.55rem;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s, color 0.13s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
+.ai-cat-chip:hover {
+  border-color: var(--cat-color, var(--accent));
+  color: var(--cat-color, var(--accent));
+}
+
+.ai-cat-chip.is-active {
+  background: color-mix(in srgb, var(--cat-color, var(--accent)) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--cat-color, var(--accent)) 55%, var(--border));
+  color: var(--cat-color, var(--accent));
+}
+
+.ai-cat-chip-count {
+  font-size: 0.68rem;
+  opacity: 0.75;
+}
+
 /* All-done celebration */
 .ai-all-done {
   display: flex;

@@ -572,6 +572,26 @@ button.primary:disabled {
   }
 }
 
+/* ---- Persistent (always-on) dim highlights after AI analysis ---- */
+.cm-line-issue-persistent {
+  border-radius: 3px;
+}
+
+.cm-line-issue-persist-high {
+  background: color-mix(in srgb, var(--ai-score-low, #d95f5f) 9%, transparent) !important;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--ai-score-low, #d95f5f) 50%, transparent);
+}
+
+.cm-line-issue-persist-medium {
+  background: color-mix(in srgb, var(--ai-score-mid, #e6a817) 7%, transparent) !important;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--ai-score-mid, #e6a817) 40%, transparent);
+}
+
+.cm-line-issue-persist-low {
+  background: transparent !important;
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
 /* ---- Issue highlight in editor ---- */
 .cm-line-issue-highlight {
   border-radius: 3px;

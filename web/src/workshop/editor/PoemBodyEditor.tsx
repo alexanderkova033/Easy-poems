@@ -95,6 +95,23 @@ const issueHighlightField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// Persistent (always-on) highlights for all AI issues after analysis
+const setPersistentIssueDecos = StateEffect.define<DecorationSet>();
+const clearPersistentIssueDecos = StateEffect.define<void>();
+
+const persistentIssueDecosField = StateField.define<DecorationSet>({
+  create() { return Decoration.none; },
+  update(value, tr) {
+    let next = value.map(tr.changes);
+    for (const e of tr.effects) {
+      if (e.is(setPersistentIssueDecos)) next = e.value;
+      if (e.is(clearPersistentIssueDecos)) next = Decoration.none;
+    }
+    return next;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
+
 export interface PoemBodyEditorProps {
   value: string;
   /** Increment when `value` was set by the workshop (not from the debounced editor pipeline). */
@@ -107,6 +124,8 @@ export interface PoemBodyEditorProps {
   jumpLine?: number | null;
   jumpBump?: number;
   issueHighlight?: [number, number, string?] | null;
+  /** Persistent dim highlights for all AI issue line ranges after analysis. */
+  persistentIssueHighlights?: Array<[number, number, string?]>;
   /** Per-line syllable counts at end of each line (CodeMirror widgets). */
   showLineSyllables?: boolean;
   id?: string;
@@ -159,6 +178,37 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
     };
   }, []);
 
+  // Persistent dim highlights for all AI issue lines (updated after each analysis run)
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    const highlights = props.persistentIssueHighlights;
+    if (!highlights || highlights.length === 0) {
+      try { view.dispatch({ effects: clearPersistentIssueDecos.of(undefined) }); } catch { /* ignore */ }
+      return;
+    }
+    try {
+      const decos = [];
+      const lineCount = view.state.doc.lines;
+      for (const [startLine, endLine, sev] of highlights) {
+        const sevClass = sev === "high"
+          ? "cm-line-issue-persistent cm-line-issue-persist-high"
+          : sev === "medium"
+            ? "cm-line-issue-persistent cm-line-issue-persist-medium"
+            : "cm-line-issue-persistent cm-line-issue-persist-low";
+        for (let n = startLine; n <= Math.min(endLine, lineCount); n++) {
+          const line = view.state.doc.line(n);
+          decos.push(Decoration.line({ class: sevClass }).range(line.from));
+        }
+      }
+      view.dispatch({
+        effects: decos.length > 0
+          ? setPersistentIssueDecos.of(Decoration.set(decos))
+          : clearPersistentIssueDecos.of(undefined),
+      });
+    } catch { /* line out of range */ }
+  }, [props.editorViewRef, props.persistentIssueHighlights]);
+
   // Issue highlight: strong background on hovered/active AI issue lines + scroll into view
   useEffect(() => {
     const view = props.editorViewRef.current;
@@ -181,12 +231,8 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
         const line = view.state.doc.line(n);
         decos.push(Decoration.line({ class: sevClass }).range(line.from));
       }
-      const anchorLine = view.state.doc.line(Math.max(1, Math.min(startLine, lineCount)));
       view.dispatch({
-        effects: [
-          setIssueHighlight.of(Decoration.set(decos)),
-          EditorView.scrollIntoView(anchorLine.from, { y: "center", yMargin: 80 }),
-        ],
+        effects: setIssueHighlight.of(Decoration.set(decos)),
       });
     } catch { /* line out of range */ }
   }, [props.editorViewRef, props.issueHighlight]);
@@ -201,6 +247,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       highlightSelectionMatches(),
       lineFlashField,
       issueHighlightField,
+      persistentIssueDecosField,
       ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,
       formatMarksExtension,

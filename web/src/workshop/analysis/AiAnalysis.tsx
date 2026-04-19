@@ -15,6 +15,25 @@ import { STORAGE_KEY_AI_MODEL } from "@/shared/storage-keys";
 const LS_KEY_MODEL = STORAGE_KEY_AI_MODEL;
 const DEFAULT_MODEL = "gpt-4o-mini";
 
+// ---- score history ---- //
+const LS_SCORE_HISTORY = "easy-poems:ai-score-history";
+const MAX_SCORE_HISTORY = 15;
+
+function loadScoreHistory(): number[] {
+  try {
+    const raw = localStorage.getItem(LS_SCORE_HISTORY);
+    if (!raw) return [];
+    return JSON.parse(raw) as number[];
+  } catch { return []; }
+}
+
+function appendScoreHistory(score: number): number[] {
+  const history = loadScoreHistory();
+  const next = [...history, score].slice(-MAX_SCORE_HISTORY);
+  try { localStorage.setItem(LS_SCORE_HISTORY, JSON.stringify(next)); } catch { /* ignore */ }
+  return next;
+}
+
 function loadStoredModel(): string {
   try { return localStorage.getItem(LS_KEY_MODEL) ?? DEFAULT_MODEL; }
   catch { return DEFAULT_MODEL; }
@@ -110,6 +129,32 @@ function ScoreRing({ score }: { score: number }) {
         style={{ transition: "stroke-dasharray 0.6s cubic-bezier(0.22,1,0.36,1)" }}
       />
     </svg>
+  );
+}
+
+function ScoreSparkline({ history }: { history: number[] }) {
+  if (history.length < 2) return null;
+  const W = 56, H = 18;
+  const min = Math.min(...history);
+  const max = Math.max(...history);
+  const range = max - min || 1;
+  const pts = history.map((s, i) => {
+    const x = (i / (history.length - 1)) * W;
+    const y = H - 2 - ((s - min) / range) * (H - 6);
+    return `${x},${y}`;
+  }).join(" ");
+  const lastScore = history[history.length - 1]!;
+  const lastX = W;
+  const lastY = H - 2 - ((lastScore - min) / range) * (H - 6);
+  return (
+    <div className="ai-sparkline-wrap" title={`Score history (last ${history.length} runs)`}>
+      <svg className="ai-sparkline" viewBox={`0 0 ${W} ${H}`} aria-hidden>
+        <polyline points={pts} fill="none"
+          stroke="var(--accent)" strokeWidth="1.5"
+          strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
+        <circle cx={lastX} cy={lastY} r="2.2" fill="var(--accent)" />
+      </svg>
+    </div>
   );
 }
 
@@ -296,13 +341,14 @@ function ComparisonPanel({ cmp }: { cmp: ComparisonChanges }) {
 type SeverityFilter = "all" | "high" | "medium" | "low";
 
 function AnalysisResults({
-  result, previous, onJump, onHighlight, onClearHighlight,
+  result, previous, onJump, onHighlight, onClearHighlight, scoreHistory,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
   onJump?: (line: number) => void;
   onHighlight?: (start: number, end: number) => void;
   onClearHighlight?: () => void;
+  scoreHistory?: number[];
 }) {
   const isCompare = "comparison" in result;
   const deltas = previous
@@ -319,6 +365,7 @@ function AnalysisResults({
   const [ignoredIds, setIgnoredIds] = useState<Set<string>>(() => new Set());
   const [showIgnored, setShowIgnored] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
 
@@ -334,13 +381,30 @@ function AnalysisResults({
     low: visibleIssues.filter((i) => !i.severity || i.severity === "low").length,
   };
 
-  const filteredIssues = severityFilter === "all"
+  // Collect categories that have at least one visible issue
+  const categoryMap = new Map<string, { color: string; count: number }>();
+  for (const iss of visibleIssues) {
+    const cat = deriveCategory(iss);
+    if (cat) {
+      const existing = categoryMap.get(cat.label);
+      categoryMap.set(cat.label, { color: cat.color, count: (existing?.count ?? 0) + 1 });
+    }
+  }
+
+  const bySeverity = severityFilter === "all"
     ? visibleIssues
     : visibleIssues.filter((i) =>
         severityFilter === "low"
           ? (!i.severity || i.severity === "low")
           : i.severity === severityFilter
       );
+
+  const filteredIssues = categoryFilter == null
+    ? bySeverity
+    : bySeverity.filter((i) => {
+        const cat = deriveCategory(i);
+        return cat?.label === categoryFilter;
+      });
 
   // Unresolved first, resolved last
   const sortedIssues = [
@@ -396,9 +460,12 @@ function AnalysisResults({
             </span>
           </div>
           <div className="ai-overall-label">
-            <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-              {scoreLabel(result.overall_score)}
-            </span>
+            <div className="ai-overall-verdict-row">
+              <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+                {scoreLabel(result.overall_score)}
+              </span>
+              <ScoreSparkline history={scoreHistory ?? []} />
+            </div>
             {deltas && (
               <span className={deltaClass(deltas.overall) + " ai-overall-delta"}>
                 {deltaLabel(deltas.overall)} from last
@@ -485,6 +552,31 @@ function AnalysisResults({
                   </button>
                 );
               })}
+            </div>
+          )}
+
+          {/* Category filter chips */}
+          {categoryMap.size >= 2 && (
+            <div className="ai-cat-filter" role="group" aria-label="Filter by category">
+              <button
+                type="button"
+                className={`ai-cat-chip${categoryFilter == null ? " is-active" : ""}`}
+                onClick={() => setCategoryFilter(null)}
+              >
+                All types
+              </button>
+              {[...categoryMap.entries()].map(([label, { color, count }]) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={`ai-cat-chip${categoryFilter === label ? " is-active" : ""}`}
+                  style={{ "--cat-color": color } as React.CSSProperties}
+                  onClick={() => setCategoryFilter(categoryFilter === label ? null : label)}
+                >
+                  {label}
+                  <span className="ai-cat-chip-count">{count}</span>
+                </button>
+              ))}
             </div>
           )}
 
@@ -602,9 +694,10 @@ export interface AiAnalysisProps {
   onJumpToLine?: (line: number) => void;
   onHighlightLines?: (start: number, end: number, severity?: string) => void;
   onClearHighlight?: () => void;
+  onAnalysisDone?: (issues: AnalysisIssue[]) => void;
 }
 
-export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onClearHighlight }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -614,6 +707,7 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
   const [errorMsg, setErrorMsg] = useState("");
   const [isUnconfigured, setIsUnconfigured] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory());
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
@@ -647,11 +741,15 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
+        onAnalysisDone?.(res.issues);
+        setScoreHistory(appendScoreHistory(res.overall_score));
       } else {
         const res = await analyzePoem({ title, lines }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
+        onAnalysisDone?.(res.issues);
+        setScoreHistory(appendScoreHistory(res.overall_score));
       }
       setStatus("done");
     } catch (err) {
@@ -800,6 +898,7 @@ export function AiAnalysis({ title, lines, onJumpToLine, onHighlightLines, onCle
                 onJump={onJumpToLine}
                 onHighlight={onHighlightLines}
                 onClearHighlight={onClearHighlight}
+                scoreHistory={scoreHistory}
               />
               <button type="button"
                 className="small-btn ai-rerun-btn"

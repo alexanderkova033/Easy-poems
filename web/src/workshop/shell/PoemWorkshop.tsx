@@ -92,6 +92,7 @@ export function PoemWorkshop() {
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
+  const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
   const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
@@ -1916,6 +1917,7 @@ export function PoemWorkshop() {
                       jumpLine={m.jumpLine}
                       jumpBump={m.jumpBump}
                       issueHighlight={issueHighlight}
+                      persistentIssueHighlights={persistentIssueHighlights}
                       showLineSyllables={showLineSyllables}
                     />
                     <WordLookupPopup
@@ -2185,6 +2187,11 @@ export function PoemWorkshop() {
         onJumpToLine={m.goToLine}
         onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
         onClearHighlight={() => setIssueHighlight(null)}
+        onAnalysisDone={(issues) => {
+          setPersistentIssueHighlights(
+            issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
+          );
+        }}
       />
 
       {isTemplatesOpen && (
