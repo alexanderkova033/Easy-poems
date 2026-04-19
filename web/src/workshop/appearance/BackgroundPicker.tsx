@@ -8,8 +8,43 @@ import {
 } from "./appearance";
 import { generateBackground } from "./generate-background";
 
-// Filter the "custom" entry out of the regular preset grid.
 const PRESET_OPTIONS = BACKGROUND_OPTIONS.filter((o) => o.id !== "custom");
+
+/** Tiny inline preview card for a generated theme */
+function ThemePreviewCard({
+  theme,
+  label,
+}: {
+  theme: CustomBackgroundTheme;
+  label?: string;
+}) {
+  return (
+    <div
+      className="theme-preview-card"
+      style={{
+        background: theme.bg,
+        borderColor: theme.border,
+      }}
+    >
+      {/* Mini text lines */}
+      <div className="theme-preview-lines">
+        <div className="theme-preview-line theme-preview-line--title" style={{ background: theme.text }} />
+        <div className="theme-preview-line" style={{ background: theme.muted }} />
+        <div className="theme-preview-line theme-preview-line--short" style={{ background: theme.muted }} />
+      </div>
+      {/* Accent dot */}
+      <div className="theme-preview-accent" style={{ background: theme.accent }} />
+      {label && <div className="theme-preview-name" style={{ color: theme.muted }}>{label}</div>}
+    </div>
+  );
+}
+
+const EXAMPLE_PROMPTS = [
+  "misty autumn morning",
+  "candlelit library at night",
+  "ocean at dawn",
+  "winter solstice, cold and still",
+];
 
 export function BackgroundPicker(props: {
   background: BackgroundId;
@@ -70,13 +105,8 @@ export function BackgroundPicker(props: {
               className={`bg-picker-card ${selected ? "is-selected" : ""}`}
               onClick={() => onChange({ ...appearance, background: o.id })}
             >
-              <span
-                className={`bg-picker-swatch bg-picker-swatch--${o.id}`}
-                aria-hidden
-              />
-              <span className="bg-picker-glyph" aria-hidden>
-                {o.glyph}
-              </span>
+              <span className={`bg-picker-swatch bg-picker-swatch--${o.id}`} aria-hidden />
+              <span className="bg-picker-glyph" aria-hidden>{o.glyph}</span>
               <span className="bg-picker-text">
                 <span className="bg-picker-label">{o.label}</span>
                 <span className="bg-picker-blurb">{o.blurb}</span>
@@ -86,87 +116,101 @@ export function BackgroundPicker(props: {
         })}
       </div>
 
-      {/* Custom backdrop creator */}
+      {/* ── Custom backdrop creator ── */}
       <div className="bg-creator">
-        <p className="bg-creator-heading">Create your own</p>
+        <div className="bg-creator-header">
+          <p className="bg-creator-heading">Generate a custom backdrop</p>
+          <p className="bg-creator-subtext">
+            Describe a mood, scene, or paste your poem — the AI will build a matching colour palette.
+          </p>
+        </div>
 
+        {/* Currently active custom theme */}
         {isCustomActive && (
           <div className="bg-creator-active-card">
-            <span
-              className="bg-creator-active-dot"
-              style={{ background: appearance.customBackground!.accent }}
-            />
-            <span className="bg-creator-active-label">
-              {appearance.customBackground!.label}
-            </span>
-            <span className="bg-creator-active-hint">active</span>
-            <button
-              type="button"
-              className="btn btn--ghost btn--sm"
-              onClick={handleRemoveCustom}
-            >
+            <ThemePreviewCard theme={appearance.customBackground!} />
+            <div className="bg-creator-active-info">
+              <span className="bg-creator-active-label">{appearance.customBackground!.label}</span>
+              <span className="bg-creator-active-hint">Currently active</span>
+            </div>
+            <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCustom}>
               Remove
             </button>
           </div>
         )}
 
-        <textarea
-          className="bg-creator-textarea"
-          placeholder="Describe your backdrop — a mood, a scene, or paste your poem — and the AI will generate a matching colour palette."
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              void handleGenerate();
-            }
-          }}
-          rows={3}
-        />
-
-        <div className="bg-creator-actions">
+        {/* Prompt input */}
+        <div className="bg-creator-input-row">
+          <input
+            type="text"
+            className="bg-creator-input"
+            placeholder="e.g. misty autumn morning…"
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") { e.preventDefault(); void handleGenerate(); }
+            }}
+            disabled={generating}
+          />
           <button
             type="button"
-            className="btn btn--primary btn--sm"
+            className="btn btn--primary btn--sm bg-creator-generate-btn"
             disabled={!prompt.trim() || generating}
             onClick={() => void handleGenerate()}
           >
-            {generating ? "Generating…" : "Generate backdrop"}
+            {generating ? (
+              <><span className="bg-creator-spinner" aria-hidden />Generating…</>
+            ) : "Generate"}
           </button>
-          {generateError && (
-            <p className="bg-creator-error">{generateError}</p>
-          )}
         </div>
 
-        {draft && (
-          <div className="bg-creator-preview">
-            <div className="bg-creator-preview-swatches">
-              {([draft.bg, draft.surface, draft.accent, draft.text] as const).map(
-                (color, i) => (
-                  <span
-                    key={i}
-                    className="bg-creator-preview-dot"
-                    style={{ background: color }}
-                    title={color}
-                  />
-                ),
-              )}
-            </div>
-            <span className="bg-creator-preview-label">{draft.label}</span>
-            <div className="bg-creator-preview-actions">
+        {/* Example prompts */}
+        {!draft && !generating && (
+          <div className="bg-creator-examples">
+            {EXAMPLE_PROMPTS.map((ex) => (
               <button
+                key={ex}
                 type="button"
-                className="btn btn--primary btn--sm"
-                onClick={handleUseDraft}
+                className="bg-creator-example-chip"
+                onClick={() => setPrompt(ex)}
               >
+                {ex}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {generateError && (
+          <p className="bg-creator-error" role="alert">{generateError}</p>
+        )}
+
+        {/* Draft preview */}
+        {draft && (
+          <div className="bg-creator-draft">
+            <ThemePreviewCard theme={draft} label={draft.label} />
+            <div className="bg-creator-draft-info">
+              <span className="bg-creator-draft-name">{draft.label}</span>
+              <div className="bg-creator-draft-swatches">
+                {([draft.bg, draft.surface, draft.accent, draft.text, draft.muted] as const).map((c, i) => (
+                  <span key={i} className="bg-creator-draft-dot" style={{ background: c }} title={c} />
+                ))}
+              </div>
+            </div>
+            <div className="bg-creator-draft-actions">
+              <button type="button" className="btn btn--primary btn--sm" onClick={handleUseDraft}>
                 Use this
+              </button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={handleDiscardDraft}>
+                Discard
               </button>
               <button
                 type="button"
                 className="btn btn--ghost btn--sm"
-                onClick={handleDiscardDraft}
+                disabled={generating}
+                onClick={() => void handleGenerate()}
+                title="Generate again with the same prompt"
               >
-                Discard
+                ↺
               </button>
             </div>
           </div>

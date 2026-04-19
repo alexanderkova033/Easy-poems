@@ -4,26 +4,26 @@ import { STORAGE_KEY_APPEARANCE } from "@/shared/storage-keys";
 const STORAGE_KEY = STORAGE_KEY_APPEARANCE;
 
 export const POEM_FONT_OPTIONS = [
-  { id: "literata", label: "Literata" },
-  { id: "spectral", label: "Spectral" },
-  { id: "lora", label: "Lora" },
-  { id: "crimson-pro", label: "Crimson Pro" },
-  { id: "source-serif", label: "Source Serif 4" },
-  { id: "eb-garamond", label: "EB Garamond" },
-  { id: "playfair", label: "Playfair Display" },
-  { id: "cormorant", label: "Cormorant Garamond" },
-  { id: "merriweather", label: "Merriweather" },
-  { id: "alegreya", label: "Alegreya" },
-  { id: "dm-serif", label: "DM Serif Display" },
-  { id: "libre-baskerville", label: "Libre Baskerville" },
+  { id: "literata",         label: "Literata",           fontFamily: '"Literata", Georgia, serif' },
+  { id: "spectral",         label: "Spectral",           fontFamily: '"Spectral", Georgia, serif' },
+  { id: "lora",             label: "Lora",               fontFamily: '"Lora", Georgia, serif' },
+  { id: "crimson-pro",      label: "Crimson Pro",        fontFamily: '"Crimson Pro", Georgia, serif' },
+  { id: "source-serif",     label: "Source Serif 4",     fontFamily: '"Source Serif 4", Georgia, serif' },
+  { id: "eb-garamond",      label: "EB Garamond",        fontFamily: '"EB Garamond", Georgia, serif' },
+  { id: "playfair",         label: "Playfair Display",   fontFamily: '"Playfair Display", Georgia, serif' },
+  { id: "cormorant",        label: "Cormorant Garamond", fontFamily: '"Cormorant Garamond", Georgia, serif' },
+  { id: "merriweather",     label: "Merriweather",       fontFamily: '"Merriweather", Georgia, serif' },
+  { id: "alegreya",         label: "Alegreya",           fontFamily: '"Alegreya", Georgia, serif' },
+  { id: "dm-serif",         label: "DM Serif Display",   fontFamily: '"DM Serif Display", Georgia, serif' },
+  { id: "libre-baskerville",label: "Libre Baskerville",  fontFamily: '"Libre Baskerville", Georgia, serif' },
 ] as const;
 
 export const UI_FONT_OPTIONS = [
-  { id: "dm-sans", label: "DM Sans" },
-  { id: "source-sans", label: "Source Sans 3" },
-  { id: "inter", label: "Inter" },
-  { id: "nunito", label: "Nunito" },
-  { id: "system", label: "System UI" },
+  { id: "dm-sans",      label: "DM Sans",      fontFamily: '"DM Sans", "Segoe UI", system-ui, sans-serif' },
+  { id: "source-sans",  label: "Source Sans 3",fontFamily: '"Source Sans 3", "Segoe UI", system-ui, sans-serif' },
+  { id: "inter",        label: "Inter",        fontFamily: '"Inter", "Segoe UI", system-ui, sans-serif' },
+  { id: "nunito",       label: "Nunito",       fontFamily: '"Nunito", "Segoe UI", system-ui, sans-serif' },
+  { id: "system",       label: "System UI",    fontFamily: 'system-ui, "Segoe UI", sans-serif' },
 ] as const;
 
 export const POEM_SIZE_OPTIONS = [

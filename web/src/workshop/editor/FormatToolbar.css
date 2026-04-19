@@ -86,6 +86,46 @@
   background: color-mix(in srgb, var(--accent) 12%, var(--bg));
 }
 
+/* Rhyme breadth toggle group */
+.fmt-breadth-group {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  gap: 0;
+  margin-left: 0.1rem;
+}
+
+.fmt-breadth-btn {
+  appearance: none;
+  background: none;
+  border: none;
+  border-right: 1px solid var(--border);
+  padding: 0 0.45rem;
+  height: 1.75rem;
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--muted);
+  transition: background 0.13s, color 0.13s;
+  line-height: 1;
+}
+
+.fmt-breadth-btn:last-child {
+  border-right: none;
+}
+
+.fmt-breadth-btn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  color: var(--text);
+}
+
+.fmt-breadth-btn.is-active {
+  background: color-mix(in srgb, var(--accent) 15%, var(--bg));
+  color: var(--accent);
+  font-weight: 700;
+}
+
 
 .body-row textarea {
   resize: vertical;

@@ -84,7 +84,7 @@ import {
   roughRhymeClusters,
 } from "@/workshop/analysis/rhyme-hints";
 import { scanCliches } from "@/workshop/analysis/cliche-scan";
-import { detectRhymeScheme } from "@/workshop/analysis/rhyme-scheme";
+import { detectRhymeScheme, type RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import {
   focusCharacterRangeInEditor,
   focusLineInEditor,
@@ -165,7 +165,7 @@ const SNAPSHOT_SAVE_MSG =
 const SNAPSHOT_DELETE_MSG =
   "Could not update snapshots in browser storage.";
 
-export function usePoemWorkshopModel() {
+export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
   const [library, setLibrary] = useState<DraftLibrary>(() => {
     migrateLegacyDraftIfNeeded();
     return loadOrCreateLibrary();
@@ -417,7 +417,7 @@ export function usePoemWorkshopModel() {
   );
   const repeated = useMemo(() => findRepeatedWords(heavyLines), [heavyLines]);
   const clicheHits = useMemo(() => scanCliches(heavyLines), [heavyLines]);
-  const rhymeScheme = useMemo(() => detectRhymeScheme(lines), [lines]);
+  const rhymeScheme = useMemo(() => detectRhymeScheme(lines, rhymeBreadth), [lines, rhymeBreadth]);
   const heavyToolsStale = body !== heavyBody;
   const heavyDocStats = useMemo(
     () => computeDocumentStats(heavyBody),

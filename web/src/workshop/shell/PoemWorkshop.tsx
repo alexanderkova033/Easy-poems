@@ -37,7 +37,8 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
+import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
 import {
@@ -55,7 +56,15 @@ function RailIcon({ children }: { children: ReactNode }) {
 }
 
 export function PoemWorkshop() {
-  const m = usePoemWorkshopModel();
+  const [rhymeBreadth, setRhymeBreadth] = useState<RhymeBreadth>(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY_RHYME_SCHEME_BREADTH);
+      if (raw === "strict" || raw === "near" || raw === "broad") return raw;
+    } catch { /* ignore */ }
+    return "near";
+  });
+
+  const m = usePoemWorkshopModel(rhymeBreadth);
   const bucketTabs = tabsForBucket(toolTabBucket(m.toolTab));
   const onToolTabKeyDown = useToolTabListKeyboard(
     m.toolTab,
@@ -250,6 +259,10 @@ export function PoemWorkshop() {
       /* ignore */
     }
   }, [showLineSyllables]);
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY_RHYME_SCHEME_BREADTH, rhymeBreadth); } catch { /* ignore */ }
+  }, [rhymeBreadth]);
 
   useEffect(() => {
     try {
@@ -1883,6 +1896,8 @@ export function PoemWorkshop() {
                     onShowLineSyllablesChange={setShowLineSyllables}
                     showRhymeScheme={showRhymeScheme}
                     onShowRhymeSchemeChange={setShowRhymeScheme}
+                    rhymeBreadth={rhymeBreadth}
+                    onRhymeBreadthChange={setRhymeBreadth}
                   />
                   </div>{/* /format-toolbar tour target */}
                 </div>

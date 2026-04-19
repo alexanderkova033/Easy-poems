@@ -1,19 +1,36 @@
 import { lastWordInLine, normalizeWordToken } from "./tokenize";
 import { vowelTailFromNormalized } from "./rhyme-hints";
 
+export type RhymeBreadth = "strict" | "near" | "broad";
+
+function endingForBreadth(norm: string, breadth: RhymeBreadth): string | null {
+  if (norm.length < 2) return null;
+  switch (breadth) {
+    case "strict":
+      // Last 4 letters — catches "night/light/right" but not "care/bare"
+      return norm.slice(-Math.min(4, norm.length));
+    case "near":
+      // Vowel tail: last vowel through end — "dream/stream" share "eam"
+      return vowelTailFromNormalized(norm) ?? norm.slice(-Math.min(3, norm.length));
+    case "broad":
+      // Last 2 letters — loosest grouping
+      return norm.slice(-2);
+  }
+}
+
 /**
  * Assigns end-rhyme scheme labels (A, B, C…) to each line.
  * Lines with no last word or blank lines get an empty string.
- * Two lines "rhyme" if their last word shares the same 3-letter suffix
- * (same heuristic as roughRhymeClusters).
  */
-export function detectRhymeScheme(lines: string[]): string[] {
+export function detectRhymeScheme(
+  lines: string[],
+  breadth: RhymeBreadth = "near",
+): string[] {
   const labels: string[] = new Array(lines.length).fill("");
   const endingToLabel = new Map<string, string>();
   let nextCode = 0;
 
   const letterFor = (n: number): string => {
-    // A–Z then AA, AB… (sufficient for any real poem)
     const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (n < 26) return base[n]!;
     return base[Math.floor(n / 26) - 1]! + base[n % 26]!;
@@ -23,11 +40,8 @@ export function detectRhymeScheme(lines: string[]): string[] {
     const lw = lastWordInLine(lines[i]!);
     if (!lw) continue;
     const norm = normalizeWordToken(lw);
-    if (norm.length < 2) continue;
-    // Vowel-tail (last vowel through end of word) gives better slant-rhyme
-    // detection than a raw 3-letter suffix: "dream/stream" share "eam",
-    // "love/dove" share "ove", "heart/art" share "art".
-    const ending = vowelTailFromNormalized(norm) ?? norm.slice(-Math.min(3, norm.length));
+    const ending = endingForBreadth(norm, breadth);
+    if (!ending) continue;
     if (!endingToLabel.has(ending)) {
       endingToLabel.set(ending, letterFor(nextCode++));
     }
