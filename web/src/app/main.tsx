@@ -1,6 +1,7 @@
 import { StrictMode, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { PoemWorkshop } from "@/workshop/shell/PoemWorkshop";
 import { LandingPage } from "@/landing/LandingPage";
 import { applyAppearance, loadAppearance } from "@/workshop/appearance/appearance";
@@ -50,6 +51,7 @@ createRoot(document.getElementById("root")!).render(
     <ErrorBoundary>
       <App />
       <Analytics />
+      <SpeedInsights />
     </ErrorBoundary>
   </StrictMode>
 );
