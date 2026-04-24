@@ -6,7 +6,7 @@ const STEPS = [
   {
     icon: "✏️",
     title: "Type your poem here",
-    desc: "The big text area on the left. Title is optional.",
+    desc: "The big text area in the editor panel. Title is optional.",
   },
   {
     icon: "📊",
@@ -58,7 +58,7 @@ export function FirstVisitHint({
       <div className="welcome-headline">
         <span className="welcome-leaf" aria-hidden>❧</span>
         <div>
-          <h2 className="welcome-title">Welcome to Easy Poems</h2>
+          <h2 className="welcome-title">Welcome to easywriting-poem</h2>
           <p className="welcome-sub">Four steps to your first poem:</p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import "./StuckHelper.css";
 
-type SuggestType = "continue" | "words" | "rhyme" | "spark" | "line";
+type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
 
 interface SuggestResult {
   suggestions: string[];
@@ -14,6 +14,7 @@ const TYPE_CONFIG: {
   label: string;
   desc: string;
 }[] = [
+  { id: "idea",     icon: "💡", label: "Poem idea",    desc: "Generate a poem concept or starting point" },
   { id: "continue", icon: "→",  label: "Continue",     desc: "What could come next"      },
   { id: "words",    icon: "✦",  label: "Better words", desc: "Vivid alternatives"         },
   { id: "rhyme",    icon: "♪",  label: "Rhymes",       desc: "For your last line"         },
@@ -103,6 +104,7 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
 
   const resultLabel = () => {
     if (!activeType) return "";
+    if (activeType === "idea") return "Poem ideas";
     if (activeType === "words") return "Word alternatives";
     if (activeType === "rhyme") return result?.rhymes_with ? `Rhymes for "${result.rhymes_with}"` : "Rhyme suggestions";
     if (activeType === "spark") return "New directions";
@@ -243,8 +245,8 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
         <div className="sh-idle">
           <p className="sh-idle-hint">
             {hasPoem
-              ? "Pick a mode above to get AI suggestions based on your poem."
-              : "Write a few lines first, then come back for suggestions."}
+              ? "Pick a mode above to get AI suggestions. Try \"Poem idea\" for a fresh concept, or \"Continue\" to carry on from where you are."
+              : "Not sure what to write? Try \"Poem idea\" above — or write a few lines and come back for suggestions."}
           </p>
         </div>
       )}

@@ -185,17 +185,21 @@ export async function comparePoem(
   return parseComparison(data);
 }
 
+export type HarshnessLevel = "baby" | "casual" | "student" | "editor" | "critic";
+
 export async function analyzePoem(
   {
     title,
     lines,
     localAnalysis,
     goals,
+    harshness,
   }: {
     title: string;
     lines: string[];
     localAnalysis?: LocalAnalysisContext;
     goals?: Record<string, number>;
+    harshness?: HarshnessLevel;
   },
   model = "gpt-4o-mini",
   signal?: AbortSignal,
@@ -204,7 +208,7 @@ export async function analyzePoem(
     method: "POST",
     signal,
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, model, localAnalysis, goals }),
+    body: JSON.stringify({ title, lines, model, localAnalysis, goals, harshness }),
   });
 
   if (!response.ok) {

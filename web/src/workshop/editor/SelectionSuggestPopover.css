@@ -127,12 +127,74 @@
   font-weight: 650;
 }
 
+.ssp-idle {
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+.ssp-generate-btn {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 650;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  width: 100%;
+}
+.ssp-generate-btn:hover {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  border-color: var(--accent);
+}
+
+.ssp-loading {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem;
+}
+
+.ssp-loading-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-left: 0.25rem;
+}
+
+.ssp-error-wrap {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ssp-retry-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.75rem;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+  align-self: flex-start;
+  margin: 0.3rem 0.75rem 0.5rem;
+  transition: color 0.1s, border-color 0.1s;
+}
+.ssp-retry-btn:hover { color: var(--accent); border-color: var(--accent); }
+
 .ssp-source {
   display: flex;
   gap: 0.35rem;
   align-items: baseline;
   padding: 0.4rem 0.75rem;
-  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   background: color-mix(in srgb, var(--bg) 60%, var(--surface));
 }
 

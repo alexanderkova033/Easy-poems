@@ -40,7 +40,7 @@ export function FeedbackWidget() {
   const submit = useCallback(() => {
     if (!text.trim()) return;
     if (FEEDBACK_HREF.startsWith("mailto:")) {
-      const subject = encodeURIComponent("Easy Poems — feedback");
+      const subject = encodeURIComponent("easywriting-poem — feedback");
       const body = encodeURIComponent(text.trim());
       window.open(`${FEEDBACK_HREF}?subject=${subject}&body=${body}`, "_blank");
     } else {
@@ -56,7 +56,7 @@ export function FeedbackWidget() {
         type="button"
         className="feedback-inline-btn"
         onClick={openModal}
-        aria-label="Share feedback about Easy Poems"
+        aria-label="Share feedback about easywriting-poem"
       >
         Send feedback
       </button>

@@ -21,7 +21,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
         <span className="landing-sticky-logo" aria-hidden>❧</span>
-        <span className="landing-sticky-name">Easy Poems</span>
+        <span className="landing-sticky-name">easywriting-poem</span>
         <button type="button" className="landing-btn landing-btn-primary landing-sticky-cta" onClick={onEnter}>
           Start writing
         </button>
@@ -30,17 +30,17 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       {/* Hero */}
       <section className="landing-hero" ref={heroRef}>
         <div className="landing-hero-inner">
-          <span className="landing-leaf" aria-hidden>❧</span>
+          <span className="landing-brand-name">easywriting-poem</span>
           <h1 className="landing-headline">
             Write better poems.<br />
-            Have more fun doing it.
+            Enjoy the process.
           </h1>
           <p className="landing-sub">
-            Rhyme, rhythm, and word-choice feedback — line by line, as you type.
+            Real-time rhyme, rhythm, syllable, and AI feedback — directly in your editor as you type. No account needed.
           </p>
           <div className="landing-ctas">
             <button type="button" className="landing-btn landing-btn-primary" onClick={onEnter}>
-              Start writing
+              Start writing →
             </button>
             <a href="#how-it-works" className="landing-btn landing-btn-ghost">
               How it works
@@ -139,7 +139,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
       {/* What we analyze */}
       <section className="landing-concepts">
-        <h2 className="landing-section-title">What Easy Poems analyzes</h2>
+        <h2 className="landing-section-title">What easywriting-poem analyzes</h2>
         <div className="landing-concepts-grid">
           <div className="landing-concept">
             <span className="landing-concept-icon" aria-hidden>♪</span>
@@ -167,8 +167,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       {/* CTA footer */}
       <section className="landing-footer-cta">
         <p className="landing-footer-tagline">
-          Whether you're writing a birthday poem or a Shakespearean sonnet — Easy
-          Poems makes the craft more approachable.
+          Whether you're writing a birthday poem or a Shakespearean sonnet — easywriting-poem makes the craft more approachable.
         </p>
         <button type="button" className="landing-btn landing-btn-primary landing-btn-lg" onClick={onEnter}>
           Open the workshop →

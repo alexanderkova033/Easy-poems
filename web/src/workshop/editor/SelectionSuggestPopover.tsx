@@ -55,9 +55,6 @@ export function SelectionSuggestPopover({
     }
   }, [poemTitle, poemLines, selectedText]);
 
-  // Auto-fetch on mount
-  useEffect(() => { void handleGenerate(); }, []); // eslint-disable-line
-
   // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -105,52 +102,71 @@ export function SelectionSuggestPopover({
   return (
     <div className="ssp-wrap" style={style} ref={popoverRef} role="dialog" aria-label="AI line suggestions">
       <div className="ssp-header">
-        <span className="ssp-title">✦ Rewrite suggestions</span>
+        <span className="ssp-title">✦ AI rewrite</span>
         <button type="button" className="ssp-close" onClick={onClose} aria-label="Close">✕</button>
       </div>
-
-      {phase === "loading" && (
-        <div className="ssp-loading">
-          <span className="ssp-dot" /><span className="ssp-dot" /><span className="ssp-dot" />
-        </div>
-      )}
-
-      {phase === "error" && (
-        <p className="ssp-error">{errorMsg}</p>
-      )}
-
-      {phase === "results" && (
-        <ul className="ssp-list">
-          {suggestions.map((s, i) => (
-            <li key={i} className="ssp-item">
-              <span className="ssp-text">{s.text}</span>
-              <div className="ssp-actions">
-                <button
-                  type="button"
-                  className={`ssp-btn${s.copied ? " is-copied" : ""}`}
-                  title="Copy"
-                  onClick={() => void handleCopy(s.text, i)}
-                >
-                  {s.copied ? "✓" : "⎘"}
-                </button>
-                <button
-                  type="button"
-                  className="ssp-btn ssp-apply"
-                  title="Replace selection"
-                  onClick={() => { onApply(s.text); onClose(); }}
-                >
-                  Apply
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
 
       <div className="ssp-source">
         <span className="ssp-source-label">Selected:</span>
         <span className="ssp-source-text">{selectedText.slice(0, 60)}{selectedText.length > 60 ? "…" : ""}</span>
       </div>
+
+      {phase === "idle" && (
+        <div className="ssp-idle">
+          <button
+            type="button"
+            className="ssp-generate-btn"
+            onClick={() => void handleGenerate()}
+          >
+            ✦ Get rewrite suggestions
+          </button>
+        </div>
+      )}
+
+      {phase === "loading" && (
+        <div className="ssp-loading">
+          <span className="ssp-dot" /><span className="ssp-dot" /><span className="ssp-dot" />
+          <span className="ssp-loading-label">Generating…</span>
+        </div>
+      )}
+
+      {phase === "error" && (
+        <div className="ssp-error-wrap">
+          <p className="ssp-error">{errorMsg}</p>
+          <button type="button" className="ssp-retry-btn" onClick={() => void handleGenerate()}>Retry</button>
+        </div>
+      )}
+
+      {phase === "results" && (
+        <>
+          <ul className="ssp-list">
+            {suggestions.map((s, i) => (
+              <li key={i} className="ssp-item">
+                <span className="ssp-text">{s.text}</span>
+                <div className="ssp-actions">
+                  <button
+                    type="button"
+                    className={`ssp-btn${s.copied ? " is-copied" : ""}`}
+                    title="Copy"
+                    onClick={() => void handleCopy(s.text, i)}
+                  >
+                    {s.copied ? "✓" : "⎘"}
+                  </button>
+                  <button
+                    type="button"
+                    className="ssp-btn ssp-apply"
+                    title="Replace selection"
+                    onClick={() => { onApply(s.text); onClose(); }}
+                  >
+                    Apply
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className="ssp-retry-btn" onClick={() => void handleGenerate()}>↺ Again</button>
+        </>
+      )}
     </div>
   );
 }

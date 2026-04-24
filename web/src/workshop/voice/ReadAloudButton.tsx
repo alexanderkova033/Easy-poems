@@ -7,23 +7,29 @@ interface ReadAloudButtonProps {
 }
 
 // Ordered preference list of high-quality TTS voices.
-// Browser voices vary widely by OS and browser; these are tried in order.
+// Neural/Online voices are listed first — they sound most natural.
 const PREFERRED_VOICES = [
+  // Windows/Edge — Microsoft Neural (Online) voices — best quality
+  "Microsoft Aria Online (Natural) - English (United States)",
+  "Microsoft Jenny Online (Natural) - English (United States)",
+  "Microsoft Sonia Online (Natural) - English (United Kingdom)",
+  "Microsoft Guy Online (Natural) - English (United States)",
+  "Microsoft Emma Online (Natural) - English (United States)",
+  "Microsoft Brian Online (Natural) - English (United States)",
+  "Microsoft Libby Online (Natural) - English (United Kingdom)",
+  "Microsoft Ryan Online (Natural) - English (United Kingdom)",
+  // macOS / iOS — high-quality neural voices
+  "Samantha",
+  "Karen",
+  "Daniel",
+  "Moira",
+  "Tessa",
+  "Rishi",
   // Chrome / Android - Google voices
   "Google UK English Female",
   "Google UK English Male",
   "Google US English",
-  // macOS / iOS system voices
-  "Samantha",
-  "Karen",
-  "Moira",
-  "Tessa",
-  "Alex",
-  "Daniel",
-  // Windows - Microsoft natural voices (Edge / newer Chrome)
-  "Microsoft Aria Online (Natural) - English (United States)",
-  "Microsoft Jenny Online (Natural) - English (United States)",
-  "Microsoft Sonia Online (Natural) - English (United Kingdom)",
+  // Windows — Microsoft Desktop voices (fallback)
   "Microsoft Zira - English (United States)",
   "Microsoft David - English (United States)",
   "Microsoft Hazel Desktop - English (Great Britain)",
@@ -112,7 +118,7 @@ export function ReadAloudButton({ getText }: ReadAloudButtonProps) {
     const utt = new SpeechSynthesisUtterance(text);
     const voice = voices.find((v) => v.name === selectedVoiceName) ?? pickVoice(voices);
     if (voice) utt.voice = voice;
-    utt.rate = 0.88;
+    utt.rate = 0.82;
     utt.pitch = 1.0;
 
     utt.onstart = () => {

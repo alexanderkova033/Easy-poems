@@ -79,12 +79,10 @@ export function PoemWorkshop() {
 
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isStyleOpen, setIsStyleOpen] = useState(false);
-  const [styleTab, setStyleTab] = useState<"typography" | "background">("typography");
-  // Legacy aliases kept for command-palette + any remaining refs
-  const setIsAppearanceOpen = (v: boolean) => { if (v) { setStyleTab("typography"); setIsStyleOpen(true); } else setIsStyleOpen(false); };
-  const setIsBackgroundOpen = (v: boolean) => { if (v) { setStyleTab("background"); setIsStyleOpen(true); } else setIsStyleOpen(false); };
-  const isAppearanceOpen = isStyleOpen && styleTab === "typography";
-  const isBackgroundOpen = isStyleOpen && styleTab === "background";
+  const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
+  // Aliases for code that previously used these
+  const setIsAppearanceOpen = (v: boolean) => setIsStyleOpen(v);
+  const isAppearanceOpen = isStyleOpen;
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [isCmdkOpen, setIsCmdkOpen] = useState(false);
@@ -172,6 +170,7 @@ export function PoemWorkshop() {
     Number(isLibraryOpen) +
     Number(isExportOpen) +
     Number(isStyleOpen) +
+    Number(isBackgroundOpen) +
     Number(isCmdkOpen) +
     Number(isFindOpen) +
     Number(isShortcutsOpen) +
@@ -198,7 +197,7 @@ export function PoemWorkshop() {
   // has been idle inside the panel for 2 seconds — prevents accidental overscroll
   // while still allowing intentional page scrolling after a deliberate pause.
   useEffect(() => {
-    const FALLBACK_DELAY_MS = 2000;
+    const FALLBACK_DELAY_MS = 500;
     const panel = toolsPanelRef.current;
     if (!panel) return;
 
@@ -311,6 +310,7 @@ export function PoemWorkshop() {
     const lockScroll =
       isLibraryOpen ||
       isStyleOpen ||
+      isBackgroundOpen ||
       isExportOpen ||
       isCmdkOpen ||
       isShortcutsOpen ||
@@ -321,7 +321,7 @@ export function PoemWorkshop() {
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [isLibraryOpen, isStyleOpen, isExportOpen, isCmdkOpen, isShortcutsOpen, isGuideOpen]);
+  }, [isLibraryOpen, isStyleOpen, isBackgroundOpen, isExportOpen, isCmdkOpen, isShortcutsOpen, isGuideOpen]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -350,6 +350,7 @@ export function PoemWorkshop() {
       if (e.key !== "Escape") return;
       setIsLibraryOpen(false);
       setIsStyleOpen(false);
+      setIsBackgroundOpen(false);
       setIsExportOpen(false);
       setIsCmdkOpen(false);
       setIsFindOpen(false);
@@ -557,6 +558,7 @@ export function PoemWorkshop() {
         keywords: "background scene theme paper night forest dawn slate wallpaper",
         run: () => setIsBackgroundOpen(true),
       },
+
       {
         id: "export",
         title: "Open Export",
@@ -829,7 +831,7 @@ export function PoemWorkshop() {
                 <button
                   type="button"
                   className={`topbar-ghost-btn topbar-ghost-btn-backdrop ${isBackgroundOpen ? "is-selected" : ""}`}
-                  onClick={() => setIsBackgroundOpen(true)}
+                  onClick={() => setIsBackgroundOpen((v) => !v)}
                   aria-haspopup="dialog"
                   aria-expanded={isBackgroundOpen}
                   aria-label="Page background"
@@ -1638,56 +1640,53 @@ export function PoemWorkshop() {
             aria-labelledby="style-modal-title"
           >
             <div className="modal-head">
-              <h2 id="style-modal-title" className="modal-title">Style</h2>
+              <h2 id="style-modal-title" className="modal-title">Fonts &amp; Typography</h2>
               <button type="button" className="small-btn" onClick={() => setIsStyleOpen(false)}>
                 Close
               </button>
             </div>
-            <div className="style-modal-tabs" role="tablist">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={styleTab === "typography"}
-                className={`style-modal-tab ${styleTab === "typography" ? "is-active" : ""}`}
-                onClick={() => setStyleTab("typography")}
-              >
-                Typography
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={styleTab === "background"}
-                className={`style-modal-tab ${styleTab === "background" ? "is-active" : ""}`}
-                onClick={() => setStyleTab("background")}
-              >
-                Background
+            <AppearanceFormFields appearance={appearance} onChange={setAppearance} />
+            <label className="appearance-hints-toggle">
+              <input
+                type="checkbox"
+                checked={hoverHintsEnabled}
+                onChange={(e) => setHoverHintsEnabled(e.target.checked)}
+              />
+              <span>Show button hints on hover (hover devices only).</span>
+            </label>
+          </section>
+        </div>
+      ) : null}
+
+      {isBackgroundOpen ? (
+        <div
+          className="overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setIsBackgroundOpen(false);
+          }}
+        >
+          <section
+            className="modal style-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bg-modal-title"
+          >
+            <div className="modal-head">
+              <h2 id="bg-modal-title" className="modal-title">Page Background</h2>
+              <button type="button" className="small-btn" onClick={() => setIsBackgroundOpen(false)}>
+                Close
               </button>
             </div>
-            {styleTab === "typography" ? (
-              <>
-                <AppearanceFormFields appearance={appearance} onChange={setAppearance} />
-                <label className="appearance-hints-toggle">
-                  <input
-                    type="checkbox"
-                    checked={hoverHintsEnabled}
-                    onChange={(e) => setHoverHintsEnabled(e.target.checked)}
-                  />
-                  <span>Show button hints on hover (hover devices only).</span>
-                </label>
-              </>
-            ) : (
-              <>
-                <BackgroundPicker
-                  appearance={appearance}
-                  background={appearance.background}
-                  onChange={setAppearance}
-                />
-                <div className="modal-note">
-                  <strong>Background settings</strong> (strength + motion + low‑power)
-                </div>
-                <BackdropFormFields appearance={appearance} onChange={setAppearance} />
-              </>
-            )}
+            <BackgroundPicker
+              appearance={appearance}
+              background={appearance.background}
+              onChange={setAppearance}
+            />
+            <div className="modal-note">
+              <strong>Background settings</strong> (strength + motion + low‑power)
+            </div>
+            <BackdropFormFields appearance={appearance} onChange={setAppearance} />
           </section>
         </div>
       ) : null}
@@ -1744,7 +1743,7 @@ export function PoemWorkshop() {
           <button
             type="button"
             className="rail-btn rail-btn-fonts"
-            onClick={() => { setStyleTab("typography"); setIsStyleOpen(true); }}
+            onClick={() => setIsStyleOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isStyleOpen}
             {...hint("Style — fonts, background and appearance")}
@@ -1829,7 +1828,7 @@ export function PoemWorkshop() {
             onClick={() => setIsGuideOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isGuideOpen}
-            {...hint("Guide — how to use Easy Poems")}
+            {...hint("Guide — how to use easywriting-poem")}
           >
             <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">

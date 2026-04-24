@@ -28,5 +28,8 @@
       "Bash(python -)",
       "Read(//c/Users/lorta/Documents/repos/Easy-poems\" 2>/dev/null || ls -la /c/Users/lorta/Documents/repos/Easy-poems/ 2>/dev/**)"
     ]
+  },
+  "env": {
+    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
   }
 }

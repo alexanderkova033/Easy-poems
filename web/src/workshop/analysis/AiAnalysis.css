@@ -133,6 +133,15 @@
   outline-offset: 1px;
 }
 
+.ai-harshness-label {
+  gap: 0.25rem;
+}
+
+.ai-harshness-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 /* ---- Idle hint ---- */
 .ai-idle-hint {
   margin: 0;

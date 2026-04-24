@@ -6,6 +6,7 @@ import {
   type AnalysisDimensions,
   type AnalysisIssue,
   type ComparisonChanges,
+  type HarshnessLevel,
   type LocalAnalysisContext,
   type PoemAnalysis,
   type PoemComparison,
@@ -96,7 +97,7 @@ const DIM_META: Record<keyof AnalysisDimensions, { label: string; desc: string }
 
 // ---- issue category derivation ---- //
 const CATEGORY_RULES: { label: string; color: string; keywords: RegExp }[] = [
-  { label: "Imagery",    color: "var(--ai-cat-imagery,  #7fa8c9)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
+  { label: "Imagery",    color: "var(--ai-cat-imagery,  #9ab89a)", keywords: /imag|visual|senso|concrete|abstract|metaphor|simile|picture|vivid/i },
   { label: "Rhythm",     color: "var(--ai-cat-rhythm,   #8fc48f)", keywords: /rhythm|meter|beat|syllable|stress|iamb|anapest|trochee|spondee|cadence|pace|flow/i },
   { label: "Sound",      color: "var(--ai-cat-sound,    #b0a0d8)", keywords: /rhyme|sound|alliter|assonance|consonance|musical|echo|repeat|repetit/i },
   { label: "Word choice", color: "var(--ai-cat-word,    #d4a96a)", keywords: /word|diction|vocab|cliché|cliche|trite|vague|overwrit|purple prose|adjective|adverb/i },
@@ -765,6 +766,7 @@ export interface AiAnalysisProps {
 
 export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
+  const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
   const [status, setStatus] = useState<"idle" | "loading" | "done" | "error">(
     () => loadLastAnalysis(poemId) ? "done" : "idle",
@@ -838,7 +840,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
         onAnalysisDone?.(res.issues, res.overall_score);
         setScoreHistory(appendScoreHistory(res.overall_score));
       } else {
-        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain }, model, ctrl.signal);
+        const res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness }, model, ctrl.signal);
         setResult(res);
         setSavedResult(res);
         setSavedLines(lines);
@@ -858,7 +860,7 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, lines, mode, model, savedLines, savedResult, title]);
+  }, [canCompare, hasPoem, harshness, lines, mode, model, savedLines, savedResult, title]);
 
   return (
     <section className="ai-analysis-section" aria-label="AI poem analysis" data-tour-id="ai-analysis">
@@ -905,6 +907,18 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
                   onChange={(e) => saveModel(e.target.value)}>
                   <option value="gpt-4o-mini">Fast</option>
                   <option value="gpt-4o">Thinking</option>
+                </select>
+              </label>
+
+              <label className="ai-model-label ai-harshness-label" title="Who should read your poem? Changes how critical the feedback is.">
+                <span className="ai-harshness-icon" aria-hidden>👁</span>
+                <select className="ai-model-select" value={harshness}
+                  onChange={(e) => setHarshness(e.target.value as HarshnessLevel)}>
+                  <option value="baby">Child reader</option>
+                  <option value="casual">Casual reader</option>
+                  <option value="student">Student</option>
+                  <option value="editor">Editor</option>
+                  <option value="critic">Literary critic</option>
                 </select>
               </label>
             </div>
