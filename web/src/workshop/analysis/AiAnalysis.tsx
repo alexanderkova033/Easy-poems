@@ -139,15 +139,17 @@ function ScoreRing({ score }: { score: number }) {
   const r = 30;
   const circ = 2 * Math.PI * r;
   const color = scoreColor(score);
+  const offset = circ - (score / 100) * circ;
   return (
     <svg className="ai-score-ring" viewBox="0 0 76 76" aria-hidden>
       <circle cx="38" cy="38" r={r} fill="none"
         stroke="color-mix(in srgb, currentColor 10%, transparent)" strokeWidth="6" />
       <circle cx="38" cy="38" r={r} fill="none"
         stroke={color} strokeWidth="6" strokeLinecap="round"
-        strokeDasharray={`${(score / 100) * circ} ${circ}`}
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
         transform="rotate(-90 38 38)"
-        style={{ transition: "stroke-dasharray 0.6s cubic-bezier(0.22,1,0.36,1)" }}
+        className="ai-score-arc"
       />
     </svg>
   );
@@ -421,6 +423,7 @@ function AnalysisResults({
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set());
   const [allExpanded, setAllExpanded] = useState(false);
+  const [dimsExpanded, setDimsExpanded] = useState(false);
 
   const visibleIssues = result.issues.filter((i) => !ignoredIds.has(i.id));
   const totalIssues = visibleIssues.length;
@@ -502,45 +505,57 @@ function AnalysisResults({
 
   return (
     <div className="ai-results">
-      {/* Score + dimensions */}
-      <div className="ai-results-top">
-        <div className="ai-overall">
-          <div className="ai-score-wrap">
-            <ScoreRing score={result.overall_score} />
-            <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
-              {result.overall_score}
-              <span className="ai-score-outof">/100</span>
-            </span>
-          </div>
-          <div className="ai-overall-label">
-            <div className="ai-overall-verdict-row">
-              <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
-                {scoreLabel(result.overall_score)}
-              </span>
-              <ScoreSparkline history={scoreHistory ?? []} />
-            </div>
-            {deltas && (
-              <span className={deltaClass(deltas.overall) + " ai-overall-delta"}>
-                {deltaLabel(deltas.overall)} from last
-              </span>
-            )}
-            <span className="ai-overall-prose muted small">
-              {buildProseSummary(result.dimensions)}
-            </span>
-          </div>
+      {/* Score row — always visible */}
+      <div className="ai-overall">
+        <div className="ai-score-wrap">
+          <ScoreRing score={result.overall_score} />
+          <span className="ai-score-number" style={{ color: scoreColor(result.overall_score) }}>
+            {result.overall_score}
+            <span className="ai-score-outof">/100</span>
+          </span>
         </div>
+        <div className="ai-overall-label">
+          <div className="ai-overall-verdict-row">
+            <span className="ai-overall-verdict" style={{ color: scoreColor(result.overall_score) }}>
+              {scoreLabel(result.overall_score)}
+            </span>
+            <ScoreSparkline history={scoreHistory ?? []} />
+          </div>
+          {deltas && (
+            <span className={deltaClass(deltas.overall) + " ai-overall-delta"}>
+              {deltaLabel(deltas.overall)} from last
+            </span>
+          )}
+          <span className="ai-overall-prose muted small">
+            {buildProseSummary(result.dimensions)}
+          </span>
+        </div>
+      </div>
 
-        <div className="ai-dimensions">
-          {(Object.keys(DIM_META) as (keyof AnalysisDimensions)[]).map((k) => (
-            <DimensionBar
-              key={k}
-              label={DIM_META[k].label}
-              desc={DIM_META[k].desc}
-              value={result.dimensions[k]}
-              delta={deltas ? deltas[k] : undefined}
-            />
-          ))}
-        </div>
+      {/* Dimension breakdown — collapsible */}
+      <div className="ai-dims-section">
+        <button
+          type="button"
+          className="ai-dims-toggle"
+          onClick={() => setDimsExpanded((p) => !p)}
+          aria-expanded={dimsExpanded}
+        >
+          <span>Breakdown</span>
+          <span className="ai-dims-chevron" aria-hidden>{dimsExpanded ? "▾" : "▸"}</span>
+        </button>
+        {dimsExpanded && (
+          <div className="ai-dimensions">
+            {(Object.keys(DIM_META) as (keyof AnalysisDimensions)[]).map((k) => (
+              <DimensionBar
+                key={k}
+                label={DIM_META[k].label}
+                desc={DIM_META[k].desc}
+                value={result.dimensions[k]}
+                delta={deltas ? deltas[k] : undefined}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Overall summary */}
@@ -770,9 +785,11 @@ export interface AiAnalysisProps {
   onClearHighlight?: () => void;
   onAnalysisDone?: (issues: AnalysisIssue[], score: number) => void;
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
+  /** Called once with a trigger fn so external UI (e.g. mobile FAB) can start analysis */
+  onAnalyzeRef?: (fn: () => void) => void;
 }
 
-export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine, onAnalyzeRef }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
@@ -869,6 +886,10 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
       }
     }
   }, [canCompare, hasPoem, harshness, lines, mode, model, savedLines, savedResult, title]);
+
+  useEffect(() => {
+    onAnalyzeRef?.(() => { if (hasPoem) void handleAnalyze(); });
+  }, [handleAnalyze, hasPoem, onAnalyzeRef]);
 
   return (
     <section className="ai-analysis-section" aria-label="AI poem analysis" data-tour-id="ai-analysis">
@@ -989,16 +1010,28 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
           )}
 
           {status === "loading" && (
-            <div className="ai-loading" role="status" aria-live="polite">
-              <span className="ai-loading-dot" aria-hidden />
-              <span className="ai-loading-dot" aria-hidden />
-              <span className="ai-loading-dot" aria-hidden />
-              <span className="ai-loading-label">
-                {effectiveMode === "compare"
-                  ? "Comparing versions…"
-                  : "Reading the poem…"}
-              </span>
-            </div>
+            <>
+              <div className="ai-loading" role="status" aria-live="polite">
+                <span className="ai-loading-pulse" aria-hidden />
+                <span className="ai-loading-dot" aria-hidden />
+                <span className="ai-loading-dot" aria-hidden />
+                <span className="ai-loading-dot" aria-hidden />
+                <span className="ai-loading-label">
+                  {effectiveMode === "compare"
+                    ? "Comparing versions…"
+                    : "Reading the poem…"}
+                </span>
+              </div>
+              {result && (
+                <div className="ai-ghost-results" aria-hidden>
+                  <AnalysisResults
+                    result={result}
+                    previous={null}
+                    scoreHistory={scoreHistory}
+                  />
+                </div>
+              )}
+            </>
           )}
 
           {status === "error" && (

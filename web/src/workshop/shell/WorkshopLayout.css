@@ -141,6 +141,28 @@
     max-height: none;
   }
 
+  /* Stagger-fade tool panel content as it slides into view */
+  @keyframes tools-panel-fade-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > * {
+    animation: tools-panel-fade-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > *:nth-child(1) { animation-delay: 0.08s; }
+  .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > *:nth-child(2) { animation-delay: 0.13s; }
+  .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > *:nth-child(3) { animation-delay: 0.18s; }
+  .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > *:nth-child(4) { animation-delay: 0.23s; }
+  .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > *:nth-child(n+5) { animation-delay: 0.27s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .workshop-grid[data-mobile-view="tools"] .tool-tab-panel > * {
+      animation: none;
+    }
+  }
+
   /* Sticky head within the tools panel scroll */
   .tools-panel .tools-sticky-head {
     position: sticky;

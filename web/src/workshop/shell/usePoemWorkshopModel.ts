@@ -183,8 +183,10 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
   const [heavyBody, setHeavyBody] = useState("");
   const [spellMode, setSpellMode] = useState<SpellMode>("permissive");
   const [savedFlash, setSavedFlash] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [persistenceError, setPersistenceError] = useState<string | null>(null);
   const [storageNearlyFull, setStorageNearlyFull] = useState(false);
+  const storageNearlyFullRef = useRef(false);
   const [importNotice, setImportNotice] = useState<string | null>(null);
   const [importNoticeKind, setImportNoticeKind] = useState<"success" | "error">(
     "success",
@@ -375,6 +377,13 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
         }
         setPersistenceError((p) => (p === DRAFT_STORAGE_MSG ? null : p));
         setSavedFlash(true);
+        setLastSavedAt(Date.now());
+        // Re-check storage fullness on every save so we warn promptly
+        if (!storageNearlyFullRef.current && isLocalStorageNearlyFull()) {
+          storageNearlyFullRef.current = true;
+          setStorageNearlyFull(true);
+          setPersistenceError("Browser storage is nearly full. Export a backup now to avoid losing work.");
+        }
         if (saveTimer.current) clearTimeout(saveTimer.current);
         saveTimer.current = setTimeout(() => {
           setSavedFlash(false);
@@ -800,6 +809,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
   useEffect(() => {
     setShowExportReminder(checkExportReminderDue(library));
     if (isLocalStorageNearlyFull()) {
+      storageNearlyFullRef.current = true;
       setStorageNearlyFull(true);
       setPersistenceError(
         "Browser storage is nearly full. Export a backup now to avoid losing work.",
@@ -1123,6 +1133,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     spellMode,
     setSpellMode,
     savedFlash,
+    lastSavedAt,
     persistenceError,
     storageNearlyFull,
     dismissPersistenceError,
@@ -1213,6 +1224,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     applyTemplate,
     applyLineRewrite,
     insertTextAtEnd,
+    lastAiScore,
     setLastAiScore,
   };
 }

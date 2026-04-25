@@ -238,10 +238,30 @@
   font-size: 0.7rem;
 }
 
-/* ── Syllable count inline widget ─────────────────────────────── */
+/* ── Syllable count + rhythm bar inline widget ────────────────── */
+.cm-syllable-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+  margin-left: 0.55em;
+  user-select: none;
+  pointer-events: none;
+}
+
+.cm-rhythm-bar {
+  display: inline-block;
+  width: calc(var(--bar-pct, 50%) * 0.28);  /* max ~28px at 100% */
+  min-width: 3px;
+  height: 5px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--accent) 45%, var(--muted));
+  opacity: 0.45;
+  vertical-align: middle;
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .cm-syllable-count {
   display: inline-block;
-  margin-left: 0.55em;
   font-size: 0.72em;
   font-variant-numeric: tabular-nums;
   color: color-mix(in srgb, var(--muted) 70%, var(--accent));

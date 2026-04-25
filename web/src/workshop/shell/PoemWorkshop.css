@@ -2733,3 +2733,111 @@
   font-size: 0.78em;
   color: var(--muted);
 }
+
+/* ---- Mobile floating Analyse FAB ---- */
+.mobile-analyse-fab {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .mobile-analyse-fab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    position: fixed;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    right: 1rem;
+    z-index: 30;
+    padding: 0.6rem 1.1rem;
+    border-radius: 99px;
+    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+    color: var(--text);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 22%, transparent),
+                0 2px 8px color-mix(in srgb, #000 18%, transparent);
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-analyse-fab:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 18%, transparent);
+  }
+}
+
+/* ---- Snapshot inline diff ---- */
+.snapshot-diff-view {
+  font-family: var(--font-poem);
+  font-size: 0.83rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  margin-top: 0.35rem;
+  color: var(--text);
+}
+
+.snapshot-diff-del {
+  text-decoration: line-through;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+  border-radius: 2px;
+  padding: 0 0.05em;
+}
+
+.snapshot-diff-add {
+  text-decoration: none;
+  background: color-mix(in srgb, var(--ai-score-high) 14%, transparent);
+  color: color-mix(in srgb, var(--ai-score-high) 80%, var(--text));
+  border-radius: 2px;
+  padding: 0 0.05em;
+}
+
+/* ---- Mobile quick-stats strip ---- */
+.mobile-editor-stats {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .mobile-editor-stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 0.45rem 1rem;
+    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    background: color-mix(in srgb, var(--surface) 85%, var(--bg));
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+}
+
+.mobile-editor-stat {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.22rem;
+}
+
+.mobile-editor-stat-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+
+.mobile-editor-stat-lbl {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.mobile-editor-stat-divider {
+  color: color-mix(in srgb, var(--muted) 50%, transparent);
+  font-size: 0.8rem;
+}

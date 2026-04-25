@@ -80,6 +80,8 @@ export function FormatToolbar({
   onRhymeBreadthChange,
   wordLookupEnabled,
   onWordLookupToggle,
+  lineFocusMode,
+  onLineFocusModeChange,
 }: {
   editorViewRef: MutableRefObject<EditorView | null>;
   poemSize: PoemSizeId;
@@ -94,6 +96,8 @@ export function FormatToolbar({
   onRhymeBreadthChange: (b: RhymeBreadth) => void;
   wordLookupEnabled?: boolean;
   onWordLookupToggle?: () => void;
+  lineFocusMode?: boolean;
+  onLineFocusModeChange?: (next: boolean) => void;
 }) {
   const hint = useHoverHintBinder();
   const apply = (fn: (v: EditorView) => void) => {
@@ -263,7 +267,7 @@ export function FormatToolbar({
       {onWordLookupToggle !== undefined && (
         <button
           type="button"
-          className={`fmt-btn fmt-tidy-btn fmt-word-lookup-btn${wordLookupEnabled ? " is-on" : ""}`}
+          className={`fmt-btn fmt-tidy-btn fmt-word-lookup-btn fmt-labeled-btn${wordLookupEnabled ? " is-on" : ""}`}
           {...hint(
             wordLookupEnabled
               ? "Word lookup: on — click to turn off synonyms/definitions popup"
@@ -273,7 +277,21 @@ export function FormatToolbar({
           aria-label={wordLookupEnabled ? "Word lookup on" : "Word lookup off"}
           onMouseDown={(e) => { e.preventDefault(); onWordLookupToggle(); }}
         >
-          W?
+          <span className="fmt-btn-icon" aria-hidden>W?</span>
+          <span className="fmt-btn-label">Lookup</span>
+        </button>
+      )}
+      {onLineFocusModeChange !== undefined && (
+        <button
+          type="button"
+          className={`fmt-btn fmt-tidy-btn fmt-line-focus-btn fmt-labeled-btn${lineFocusMode ? " is-on" : ""}`}
+          {...hint(lineFocusMode ? "Line focus: on — dims other lines while you write" : "Line focus: off — click to dim other lines")}
+          aria-pressed={lineFocusMode}
+          aria-label={lineFocusMode ? "Line focus on" : "Line focus off"}
+          onMouseDown={(e) => { e.preventDefault(); onLineFocusModeChange(!lineFocusMode); }}
+        >
+          <span className="fmt-btn-icon" aria-hidden>◉</span>
+          <span className="fmt-btn-label">Focus</span>
         </button>
       )}
     </div>

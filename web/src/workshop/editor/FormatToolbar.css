@@ -320,6 +320,17 @@
   border-radius: 4px;
 }
 
+/* Line focus mode: very subtle dimming of non-active lines */
+.cm-line-dimmed {
+  opacity: 0.38;
+  transition: opacity 0.18s ease;
+}
+
+/* Reduce motion: instant change, no fade */
+@media (prefers-reduced-motion: reduce) {
+  .cm-line-dimmed { transition: none; }
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -550,14 +561,53 @@ button.primary:disabled {
   min-height: 2.4rem;
 }
 
-/* On narrow screens: hide tidy buttons (clutter) and shrink remaining controls */
+.fmt-tidy-btn.is-on {
+  color: color-mix(in srgb, var(--accent) 82%, var(--text));
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+}
+
+/* Labeled toggle buttons — icon + text stacked vertically */
+.fmt-labeled-btn {
+  flex-direction: column;
+  gap: 0.06rem;
+  height: auto;
+  min-height: 2.4rem;
+  padding: 0.2rem 0.5rem;
+  width: auto;
+}
+
+.fmt-btn-icon {
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.fmt-btn-label {
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.7;
+  line-height: 1;
+}
+
+/* On mobile the mobile-specific ::after label is redundant — hide it */
 @media (max-width: 899px) {
-  .fmt-tidy-btn {
+  .fmt-word-lookup-btn .fmt-btn-label,
+  .fmt-line-focus-btn .fmt-btn-label {
+    display: none;
+  }
+}
+
+/* On narrow screens: hide tidy buttons except word lookup, shrink remaining controls */
+@media (max-width: 899px) {
+  .fmt-tidy-btn:not(.fmt-word-lookup-btn) {
     display: none;
   }
   .fmt-sep {
     display: none;
   }
+
 }
 
 @media (max-width: 520px) {

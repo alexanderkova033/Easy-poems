@@ -25,11 +25,8 @@ import { AiAnalysis } from "@/workshop/analysis/AiAnalysis";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
-import { ShareModal, ViewSharedPoem } from "@/workshop/sharing/ShareModal";
 import { checkShareHash } from "@/workshop/sharing/sharing";
 import { WordLookupPopup } from "@/workshop/vocabulary/WordLookupPopup";
-import { TemplatesModal } from "./TemplatesModal";
-import { ReadingModeModal } from "@/workshop/reading/ReadingModeModal";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "@/workshop/palette/CommandPalette";
 import { FindReplaceBar } from "@/workshop/editor/FindReplaceBar";
 import {
@@ -42,6 +39,10 @@ import {
   toolTabBucket,
 } from "./workshop-helpers";
 import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
+import { wordDiff } from "@/workshop/library/text-diff";
+import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
+import { MobileActionBar } from "./MobileActionBar";
+import { WorkshopModals } from "./WorkshopModals";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
 import { SpotlightTour } from "@/workshop/tour/SpotlightTour";
@@ -57,6 +58,32 @@ function RailIcon({ children }: { children: ReactNode }) {
       {children}
     </span>
   );
+}
+
+function SavedAgo({ ts }: { ts: number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 15_000);
+    return () => clearInterval(id);
+  }, []);
+  const secs = Math.floor((Date.now() - ts) / 1000);
+  if (secs < 10) return <>Saved</>;
+  if (secs < 60) return <>Saved {secs}s ago</>;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return <>Saved {mins}m ago</>;
+  return <>Saved {Math.floor(mins / 60)}h ago</>;
+}
+
+function SessionTimer({ startTs }: { startTs: number }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+  const mins = Math.floor((Date.now() - startTs) / 60_000);
+  if (mins < 1) return null;
+  if (mins < 60) return <>{mins}m</>;
+  return <>{Math.floor(mins / 60)}h {mins % 60}m</>;
 }
 
 export function PoemWorkshop() {
@@ -126,6 +153,7 @@ export function PoemWorkshop() {
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [showDeleteCurrentConfirm, setShowDeleteCurrentConfirm] = useState(false);
   const [pendingDeleteSnapId, setPendingDeleteSnapId] = useState<string | null>(null);
+  const [diffSnapshotId, setDiffSnapshotId] = useState<string | null>(null);
   const [exportFlash, setExportFlash] = useState<string | null>(null);
   const exportFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isReadingMode, setIsReadingMode] = useState(false);
@@ -155,6 +183,11 @@ export function PoemWorkshop() {
     } catch { /* ignore */ }
     return true; // on by default
   });
+  const [lineFocusMode, setLineFocusMode] = useState(false);
+  const sessionStartRef = useRef(Date.now());
+  const [sessionWordGoal, setSessionWordGoal] = useState<number | null>(null);
+  const [showGoalInput, setShowGoalInput] = useState(false);
+  const [goalInputVal, setGoalInputVal] = useState("");
   const workshopGridRef = useRef<HTMLDivElement | null>(null);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
     loadAppearance(),
@@ -166,6 +199,7 @@ export function PoemWorkshop() {
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
   const lastPanelScrollRef = useRef<number>(0);
+  const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
 
   const overlayOpenCount =
     Number(isLibraryOpen) +
@@ -873,7 +907,65 @@ export function PoemWorkshop() {
             ) : null}
             <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
               <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
-              <span className="topbar-saved-label">Saved</span>
+              <span className="topbar-saved-label">
+                {m.savedFlash ? "Saved" : m.lastSavedAt ? <SavedAgo ts={m.lastSavedAt} /> : null}
+              </span>
+            </span>
+            <span className="topbar-session-bar" aria-label="Session stats">
+              <span className="topbar-session-timer">
+                <SessionTimer startTs={sessionStartRef.current} />
+              </span>
+              {sessionWordGoal ? (
+                <button
+                  type="button"
+                  className="topbar-word-goal"
+                  title={`${m.quickDocStats.totalWords} / ${sessionWordGoal} words — click to change`}
+                  aria-label={`Word goal: ${m.quickDocStats.totalWords} of ${sessionWordGoal} words`}
+                  onClick={() => { setGoalInputVal(String(sessionWordGoal)); setShowGoalInput(true); }}
+                >
+                  <span
+                    className="topbar-word-goal-fill"
+                    style={{ width: `${Math.min(100, Math.round((m.quickDocStats.totalWords / sessionWordGoal) * 100))}%` }}
+                  />
+                  <span className="topbar-word-goal-label">
+                    {m.quickDocStats.totalWords}/{sessionWordGoal}w
+                  </span>
+                </button>
+              ) : showGoalInput ? (
+                <form
+                  className="topbar-goal-form"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const n = parseInt(goalInputVal, 10);
+                    if (!isNaN(n) && n > 0) { setSessionWordGoal(n); setShowGoalInput(false); }
+                  }}
+                >
+                  <input
+                    className="topbar-goal-input"
+                    type="number"
+                    min="1"
+                    max="9999"
+                    placeholder="e.g. 100"
+                    value={goalInputVal}
+                    onChange={(e) => setGoalInputVal(e.target.value)}
+                    aria-label="Word count goal"
+                    autoFocus
+                    onBlur={() => { if (!goalInputVal) setShowGoalInput(false); }}
+                    onKeyDown={(e) => { if (e.key === "Escape") setShowGoalInput(false); }}
+                  />
+                  <button type="submit" className="topbar-goal-submit" aria-label="Set goal">✓</button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  className="topbar-word-goal-set"
+                  onClick={() => { setGoalInputVal(""); setShowGoalInput(true); }}
+                  {...hint("Set a word count goal for this writing session")}
+                  aria-label="Set word count goal"
+                >
+                  + goal
+                </button>
+              )}
             </span>
             {isFocusMode ? (
               <button
@@ -1399,6 +1491,15 @@ export function PoemWorkshop() {
                           <button
                             type="button"
                             className="small-btn"
+                            onClick={() => setDiffSnapshotId(diffSnapshotId === snap.id ? null : snap.id)}
+                            aria-pressed={diffSnapshotId === snap.id}
+                            {...hint("Show word-level diff between this snapshot and the current poem")}
+                          >
+                            {diffSnapshotId === snap.id ? "Hide diff" : "Diff"}
+                          </button>
+                          <button
+                            type="button"
+                            className="small-btn"
                             onClick={() => {
                               if (window.confirm(`Restore to "${formatRelativeSnapshotWhen(snap.createdAt)}"${snap.label ? ` (${snap.label})` : ""}?\n\nThis will replace the current poem text.`)) {
                                 m.restoreRevision(snap);
@@ -1441,6 +1542,22 @@ export function PoemWorkshop() {
                             </button>
                           )}
                         </div>
+                        {diffSnapshotId === snap.id && (() => {
+                          const tokens = wordDiff(snap.body, m.body);
+                          return (
+                            <div className="snapshot-diff-view" aria-label="Poem diff">
+                              {tokens.map((tok, i) =>
+                                tok.type === "same" ? (
+                                  <span key={i}>{tok.text}</span>
+                                ) : tok.type === "del" ? (
+                                  <del key={i} className="snapshot-diff-del">{tok.text}</del>
+                                ) : (
+                                  <ins key={i} className="snapshot-diff-add">{tok.text}</ins>
+                                )
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -1721,10 +1838,12 @@ export function PoemWorkshop() {
         onChange={m.onImportBackupFile}
       />
 
-      <div
+      <main
+        id="workshop-main"
         className="workshop-grid"
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
+        aria-label="Poetry workshop"
       >
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           <button
@@ -1946,11 +2065,13 @@ export function PoemWorkshop() {
                       setWordLookupEnabled(next);
                       try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, next ? "1" : "0"); } catch { /* ignore */ }
                     }}
+                    lineFocusMode={lineFocusMode}
+                    onLineFocusModeChange={setLineFocusMode}
                   />
                   </div>{/* /format-toolbar tour target */}
                 </div>
                 <div className="poem-editor-with-scheme">
-                  <div className="poem-editor-shell">
+                  <div className="poem-editor-shell" style={{ display: "flex", flexDirection: "column" }}>
                     <PoemBodyEditor
                       id="poem-body"
                       aria-describedby="poem-body-hint"
@@ -1966,11 +2087,13 @@ export function PoemWorkshop() {
                       issueHighlight={issueHighlight}
                       persistentIssueHighlights={persistentIssueHighlights}
                       showLineSyllables={showLineSyllables}
+                      lineFocusMode={lineFocusMode}
                       onSelectionText={(text, rect) => {
                         setSelectionText(text);
                         setSelectionRect(rect);
                       }}
                     />
+                    <InlineRhymeHint editorViewRef={m.editorViewRef} />
                     <WordLookupPopup
                       editorViewRef={m.editorViewRef}
                       enabled={wordLookupEnabled}
@@ -2060,6 +2183,28 @@ export function PoemWorkshop() {
           <pre className="poem-print-fallback" aria-hidden="true">
             {printPoemText}
           </pre>
+
+          {/* Mobile quick-stats strip — always visible at bottom of editor on narrow screens */}
+          <div className="mobile-editor-stats" aria-label="Quick stats" role="status">
+            <span className="mobile-editor-stat">
+              <span className="mobile-editor-stat-val">{m.quickDocStats.totalWords}</span>
+              <span className="mobile-editor-stat-lbl">words</span>
+            </span>
+            <span className="mobile-editor-stat-divider" aria-hidden>·</span>
+            <span className="mobile-editor-stat">
+              <span className="mobile-editor-stat-val">{m.quickDocStats.totalLines}</span>
+              <span className="mobile-editor-stat-lbl">lines</span>
+            </span>
+            {m.lastAiScore != null && (
+              <>
+                <span className="mobile-editor-stat-divider" aria-hidden>·</span>
+                <span className="mobile-editor-stat">
+                  <span className="mobile-editor-stat-val">✦ {m.lastAiScore}</span>
+                  <span className="mobile-editor-stat-lbl">score</span>
+                </span>
+              </>
+            )}
+          </div>
         </section>
 
         <aside
@@ -2209,47 +2354,24 @@ export function PoemWorkshop() {
             onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
           />
         </aside>
-      </div>
+      </main>
 
-      <nav
-        className={`mobile-actionbar mobile-actionbar-4 ${isFocusMode ? "is-hidden" : ""}`}
-        aria-label="Workshop actions"
-      >
-        <button
-          type="button"
-          className={`mobile-action-btn mobile-action-btn-view ${mobileToolsExpanded ? "" : "mobile-action-btn-view-active"}`}
-          onClick={() => setMobileToolsExpanded(false)}
-          aria-pressed={!mobileToolsExpanded}
-        >
-          Write
-        </button>
-        <button
-          type="button"
-          className={`mobile-action-btn mobile-action-btn-view ${mobileToolsExpanded ? "mobile-action-btn-view-active" : ""}`}
-          onClick={() => setMobileToolsExpanded(true)}
-          aria-pressed={mobileToolsExpanded}
-        >
-          Tools
-        </button>
-        <button
-          type="button"
-          className="mobile-action-btn"
-          onClick={() => setIsLibraryOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={isLibraryOpen}
-        >
-          Library
-        </button>
-        <button
-          type="button"
-          className="mobile-action-btn mobile-action-btn-primary"
-          onClick={() => setIsExportOpen(true)}
-          aria-haspopup="dialog"
-          aria-expanded={isExportOpen}
-        >
-          Export
-        </button>
-      </nav>
+      <MobileActionBar
+        isFocusMode={isFocusMode}
+        mobileToolsExpanded={mobileToolsExpanded}
+        isLibraryOpen={isLibraryOpen}
+        isExportOpen={isExportOpen}
+        onShowEditor={() => setMobileToolsExpanded(false)}
+        onShowTools={() => setMobileToolsExpanded(true)}
+        onOpenLibrary={() => setIsLibraryOpen(true)}
+        onOpenExport={() => setIsExportOpen(true)}
+        analyseVisible={!mobileToolsExpanded}
+        onAnalyse={() => {
+          mobileAnalyzeFnRef.current?.();
+          setMobileToolsExpanded(true);
+          m.setToolTab("issues");
+        }}
+      />
 
       <AiAnalysis
         key={m.activePoemId}
@@ -2266,54 +2388,41 @@ export function PoemWorkshop() {
             issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
           );
           m.setLastAiScore(score);
+          // Scroll the tools panel to the results so users don't have to hunt for them
+          requestAnimationFrame(() => {
+            const panel = toolsPanelRef.current;
+            if (!panel) return;
+            const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
+            if (!resultsEl) return;
+            const panelRect = panel.getBoundingClientRect();
+            const elRect = resultsEl.getBoundingClientRect();
+            panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
+          });
         }}
         onApplyLine={m.applyLineRewrite}
+        onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
       />
 
-      {isTemplatesOpen && (
-        <TemplatesModal
-          onClose={() => setIsTemplatesOpen(false)}
-          onInsert={(body, form) => {
-            m.applyTemplate(body, form);
-            setIsTemplatesOpen(false);
-          }}
-        />
-      )}
-
-      {isReadingMode && (
-        <ReadingModeModal
-          title={m.title}
-          formNote={m.formNote}
-          body={m.body}
-          onClose={() => setIsReadingMode(false)}
-        />
-      )}
-
-      {isShareOpen && (
-        <ShareModal
-          poem={{ title: m.title, body: m.body }}
-          onClose={() => setIsShareOpen(false)}
-        />
-      )}
-
-      {sharedPoemView && (
-        <ViewSharedPoem
-          poem={sharedPoemView}
-          onDismiss={() => {
-            setSharedPoemView(null);
-            window.location.hash = "";
-          }}
-          onAddToDrafts={() => {
-            m.newPoem();
-            setTimeout(() => {
-              m.setTitle(sharedPoemView.title);
-              m.setBody(sharedPoemView.body);
-            }, 50);
-            setSharedPoemView(null);
-            window.location.hash = "";
-          }}
-        />
-      )}
+      <WorkshopModals
+        isTemplatesOpen={isTemplatesOpen}
+        onCloseTemplates={() => setIsTemplatesOpen(false)}
+        onInsertTemplate={(body, form) => { m.applyTemplate(body, form); setIsTemplatesOpen(false); }}
+        isReadingMode={isReadingMode}
+        onCloseReadingMode={() => setIsReadingMode(false)}
+        title={m.title}
+        formNote={m.formNote}
+        body={m.body}
+        isShareOpen={isShareOpen}
+        onCloseShare={() => setIsShareOpen(false)}
+        sharedPoemView={sharedPoemView}
+        onDismissSharedPoem={() => { setSharedPoemView(null); window.location.hash = ""; }}
+        onAddSharedPoemToDrafts={(poem) => {
+          m.newPoem();
+          setTimeout(() => { m.setTitle(poem.title); m.setBody(poem.body); }, 50);
+          setSharedPoemView(null);
+          window.location.hash = "";
+        }}
+      />
 
       <footer className="privacy">
         <div className="privacy-top-row">

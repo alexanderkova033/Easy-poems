@@ -851,3 +851,143 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+
+/* ---- Session timer + word goal bar ---- */
+.topbar-session-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.topbar-session-timer {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  min-width: 1.5rem;
+}
+
+.topbar-word-goal {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 1.4rem;
+  min-width: 5rem;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface) 80%, var(--bg));
+  overflow: hidden;
+  cursor: default;
+}
+
+.topbar-word-goal-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface));
+  border-radius: 99px;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.topbar-word-goal-label {
+  position: relative;
+  z-index: 1;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  padding: 0 0.55rem;
+  white-space: nowrap;
+}
+
+.topbar-word-goal-set {
+  appearance: none;
+  border: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 99px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0.1rem 0.5rem;
+  transition: color 0.13s ease, border-color 0.13s ease;
+}
+
+.topbar-word-goal-set:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+/* Hide session bar on very small screens */
+@media (max-width: 520px) {
+  .topbar-session-bar { display: none; }
+}
+
+/* ---- Inline word goal form ---- */
+.topbar-goal-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  animation: topbar-goal-form-in 0.15s ease both;
+}
+
+@keyframes topbar-goal-form-in {
+  from { opacity: 0; transform: translateX(-4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.topbar-goal-input {
+  width: 5rem;
+  height: 1.55rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--border));
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0 0.4rem;
+  outline: none;
+}
+
+.topbar-goal-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Hide spin buttons */
+.topbar-goal-input::-webkit-inner-spin-button,
+.topbar-goal-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.topbar-goal-input[type=number] { -moz-appearance: textfield; }
+
+.topbar-goal-submit {
+  appearance: none;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  width: 1.6rem;
+  height: 1.55rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.12s ease;
+}
+
+.topbar-goal-submit:hover {
+  background: color-mix(in srgb, var(--accent) 28%, var(--surface));
+}
+
+/* Make the goal pill button-like so click-to-change is discoverable */
+.topbar-word-goal {
+  cursor: pointer;
+  border: none;
+  appearance: none;
+  font: inherit;
+}
+.topbar-word-goal:hover .topbar-word-goal-fill {
+  filter: brightness(1.15);
+}

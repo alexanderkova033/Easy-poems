@@ -1,6 +1,7 @@
 import { EditorView, ViewPlugin, WidgetType, placeholder } from "@codemirror/view";
 import { StateEffect, StateField } from "@codemirror/state";
 import { Decoration, type DecorationSet } from "@codemirror/view";
+import { lineFocusExtension, setLineFocusEnabled } from "@/workshop/editor/line-focus-extension";
 import { highlightSelectionMatches, search } from "@codemirror/search";
 import { countSyllablesInLine } from "@/workshop/analysis/syllables";
 import type { MutableRefObject } from "react";
@@ -19,16 +20,25 @@ import {
 } from "@/workshop/editor/format-marks";
 import type { SpellMode } from "@/workshop/library/local-draft-storage";
 
-// ---- Syllable count line widgets ----
+// ---- Syllable count + rhythm bar widgets ----
 class SyllableWidget extends WidgetType {
-  constructor(readonly count: number) { super(); }
-  eq(other: SyllableWidget) { return other.count === this.count; }
+  constructor(readonly count: number, readonly pct: number) { super(); }
+  eq(other: SyllableWidget) { return other.count === this.count && other.pct === this.pct; }
   toDOM() {
-    const span = document.createElement("span");
-    span.className = "cm-syllable-count";
-    span.textContent = `${this.count}`;
-    span.setAttribute("aria-hidden", "true");
-    return span;
+    const wrap = document.createElement("span");
+    wrap.className = "cm-syllable-wrap";
+    wrap.setAttribute("aria-hidden", "true");
+
+    const bar = document.createElement("span");
+    bar.className = "cm-rhythm-bar";
+    bar.style.setProperty("--bar-pct", `${this.pct}%`);
+
+    const num = document.createElement("span");
+    num.className = "cm-syllable-count";
+    num.textContent = `${this.count}`;
+
+    wrap.append(bar, num);
+    return wrap;
   }
   ignoreEvent() { return true; }
 }
@@ -41,17 +51,23 @@ const syllableCountPlugin = ViewPlugin.fromClass(
       if (update.docChanged) this.decorations = this.build(update.view);
     }
     build(view: EditorView): DecorationSet {
-      const decos = [];
+      // First pass: collect counts to find max for scaling bars
+      const counts: { lineNo: number; to: number; count: number }[] = [];
       for (let i = 1; i <= view.state.doc.lines; i++) {
         const line = view.state.doc.line(i);
         if (!line.text.trim()) continue;
         const count = countSyllablesInLine(line.text);
         if (count === 0) continue;
-        decos.push(
-          Decoration.widget({ widget: new SyllableWidget(count), side: 1 })
-            .range(line.to),
-        );
+        counts.push({ lineNo: i, to: line.to, count });
       }
+      const maxCount = counts.reduce((m, c) => Math.max(m, c.count), 1);
+      // Second pass: render widget with proportional bar
+      const decos = counts.map(({ to, count }) =>
+        Decoration.widget({
+          widget: new SyllableWidget(count, Math.round((count / maxCount) * 100)),
+          side: 1,
+        }).range(to),
+      );
       return Decoration.set(decos);
     }
   },
@@ -128,6 +144,8 @@ export interface PoemBodyEditorProps {
   persistentIssueHighlights?: Array<[number, number, string?]>;
   /** Per-line syllable counts at end of each line (CodeMirror widgets). */
   showLineSyllables?: boolean;
+  /** Dim non-active lines very subtly (typewriter focus mode). */
+  lineFocusMode?: boolean;
   /** Called when user selects text; null means selection cleared. */
   onSelectionText?: (text: string | null, rect: DOMRect | null) => void;
   id?: string;
@@ -241,6 +259,13 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const showSyllables = props.showLineSyllables !== false;
 
+  // Sync line-focus enabled state into the CM state field when the prop changes
+  useEffect(() => {
+    const view = props.editorViewRef.current;
+    if (!view) return;
+    try { view.dispatch({ effects: setLineFocusEnabled.of(props.lineFocusMode ?? false) }); } catch { /* ignore */ }
+  }, [props.editorViewRef, props.lineFocusMode]);
+
   const extensions = useMemo(
     () => [
       EditorView.contentAttributes.of({ spellcheck: "true" }),
@@ -250,6 +275,7 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       lineFlashField,
       issueHighlightField,
       persistentIssueDecosField,
+      ...lineFocusExtension,
       placeholder("Write your poem here — one line per line break…"),
       ...(showSyllables ? [syllableCountPlugin] : []),
       ...poemSpellExtensions,

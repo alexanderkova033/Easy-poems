@@ -379,6 +379,25 @@ export function WordLookupPopup({
     };
   }, [word, close]);
 
+  // Swipe-down to dismiss on touch devices
+  useEffect(() => {
+    if (!word) return;
+    const el = popupRef.current;
+    if (!el) return;
+    let startY = 0;
+    const onTouchStart = (e: TouchEvent) => { startY = e.touches[0]!.clientY; };
+    const onTouchEnd = (e: TouchEvent) => {
+      const dy = e.changedTouches[0]!.clientY - startY;
+      if (dy > 48) close();
+    };
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, [word, close]);
+
   if (!enabled || !word || !anchor) return null;
 
   const showLoading = status === "loading";

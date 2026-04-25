@@ -48,6 +48,7 @@ function App() {
 
   return (
     <Suspense fallback={<div className="app-loading-shell" aria-hidden />}>
+      <a href="#poem-body" className="skip-link">Skip to editor</a>
       <ToastProvider>
         <HoverHintsProvider>
           <PoemWorkshop />
