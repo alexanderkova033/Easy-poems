@@ -153,7 +153,7 @@ export function PoemWorkshop() {
       if (v === "1" || v === "true") return true;
       if (v === "0" || v === "false") return false;
     } catch { /* ignore */ }
-    return false; // off by default — enable via Format toolbar or Commands
+    return true; // on by default
   });
   const workshopGridRef = useRef<HTMLDivElement | null>(null);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
@@ -1766,7 +1766,7 @@ export function PoemWorkshop() {
             onClick={() => setIsStyleOpen(true)}
             aria-haspopup="dialog"
             aria-expanded={isStyleOpen}
-            {...hint("Style — fonts, background and appearance")}
+            {...hint("Style — fonts and typography")}
           >
             <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
@@ -1775,6 +1775,24 @@ export function PoemWorkshop() {
               </svg>
             </RailIcon>
             <span className="rail-label">Style</span>
+          </button>
+
+          <button
+            type="button"
+            className={`rail-btn${isBackgroundOpen ? " is-active" : ""}`}
+            onClick={() => setIsBackgroundOpen((v) => !v)}
+            aria-haspopup="dialog"
+            aria-expanded={isBackgroundOpen}
+            {...hint("Background — choose a scene behind the page")}
+          >
+            <RailIcon>
+              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+                <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
+                <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M3 15l4.5-4.5 3 3 3-3 4.5 4.5" />
+                <circle cx="8" cy="9.5" r="1.25" fill="currentColor" />
+              </svg>
+            </RailIcon>
+            <span className="rail-label">Background</span>
           </button>
 
           <button
