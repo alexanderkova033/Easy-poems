@@ -32,6 +32,7 @@ export interface PoemAnalysis {
   meta: AnalysisMeta;
   overall_score: number;
   summary?: string;
+  overall_direction?: string;
   dimensions: AnalysisDimensions;
   issues: AnalysisIssue[];
 }
@@ -89,6 +90,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     },
     overall_score: clampScore(obj.overall_score),
     summary: typeof obj.summary === "string" ? obj.summary : undefined,
+    overall_direction: typeof obj.overall_direction === "string" ? obj.overall_direction : undefined,
     dimensions: {
       imagery: clampScore(dims.imagery),
       musicality: clampScore(dims.musicality),

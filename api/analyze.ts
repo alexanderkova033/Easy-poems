@@ -9,11 +9,24 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI, sendParsedResponse } from "./_openai";
 
-const SYSTEM_PROMPT = `You are a skilled, encouraging poetry editor. Analyze the poem and return valid JSON with this exact shape:
+const HARSHNESS_PERSONAS: Record<string, string> = {
+  baby:    "a kind, encouraging reader who celebrates effort and only mentions one very obvious improvement gently",
+  casual:  "a supportive friend who enjoys poetry casually — warm, encouraging, only notes glaring issues",
+  student: "a writing workshop peer — honest and constructive, balanced praise and critique",
+  editor:  "a professional poetry editor — direct, specific, and demanding high craft standards",
+  critic:  "a rigorous literary critic — uncompromising, deeply analytical, expects excellence in every line",
+};
+
+function buildSystemPrompt(harshness?: string): string {
+  const persona = harshness && harshness in HARSHNESS_PERSONAS
+    ? HARSHNESS_PERSONAS[harshness as keyof typeof HARSHNESS_PERSONAS]
+    : HARSHNESS_PERSONAS.editor;
+  return `You are ${persona}. Analyze the poem and return valid JSON with this exact shape:
 {
   "meta": { "model": "<model-id>", "analyzedAt": "<ISO-8601>" },
   "overall_score": <integer 1-100>,
-  "summary": "<2-3 sentences: an honest, specific overall impression of the poem as a whole — what it achieves, what mood or effect it creates, and the single most important direction for improvement>",
+  "summary": "<2-3 sentences: an honest, specific overall impression — what the poem achieves, what mood it creates, and its defining strength>",
+  "overall_direction": "<3-5 sentences giving the single most important whole-poem improvement direction. This should be broad craft advice — about the poem's arc, emotional range, tonal consistency, structural choices, or central image — NOT a repeat of individual line issues. Write as if advising a poet before their next full revision.>",
   "dimensions": {
     "imagery": <integer 1-100>,
     "musicality": <integer 1-100>,
@@ -37,6 +50,7 @@ const SYSTEM_PROMPT = `You are a skilled, encouraging poetry editor. Analyze the
 Rules:
 - Scores are integers 1-100.
 - summary: always present, 2-3 sentences, honest and specific — not generic praise.
+- overall_direction: always present, 3-5 sentences of whole-poem craft advice. Never a list of line problems — think big picture: arc, theme, voice, structure, emotional progression.
 - Limit issues to the 3-6 most actionable ones; fewer is fine for strong poems.
 - severity: "high" = significantly hurts the poem, "medium" = noticeable flaw, "low" = minor polish.
 - problem_words: 0-3 specific words or short phrases from the line that are weak. Omit if none stand out.
@@ -45,6 +59,7 @@ Rules:
 - If local analysis context is provided (syllables, rhyme scheme, clichés, goals), use it to make your feedback more precise and specific. Reference detected clichés directly.
 - line_start / line_end are 1-based indexes into the numbered lines you receive.
 - Return ONLY the JSON object, no markdown fences.`;
+}
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;
@@ -136,6 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     model?: unknown;
     localAnalysis?: unknown;
     goals?: unknown;
+    harshness?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -147,6 +163,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
+  const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -158,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     {
       model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: buildSystemPrompt(harshness) },
         { role: "user", content: buildPrompt(title, lines, local, goals) },
       ],
       max_tokens: 2200,

@@ -114,20 +114,20 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
 
   return (
     <div className="sh-root">
-      {/* Mode tab strip */}
-      <div className="sh-tabs" role="tablist" aria-label="Suggestion mode">
+      {/* Mode card grid */}
+      <div className="sh-card-grid" role="group" aria-label="Suggestion mode">
         {TYPE_CONFIG.map(({ id, icon, label, desc }) => (
           <button
             key={id}
             type="button"
-            role="tab"
-            aria-selected={activeType === id}
-            className={`sh-tab${activeType === id ? " is-active" : ""}`}
+            aria-pressed={activeType === id}
+            className={`sh-card${activeType === id ? " is-active" : ""}${id === "idea" ? " sh-card-idea" : ""}`}
             onClick={() => handleSelectMode(id)}
             title={desc}
           >
-            <span className="sh-tab-icon" aria-hidden>{icon}</span>
-            <span className="sh-tab-label">{label}</span>
+            <span className="sh-card-icon" aria-hidden>{icon}</span>
+            <span className="sh-card-label">{label}</span>
+            <span className="sh-card-desc">{desc}</span>
           </button>
         ))}
       </div>

@@ -548,6 +548,14 @@ function AnalysisResults({
         <p className="ai-poem-summary">{result.summary}</p>
       )}
 
+      {/* Whole-poem improvement direction */}
+      {result.overall_direction && (
+        <div className="ai-overall-direction">
+          <span className="ai-overall-direction-label">Direction for next revision</span>
+          <p className="ai-overall-direction-text">{result.overall_direction}</p>
+        </div>
+      )}
+
       {/* Comparison panel */}
       {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 

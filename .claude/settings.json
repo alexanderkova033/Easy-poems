@@ -1,4 +1,7 @@
 {
+  "env": {
+    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+  },
   "permissions": {
     "allow": [
       "Bash(npm install:*)",
@@ -26,10 +29,9 @@
       "Bash(cmd /c \"cd /d c:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web && npx tsc --noEmit 2>&1 && echo BUILD_OK || echo BUILD_FAILED\")",
       "Bash(python3 -)",
       "Bash(python -)",
-      "Read(//c/Users/lorta/Documents/repos/Easy-poems\" 2>/dev/null || ls -la /c/Users/lorta/Documents/repos/Easy-poems/ 2>/dev/**)"
+      "Read(//c/Users/lorta/Documents/repos/Easy-poems\" 2>/dev/null || ls -la /c/Users/lorta/Documents/repos/Easy-poems/ 2>/dev/**)",
+      "Read(//c/Users/lorta/.claude/projects/c--Users-lorta-Documents-repos-Easy-poems/memory/**)",
+      "Read(//c/Users/lorta/.claude/projects/c--Users-lorta-Documents-repos-Easy-poems/memory\" 2>/dev/**)"
     ]
-  },
-  "env": {
-    "NODE_TLS_REJECT_UNAUTHORIZED": "0"
   }
 }

@@ -79,9 +79,15 @@
   box-sizing: border-box;
 }
 
+.app-loading-shell {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+}
+
 html {
   min-height: 100%;
-  font-size: 17px;
+  font-size: 17.5px;
 }
 
 body {
@@ -121,6 +127,8 @@ body::before {
   /* 4 % scale gives ±2 % translate headroom without revealing empty edges. */
   transform: scale(1.04);
   transition: opacity 0.45s ease;
+  /* Globally calm all backgrounds: slight desaturation + reduced intensity */
+  filter: saturate(0.82) brightness(0.96);
 }
 
 /* Theme cross-fade: JS adds this class for one frame to trigger the fade.

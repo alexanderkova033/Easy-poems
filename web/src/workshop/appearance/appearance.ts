@@ -325,10 +325,10 @@ export function saveAppearance(s: AppearanceSettings): boolean {
 }
 
 const POEM_SIZE_VAR: Record<PoemSizeId, string> = {
-  sm: "0.88rem",
-  md: "1rem",
-  lg: "1.15rem",
-  xl: "1.3rem",
+  sm: "0.95rem",
+  md: "1.075rem",
+  lg: "1.2rem",
+  xl: "1.38rem",
 };
 
 const POEM_WEIGHT_VAR: Record<PoemWeightId, string> = {

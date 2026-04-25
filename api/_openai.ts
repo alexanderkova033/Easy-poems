@@ -17,10 +17,41 @@ export interface OpenAICallResult {
   model: string;
 }
 
-/**
- * Calls the OpenAI chat completions endpoint and extracts the first message
- * content. Returns a typed result or sends an error response and returns null.
- */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 2,
+  timeoutMs = 30000,
+): Promise<Response> {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeout);
+      return response;
+    } catch (err) {
+      clearTimeout(timeout);
+      lastError = err;
+
+      console.error(`OpenAI fetch attempt ${attempt + 1} failed:`, err);
+
+      if (attempt < retries) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 export async function callOpenAI(
   apiKey: string,
   opts: {
@@ -32,8 +63,9 @@ export async function callOpenAI(
   res: VercelResponse,
 ): Promise<OpenAICallResult | null> {
   let upstream: Response;
+
   try {
-    upstream = await fetch(OPENAI_URL, {
+    upstream = await fetchWithRetry(OPENAI_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -48,18 +80,34 @@ export async function callOpenAI(
       }),
     });
   } catch (err) {
-    res.status(502).json({ error: `Could not reach OpenAI: ${(err as Error).message}` });
+    console.error("OpenAI fetch failed completely:", err);
+
+    res.status(502).json({
+      error: `Could not reach OpenAI: ${
+        err instanceof Error ? err.message : String(err)
+      }`,
+    });
+
     return null;
   }
 
   if (!upstream.ok) {
     let msg = `OpenAI returned HTTP ${upstream.status}`;
+
     try {
-      const errBody = (await upstream.json()) as { error?: { message?: string } };
-      if (errBody?.error?.message) msg = errBody.error.message;
+      const errBody = (await upstream.json()) as {
+        error?: { message?: string };
+      };
+
+      if (errBody?.error?.message) {
+        msg = errBody.error.message;
+      }
     } catch {
       /* ignore */
     }
+
+    console.error("OpenAI returned an error:", msg);
+
     const status = upstream.status === 429 ? 429 : 502;
     res.status(status).json({ error: msg });
     return null;
@@ -69,29 +117,43 @@ export async function callOpenAI(
     choices?: { message?: { content?: string } }[];
     model?: string;
   };
+
   const content = data.choices?.[0]?.message?.content ?? "";
+
   if (!content) {
-    res.status(502).json({ error: "Empty response from OpenAI." });
+    console.error("OpenAI returned empty content:", data);
+
+    res.status(502).json({
+      error: "Empty response from OpenAI.",
+    });
+
     return null;
   }
 
-  return { ok: true, content, model: data.model ?? opts.model };
+  return {
+    ok: true,
+    content,
+    model: data.model ?? opts.model,
+  };
 }
 
-/**
- * Parses JSON from an OpenAI response string, injects server-side meta,
- * and sends the result. Returns false if parsing fails.
- */
 export function sendParsedResponse(
   res: VercelResponse,
   rawContent: string,
   resolvedModel: string,
 ): boolean {
   let parsed: unknown;
+
   try {
     parsed = JSON.parse(rawContent);
-  } catch {
-    res.status(502).json({ error: "OpenAI returned invalid JSON." });
+  } catch (err) {
+    console.error("Failed to parse OpenAI JSON:", err);
+    console.error("Raw OpenAI content:", rawContent);
+
+    res.status(502).json({
+      error: "OpenAI returned invalid JSON.",
+    });
+
     return false;
   }
 

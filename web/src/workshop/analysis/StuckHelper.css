@@ -7,56 +7,83 @@
   padding: 0.1rem 0;
 }
 
-/* ── Mode tab strip ── */
+/* ── Mode card grid ── */
 
-.sh-tabs {
-  display: flex;
-  gap: 0.3rem;
-  flex-wrap: wrap;
+.sh-card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
 }
 
-.sh-tab {
+.sh-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.18rem;
-  padding: 0.55rem 0.7rem 0.5rem;
-  border-radius: 9px;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem 0.65rem;
+  border-radius: 10px;
   border: 1.5px solid var(--border);
-  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+  background: color-mix(in srgb, var(--surface) 75%, var(--bg));
   color: var(--text);
   font: inherit;
   cursor: pointer;
-  flex: 1 1 0;
-  min-width: 0;
-  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s;
+  text-align: left;
+  transition: border-color 0.14s, background 0.14s, box-shadow 0.14s, transform 0.12s;
 }
 
-.sh-tab:hover:not(.is-active) {
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+.sh-card:hover:not(.is-active) {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface));
+  transform: translateY(-1px);
 }
 
-.sh-tab.is-active {
+.sh-card.is-active {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 16%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  box-shadow: 0 0 0 2.5px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
-.sh-tab-icon {
-  font-size: 1.1rem;
+/* "Poem idea" spans the full width to make it more prominent */
+.sh-card-idea {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.7rem;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+.sh-card-idea:hover:not(.is-active) {
+  background: color-mix(in srgb, var(--accent) 13%, var(--surface));
+}
+
+.sh-card-idea .sh-card-desc {
+  display: block;
+}
+
+.sh-card-icon {
+  font-size: 1.2rem;
   line-height: 1;
   color: var(--accent);
+  flex-shrink: 0;
 }
 
-.sh-tab-label {
-  font-size: 0.72rem;
+.sh-card-label {
+  font-size: 0.8rem;
   font-weight: 700;
   color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  line-height: 1.2;
+}
+
+.sh-card-desc {
+  display: none;
+  font-size: 0.72rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.sh-card-idea .sh-card-label {
+  font-size: 0.85rem;
 }
 
 /* ── Active mode body ── */

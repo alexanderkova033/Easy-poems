@@ -52,6 +52,12 @@ export default defineConfig({
           if (id.includes("node_modules/docx")) {
             return "vendor-docx";
           }
+          // Landing page is now lazy-loaded — give it its own chunk so the
+          // workshop code (CodeMirror, tools, etc.) doesn't inflate the
+          // landing-page download and vice-versa.
+          if (id.includes("/src/landing/")) {
+            return "landing";
+          }
         },
       },
     },

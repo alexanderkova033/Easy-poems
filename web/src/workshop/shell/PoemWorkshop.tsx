@@ -150,9 +150,10 @@ export function PoemWorkshop() {
   const [wordLookupEnabled, setWordLookupEnabled] = useState(() => {
     try {
       const v = localStorage.getItem(STORAGE_KEY_WORD_LOOKUP_ENABLED);
+      if (v === "1" || v === "true") return true;
       if (v === "0" || v === "false") return false;
     } catch { /* ignore */ }
-    return true;
+    return false; // off by default — enable via Format toolbar or Commands
   });
   const workshopGridRef = useRef<HTMLDivElement | null>(null);
   const [appearance, setAppearance] = useState<AppearanceSettings>(() =>
@@ -219,6 +220,11 @@ export function PoemWorkshop() {
     panel.addEventListener("wheel", onWheel, { passive: false });
     return () => panel.removeEventListener("wheel", onWheel);
   }, []);
+
+  // Reset tools panel scroll to top when switching tabs so you always start at the top.
+  useEffect(() => {
+    toolsPanelRef.current?.scrollTo({ top: 0 });
+  }, [m.toolTab]);
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-writing-focus-v2", isFocusMode);
@@ -681,27 +687,41 @@ export function PoemWorkshop() {
               <h1 className="brand-mark">
                 <svg
                   className="brand-logo-icon"
-                  viewBox="0 0 18 24"
+                  viewBox="0 0 24 24"
                   aria-hidden
                   focusable="false"
                 >
+                  {/* Feather body — vivid accent fill, white stroke for any-bg visibility */}
                   <path
-                    d="M14 2C17 4 18 9 13 15L10 20L9 23L8 20C6 15 7 9 14 2Z"
-                    fill="#7a9b7c"
+                    d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z"
+                    fill="#68aa6e"
+                    stroke="white"
+                    strokeWidth="0.7"
+                    strokeLinejoin="round"
                   />
+                  {/* Quill vein */}
                   <path
-                    d="M14 2L9 20"
-                    stroke="rgba(10,15,13,0.25)"
-                    strokeWidth="0.65"
+                    d="M19 3L12 21"
+                    stroke="rgba(0,0,0,0.18)"
+                    strokeWidth="0.55"
                     strokeLinecap="round"
                     fill="none"
                   />
+                  {/* Nib highlight */}
                   <path
-                    d="M8 20L9 23"
-                    stroke="#c5d4c8"
-                    strokeWidth="1.3"
+                    d="M11 18L12 21"
+                    stroke="#c5e0c8"
+                    strokeWidth="1.5"
                     strokeLinecap="round"
                     fill="none"
+                  />
+                  {/* Dark outline for light-background visibility */}
+                  <path
+                    d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z"
+                    fill="none"
+                    stroke="rgba(30,60,35,0.22)"
+                    strokeWidth="0.8"
+                    strokeLinejoin="round"
                   />
                 </svg>
                 easywriting-poem
@@ -1902,6 +1922,12 @@ export function PoemWorkshop() {
                     onShowRhymeSchemeChange={setShowRhymeScheme}
                     rhymeBreadth={rhymeBreadth}
                     onRhymeBreadthChange={setRhymeBreadth}
+                    wordLookupEnabled={wordLookupEnabled}
+                    onWordLookupToggle={() => {
+                      const next = !wordLookupEnabled;
+                      setWordLookupEnabled(next);
+                      try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, next ? "1" : "0"); } catch { /* ignore */ }
+                    }}
                   />
                   </div>{/* /format-toolbar tour target */}
                 </div>

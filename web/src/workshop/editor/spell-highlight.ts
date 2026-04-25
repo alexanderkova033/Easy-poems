@@ -67,14 +67,20 @@ const spellPlugin = ViewPlugin.fromClass(
         this.safeDispatch(setSpellDeco.of(Decoration.none));
         return;
       }
-      const text = this.view.state.doc.toString();
+      const state = this.view.state;
+      const text = state.doc.toString();
+      // Cursor positions — skip any error range that the cursor sits inside
+      // so in-progress words are never underlined until the word is finished.
+      const cursorPositions = state.selection.ranges
+        .filter((r) => r.empty)
+        .map((r) => r.from);
       const ranges = spellErrorRangesFromText(
         text,
         dict,
         loadPersonalDictionary(),
         loadSessionIgnores(),
         mode,
-      );
+      ).filter((r) => !cursorPositions.some((pos) => pos >= r.from && pos <= r.to));
       const deco = ranges.map((r) =>
         Decoration.mark({ class: "cm-spell-error" }).range(r.from, r.to),
       );

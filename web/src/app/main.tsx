@@ -1,15 +1,20 @@
-import { StrictMode, useState } from "react";
+import { StrictMode, Suspense, lazy, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/react";
-import { PoemWorkshop } from "@/workshop/shell/PoemWorkshop";
-import { LandingPage } from "@/landing/LandingPage";
 import { applyAppearance, loadAppearance } from "@/workshop/appearance/appearance";
 import { HoverHintsProvider } from "@/workshop/hints/HoverHintsContext";
 import { ToastProvider } from "@/shared/toast/ToastContext";
 import { ErrorBoundary } from "@/app/ErrorBoundary";
 import { STORAGE_KEY_LANDING_DISMISSED } from "@/shared/storage-keys";
 import "@/app/index.css";
+
+const PoemWorkshop = lazy(() =>
+  import("@/workshop/shell/PoemWorkshop").then((m) => ({ default: m.PoemWorkshop })),
+);
+const LandingPage = lazy(() =>
+  import("@/landing/LandingPage").then((m) => ({ default: m.LandingPage })),
+);
 
 applyAppearance(loadAppearance());
 
@@ -34,15 +39,21 @@ function App() {
   };
 
   if (!showWorkshop) {
-    return <LandingPage onEnter={enter} />;
+    return (
+      <Suspense fallback={null}>
+        <LandingPage onEnter={enter} />
+      </Suspense>
+    );
   }
 
   return (
-    <ToastProvider>
-      <HoverHintsProvider>
-        <PoemWorkshop />
-      </HoverHintsProvider>
-    </ToastProvider>
+    <Suspense fallback={<div className="app-loading-shell" aria-hidden />}>
+      <ToastProvider>
+        <HoverHintsProvider>
+          <PoemWorkshop />
+        </HoverHintsProvider>
+      </ToastProvider>
+    </Suspense>
   );
 }
 

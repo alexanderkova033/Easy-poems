@@ -78,6 +78,8 @@ export function FormatToolbar({
   onShowRhymeSchemeChange,
   rhymeBreadth,
   onRhymeBreadthChange,
+  wordLookupEnabled,
+  onWordLookupToggle,
 }: {
   editorViewRef: MutableRefObject<EditorView | null>;
   poemSize: PoemSizeId;
@@ -90,6 +92,8 @@ export function FormatToolbar({
   onShowRhymeSchemeChange: (next: boolean) => void;
   rhymeBreadth: RhymeBreadth;
   onRhymeBreadthChange: (b: RhymeBreadth) => void;
+  wordLookupEnabled?: boolean;
+  onWordLookupToggle?: () => void;
 }) {
   const hint = useHoverHintBinder();
   const apply = (fn: (v: EditorView) => void) => {
@@ -254,6 +258,22 @@ export function FormatToolbar({
           onMouseDown={(e) => { e.preventDefault(); onReadingMode(); }}
         >
           ☰
+        </button>
+      )}
+      {onWordLookupToggle !== undefined && (
+        <button
+          type="button"
+          className={`fmt-btn fmt-tidy-btn fmt-word-lookup-btn${wordLookupEnabled ? " is-on" : ""}`}
+          {...hint(
+            wordLookupEnabled
+              ? "Word lookup: on — click to turn off synonyms/definitions popup"
+              : "Word lookup: off — click to enable synonyms/definitions on word selection",
+          )}
+          aria-pressed={wordLookupEnabled}
+          aria-label={wordLookupEnabled ? "Word lookup on" : "Word lookup off"}
+          onMouseDown={(e) => { e.preventDefault(); onWordLookupToggle(); }}
+        >
+          W?
         </button>
       )}
     </div>

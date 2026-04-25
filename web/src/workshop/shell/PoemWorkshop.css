@@ -160,6 +160,9 @@
     position: sticky;
     top: 1.15rem;
     align-self: start;
+    /* Promote to compositor layer to eliminate jank when page scrolls */
+    will-change: transform;
+    transform: translateZ(0);
   }
 }
 

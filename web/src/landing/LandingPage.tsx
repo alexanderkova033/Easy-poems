@@ -20,7 +20,12 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
     <div className="landing-root">
       {/* Sticky mini-header — appears after hero scrolls out of view */}
       <header className={`landing-sticky-bar${stickyVisible ? " is-visible" : ""}`} aria-hidden={!stickyVisible}>
-        <span className="landing-sticky-logo" aria-hidden>❧</span>
+        <svg className="landing-sticky-logo" viewBox="0 0 24 24" aria-hidden width="20" height="20">
+          <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" stroke="white" strokeWidth="0.7" strokeLinejoin="round" />
+          <path d="M19 3L12 21" stroke="rgba(0,0,0,0.18)" strokeWidth="0.55" strokeLinecap="round" fill="none" />
+          <path d="M11 18L12 21" stroke="#c5e0c8" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="none" stroke="rgba(30,60,35,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
+        </svg>
         <span className="landing-sticky-name">easywriting-poem</span>
         <button type="button" className="landing-btn landing-btn-primary landing-sticky-cta" onClick={onEnter}>
           Start writing
