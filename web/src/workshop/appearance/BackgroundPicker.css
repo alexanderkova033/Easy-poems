@@ -685,6 +685,8 @@
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border));
   background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  /* Don't shrink when inside the pinned mobile flex column */
+  flex-shrink: 0;
 }
 
 .persistence-banner-text {

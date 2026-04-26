@@ -21,12 +21,13 @@
 
 @media (max-width: 899px) {
   /*
-   * Mobile layout: two full-width "slides" (editor + tools) that sit side by
-   * side inside an overflow-hidden viewport strip. Swiping left reveals tools;
-   * swiping right reveals the editor. No vertical stacking of two tall panels.
+   * Mobile layout: the poem-workshop fills the viewport (height: 100%, overflow: hidden).
+   * The workshop-grid fills the remaining height below the topbar via flex: 1 1 0.
+   * Two panels slide horizontally — only the active panel scrolls; the page never does.
    */
   .workshop-grid {
-    /* Overflow hidden on the outer shell; the slides scroll inside */
+    flex: 1 1 0;
+    min-height: 0;
     display: block;
     overflow: hidden;
     position: relative;
@@ -40,56 +41,53 @@
   .editor-panel,
   .tools-panel {
     width: 100%;
+    height: 100%;
     box-sizing: border-box;
     position: absolute;
     top: 0;
     left: 0;
-    min-height: 100%;
-    /* Extra bottom padding so content clears fixed action bar */
+    /* Bottom padding clears fixed action bar + safe-area */
     padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
     will-change: transform;
     transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
     overflow-y: auto;
-    /* Prevent rubber-banding from hijacking the slide transition */
-    overscroll-behavior-x: none;
-    /* Establish independent scroll context */
+    overflow-x: hidden;
+    /* Contain vertical overscroll inside the panel — prevents page bounce */
+    overscroll-behavior: contain;
+    /* Smooth momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
     /* Isolate paint for each slide panel */
     contain: paint;
   }
 
-  /* Both slides fill the grid area and can scroll independently */
+  /* Editor is in-flow when active so the grid takes its height */
   .editor-panel {
-    position: relative; /* in-flow to give the grid a natural height */
+    position: relative;
     transform: translateX(0);
-    min-height: 100svh;
   }
 
   .tools-panel {
     transform: translateX(100%);
-    height: 100svh;
-    max-height: none;
   }
 
   /* State-driven: editor view (default) */
   .workshop-grid[data-mobile-view="editor"] .editor-panel {
     transform: translateX(0);
+    position: relative;
   }
   .workshop-grid[data-mobile-view="editor"] .tools-panel {
     transform: translateX(100%);
+    position: absolute;
   }
 
-  /* State-driven: tools view — editor slides out left, tools slides in */
+  /* State-driven: tools view */
   .workshop-grid[data-mobile-view="tools"] .editor-panel {
     transform: translateX(-100%);
-    /* move out of flow so grid doesn't retain its height when tools are showing */
     position: absolute;
   }
   .workshop-grid[data-mobile-view="tools"] .tools-panel {
     transform: translateX(0);
-    position: relative; /* in-flow when active so page height matches tools content */
-    height: auto;
-    min-height: 100svh;
+    position: relative;
   }
 
   /* The toggle button becomes a tab switcher in the tools head */

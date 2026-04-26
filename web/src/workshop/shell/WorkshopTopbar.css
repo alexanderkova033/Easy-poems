@@ -15,6 +15,22 @@
   box-shadow: 0 2px 12px color-mix(in srgb, #000 5%, transparent);
   backdrop-filter: saturate(1.02) blur(10px);
   -webkit-backdrop-filter: saturate(1.02) blur(10px);
+  /* Don't shrink on mobile — let the workshop-grid take all remaining space */
+  flex-shrink: 0;
+}
+
+@media (max-width: 899px) {
+  .topbar {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    padding: 0.55rem 0.85rem 0.5rem;
+    /* Topbar sticks to the top inside the pinned viewport */
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
 }
 
 .topbar-primary {
