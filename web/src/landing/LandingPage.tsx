@@ -35,22 +35,30 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       {/* Hero */}
       <section className="landing-hero" ref={heroRef}>
         <div className="landing-hero-inner">
-          <span className="landing-brand-name">easywriting-poem</span>
+          <div className="landing-hero-eyebrow">
+            <svg className="landing-hero-feather" viewBox="0 0 24 24" aria-hidden width="22" height="22">
+              <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" stroke="white" strokeWidth="0.7" strokeLinejoin="round" />
+              <path d="M19 3L12 21" stroke="rgba(0,0,0,0.18)" strokeWidth="0.55" strokeLinecap="round" fill="none" />
+            </svg>
+            <span className="landing-brand-name">easywriting-poem</span>
+          </div>
           <h1 className="landing-headline">
-            Write better poems.<br />
-            Enjoy the process.
+            A quiet place<br />
+            to write poetry.
           </h1>
           <p className="landing-sub">
-            Real-time rhyme, rhythm, syllable, and AI feedback — directly in your editor as you type. No account needed.
+            Your editor listens as you write — live rhyme, rhythm, and syllable feedback,
+            plus AI that reads your poem line by line. No account. Nothing stored online.
           </p>
           <div className="landing-ctas">
             <button type="button" className="landing-btn landing-btn-primary" onClick={onEnter}>
               Start writing →
             </button>
             <a href="#how-it-works" className="landing-btn landing-btn-ghost">
-              How it works
+              See how it works
             </a>
           </div>
+          <p className="landing-hero-reassurance">Free to use · Saves in your browser · No sign-up</p>
         </div>
       </section>
 

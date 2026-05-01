@@ -48,30 +48,32 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --bg: #ebf1ec;
-    --surface: #f6faf7;
-    --surface-2: #eef4ef;
+    /* Slightly warmer, less harsh than pure white — like quality writing paper */
+    --bg: #f2f4f0;
+    --surface: #fafcf9;
+    --surface-2: #edf0eb;
     --surface-elevated: color-mix(in srgb, var(--surface) 92%, #fff);
-    --border: #cfd9d1;
-    --text: #253028;
-    --muted: #4d5f54;
-    --accent: #3a6444;
-    --selection-bg: color-mix(in srgb, var(--accent) 18%, #d2ddd6);
+    --border: #d8ddd9;
+    /* Softer text — not quite black, easier on the eyes for long sessions */
+    --text: #2a3329;
+    --muted: #5a6b60;
+    --accent: #3e6b47;
+    --selection-bg: color-mix(in srgb, var(--accent) 16%, #dce6de);
     --selection-fg: var(--text);
     --danger: #b42318;
     --ai-score-high: #2d8a4e;
     --ai-score-mid: #b07800;
     --ai-score-low: #c0392b;
-    --net-line: rgba(45, 75, 58, 0.048);
-    --ambient-a: rgba(70, 155, 125, 0.055);
-    --ambient-b: rgba(55, 110, 90, 0.044);
-    --ambient-c: rgba(95, 165, 135, 0.038);
-    --ambient-d: rgba(120, 190, 155, 0.034);
-    --shine-top: rgba(255, 255, 255, 0.3);
-    --shine-mid: rgba(100, 170, 135, 0.032);
-    --shadow-1: 0 3px 14px color-mix(in srgb, #000 3%, transparent);
-    --shadow-2: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
-    --shadow-3: 0 14px 46px color-mix(in srgb, #000 28%, transparent);
+    --net-line: rgba(45, 75, 58, 0.038);
+    --ambient-a: rgba(70, 155, 125, 0.04);
+    --ambient-b: rgba(55, 110, 90, 0.032);
+    --ambient-c: rgba(95, 165, 135, 0.028);
+    --ambient-d: rgba(120, 190, 155, 0.024);
+    --shine-top: rgba(255, 255, 255, 0.28);
+    --shine-mid: rgba(100, 170, 135, 0.026);
+    --shadow-1: 0 2px 10px color-mix(in srgb, #000 3%, transparent);
+    --shadow-2: 0 3px 12px color-mix(in srgb, #000 4%, transparent);
+    --shadow-3: 0 12px 40px color-mix(in srgb, #000 24%, transparent);
   }
 }
 

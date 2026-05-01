@@ -5,7 +5,6 @@ import { toggleBold, toggleUnderline } from "@/workshop/editor/format-marks";
 import { POEM_SIZE_OPTIONS, type PoemSizeId } from "@/workshop/appearance/appearance";
 import { ReadAloudButton } from "@/workshop/voice/ReadAloudButton";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
-import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 
 function tidyDoubleSpaces(view: EditorView) {
   const text = view.state.doc.toString();
@@ -76,10 +75,6 @@ export function FormatToolbar({
   onShowLineSyllablesChange,
   showRhymeScheme,
   onShowRhymeSchemeChange,
-  rhymeBreadth,
-  onRhymeBreadthChange,
-  wordLookupEnabled,
-  onWordLookupToggle,
   lineFocusMode,
   onLineFocusModeChange,
 }: {
@@ -92,10 +87,6 @@ export function FormatToolbar({
   onShowLineSyllablesChange: (next: boolean) => void;
   showRhymeScheme: boolean;
   onShowRhymeSchemeChange: (next: boolean) => void;
-  rhymeBreadth: RhymeBreadth;
-  onRhymeBreadthChange: (b: RhymeBreadth) => void;
-  wordLookupEnabled?: boolean;
-  onWordLookupToggle?: () => void;
   lineFocusMode?: boolean;
   onLineFocusModeChange?: (next: boolean) => void;
 }) {
@@ -190,27 +181,6 @@ export function FormatToolbar({
         A B
       </button>
 
-      {showRhymeScheme && (
-        <span className="fmt-breadth-group" role="group" aria-label="Rhyme strictness">
-          {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
-            <button
-              key={b}
-              type="button"
-              className={`fmt-breadth-btn${rhymeBreadth === b ? " is-active" : ""}`}
-              aria-pressed={rhymeBreadth === b}
-              title={
-                b === "strict" ? "Strict — last 4 letters must match" :
-                b === "near"   ? "Near — vowel tail match (default)" :
-                                 "Broad — last 2 letters"
-              }
-              onMouseDown={(e) => { e.preventDefault(); onRhymeBreadthChange(b); }}
-            >
-              {b === "strict" ? "=" : b === "near" ? "≈" : "~"}
-            </button>
-          ))}
-        </span>
-      )}
-
       <span className="fmt-sep" aria-hidden />
 
       <button
@@ -262,23 +232,6 @@ export function FormatToolbar({
           onMouseDown={(e) => { e.preventDefault(); onReadingMode(); }}
         >
           ☰
-        </button>
-      )}
-      {onWordLookupToggle !== undefined && (
-        <button
-          type="button"
-          className={`fmt-btn fmt-tidy-btn fmt-word-lookup-btn fmt-labeled-btn${wordLookupEnabled ? " is-on" : ""}`}
-          {...hint(
-            wordLookupEnabled
-              ? "Word lookup: on — click to turn off synonyms/definitions popup"
-              : "Word lookup: off — click to enable synonyms/definitions on word selection",
-          )}
-          aria-pressed={wordLookupEnabled}
-          aria-label={wordLookupEnabled ? "Word lookup on" : "Word lookup off"}
-          onMouseDown={(e) => { e.preventDefault(); onWordLookupToggle(); }}
-        >
-          <span className="fmt-btn-icon" aria-hidden>W?</span>
-          <span className="fmt-btn-label">Lookup</span>
         </button>
       )}
       {onLineFocusModeChange !== undefined && (

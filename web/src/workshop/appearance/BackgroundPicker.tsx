@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import "./BackgroundPicker.css";
 import {
   BACKGROUND_OPTIONS,
@@ -9,6 +9,15 @@ import {
 import { generateBackground } from "./generate-background";
 
 const PRESET_OPTIONS = BACKGROUND_OPTIONS.filter((o) => o.id !== "custom");
+
+const EDITABLE_COLORS: { key: keyof CustomBackgroundTheme; label: string }[] = [
+  { key: "bg",      label: "Background" },
+  { key: "surface", label: "Surface" },
+  { key: "accent",  label: "Accent" },
+  { key: "text",    label: "Text" },
+  { key: "muted",   label: "Muted" },
+  { key: "border",  label: "Border" },
+];
 
 /** Tiny inline preview card for a generated theme */
 function ThemePreviewCard({
@@ -21,20 +30,54 @@ function ThemePreviewCard({
   return (
     <div
       className="theme-preview-card"
-      style={{
-        background: theme.bg,
-        borderColor: theme.border,
-      }}
+      style={{ background: theme.bg, borderColor: theme.border }}
     >
-      {/* Mini text lines */}
       <div className="theme-preview-lines">
         <div className="theme-preview-line theme-preview-line--title" style={{ background: theme.text }} />
         <div className="theme-preview-line" style={{ background: theme.muted }} />
         <div className="theme-preview-line theme-preview-line--short" style={{ background: theme.muted }} />
       </div>
-      {/* Accent dot */}
       <div className="theme-preview-accent" style={{ background: theme.accent }} />
       {label && <div className="theme-preview-name" style={{ color: theme.muted }}>{label}</div>}
+    </div>
+  );
+}
+
+function ColorEditor({
+  theme,
+  onChange,
+}: {
+  theme: CustomBackgroundTheme;
+  onChange: (next: CustomBackgroundTheme) => void;
+}) {
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  return (
+    <div className="bg-color-editor">
+      <p className="bg-color-editor-hint">Click a swatch to adjust individual colours:</p>
+      <div className="bg-color-swatches">
+        {EDITABLE_COLORS.map(({ key, label }) => {
+          const value = theme[key] as string;
+          return (
+            <label key={key} className="bg-color-swatch-label" title={label}>
+              <span
+                className="bg-color-swatch"
+                style={{ background: value }}
+                onClick={() => inputRefs.current[key]?.click()}
+              />
+              <span className="bg-color-swatch-name">{label}</span>
+              <input
+                ref={(el) => { inputRefs.current[key] = el; }}
+                type="color"
+                value={value.startsWith("#") ? value : "#888888"}
+                className="bg-color-input"
+                onChange={(e) => onChange({ ...theme, [key]: e.target.value })}
+                aria-label={`Edit ${label} colour`}
+              />
+            </label>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -57,6 +100,7 @@ export function BackgroundPicker(props: {
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [draft, setDraft] = useState<CustomBackgroundTheme | null>(null);
+  const [editingActive, setEditingActive] = useState(false);
 
   const handleGenerate = useCallback(async () => {
     const trimmed = prompt.trim();
@@ -87,7 +131,16 @@ export function BackgroundPicker(props: {
 
   const handleRemoveCustom = useCallback(() => {
     onChange({ ...appearance, background: "default", customBackground: null });
+    setEditingActive(false);
   }, [appearance, onChange]);
+
+  const handleActiveColorChange = useCallback((next: CustomBackgroundTheme) => {
+    onChange({ ...appearance, background: "custom", customBackground: next });
+  }, [appearance, onChange]);
+
+  const handleDraftColorChange = useCallback((next: CustomBackgroundTheme) => {
+    setDraft(next);
+  }, []);
 
   const isCustomActive = background === "custom" && appearance.customBackground != null;
 
@@ -133,10 +186,27 @@ export function BackgroundPicker(props: {
               <span className="bg-creator-active-label">{appearance.customBackground!.label}</span>
               <span className="bg-creator-active-hint">Currently active</span>
             </div>
-            <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCustom}>
-              Remove
-            </button>
+            <div className="bg-creator-active-actions">
+              <button
+                type="button"
+                className="btn btn--ghost btn--sm"
+                onClick={() => setEditingActive((v) => !v)}
+              >
+                {editingActive ? "Done editing" : "Edit colours"}
+              </button>
+              <button type="button" className="btn btn--ghost btn--sm" onClick={handleRemoveCustom}>
+                Remove
+              </button>
+            </div>
           </div>
+        )}
+
+        {/* Colour editor for active theme */}
+        {isCustomActive && editingActive && appearance.customBackground && (
+          <ColorEditor
+            theme={appearance.customBackground}
+            onChange={handleActiveColorChange}
+          />
         )}
 
         {/* Prompt input */}
@@ -184,7 +254,7 @@ export function BackgroundPicker(props: {
           <p className="bg-creator-error" role="alert">{generateError}</p>
         )}
 
-        {/* Draft preview */}
+        {/* Draft preview + colour editing */}
         {draft && (
           <div className="bg-creator-draft">
             <ThemePreviewCard theme={draft} label={draft.label} />
@@ -213,6 +283,7 @@ export function BackgroundPicker(props: {
                 ↺
               </button>
             </div>
+            <ColorEditor theme={draft} onChange={handleDraftColorChange} />
           </div>
         )}
       </div>

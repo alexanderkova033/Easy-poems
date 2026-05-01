@@ -34,6 +34,7 @@ import {
 } from "./RevisionCompareSection";
 import { computeVocabStats, ttrLabel } from "@/workshop/analysis/vocab-richness";
 import type { ToolTab } from "@/workshop/shell/workshop-helpers";
+import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 
 const LINES_TABLE_MAX = 400;
 const METER_TABLE_MAX = 400;
@@ -230,6 +231,8 @@ export interface WorkshopToolPanelsProps {
   poemLines: string[];
   onInsertSuggestion?: (text: string) => void;
   onReplaceLine?: (lineNum: number, text: string) => void;
+  rhymeBreadth: RhymeBreadth;
+  onRhymeBreadthChange: (b: RhymeBreadth) => void;
 }
 
 export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
@@ -287,6 +290,8 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
     poemLines,
     onInsertSuggestion,
     onReplaceLine,
+    rhymeBreadth,
+    onRhymeBreadthChange,
   } = props;
 
   const vocabStats = useMemo(() => computeVocabStats(poemLines), [poemLines]);
@@ -1241,6 +1246,25 @@ export function WorkshopToolPanels(props: WorkshopToolPanelsProps) {
           <LiveSectionTitle>Rhyme &amp; sound hints</LiveSectionTitle>
           {docStats.nonEmptyLines === 0 ? <NoLinesYetHint /> : null}
           <RhymeFinder />
+          <div className="rhyme-breadth-row" role="group" aria-label="Rhyme match strictness">
+            <span className="rhyme-breadth-label">Match strictness:</span>
+            {(["strict", "near", "broad"] as RhymeBreadth[]).map((b) => (
+              <button
+                key={b}
+                type="button"
+                className={`small-btn rhyme-breadth-btn${rhymeBreadth === b ? " active" : ""}`}
+                aria-pressed={rhymeBreadth === b}
+                onClick={() => onRhymeBreadthChange(b)}
+                title={
+                  b === "strict" ? "Strict — last 4 letters must match" :
+                  b === "near"   ? "Near — vowel tail match (default)" :
+                                   "Broad — last 2 letters"
+                }
+              >
+                {b === "strict" ? "Strict =" : b === "near" ? "Near ≈" : "Broad ~"}
+              </button>
+            ))}
+          </div>
           {heavyToolsStale ? (
             <p
               className="tools-stale-hint muted small"

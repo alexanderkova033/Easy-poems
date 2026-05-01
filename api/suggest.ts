@@ -19,16 +19,17 @@ const PROMPTS: Record<SuggestType, string> = {
 
   spark: `The user needs a creative spark to break out of a rut. Based on the poem's existing theme and mood, suggest 3 unexpected creative directions, images, or "what if" prompts that could take the poem somewhere surprising and memorable. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each is 1 sentence. No markdown fences.`,
 
-  line: `The user wants to improve a specific line in their poem. Study the poem's full context — its tone, imagery, rhythm, and voice — then suggest 4 distinct rewrites of the target line. Each rewrite should take a different approach: vary the imagery, rhythm, or angle while staying true to the poem's overall voice. Keep each to 1-2 lines. Return valid JSON: { "suggestions": ["...", "...", "...", "..."] }. No markdown fences.`,
+  line: `The user wants to improve a specific line in their poem. Study the poem's full context — its tone, imagery, rhythm, and voice — then suggest 4 distinct rewrites of the target line. Each rewrite should take a different approach: vary the imagery, rhythm, or angle while staying true to the poem's overall voice. Keep each to 1-2 lines. Return valid JSON: { "suggestions": ["...", "...", "...", "..."] }. No markdown fences. If a syllable count is specified, match it closely.`,
 };
 
-function buildPrompt(title: string, lines: string[], context: string, targetLine?: string): string {
+function buildPrompt(title: string, lines: string[], context: string, targetLine?: string, syllableTarget?: number): string {
   const parts: string[] = [];
   if (title.trim()) parts.push(`Title: ${title.trim()}`);
   if (lines.length > 0) {
     parts.push("Poem so far:\n" + lines.map((l, i) => `${i + 1}: ${l}`).join("\n"));
   }
   if (targetLine) parts.push(`Line to rewrite: "${targetLine}"`);
+  if (syllableTarget != null && syllableTarget > 0) parts.push(`Target syllable count: ${syllableTarget} syllables. Each rewrite should match this count as closely as possible.`);
   if (context.trim()) parts.push(`User note: ${context.trim()}`);
   return parts.join("\n\n");
 }
@@ -53,6 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     type?: unknown;
     context?: unknown;
     targetLine?: unknown;
+    syllableTarget?: unknown;
     model?: unknown;
   };
 
@@ -65,6 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const lines = Array.isArray(body.lines) ? (body.lines as unknown[]).map((l) => String(l ?? "")) : [];
   const context = typeof body.context === "string" ? body.context : "";
   const targetLine = typeof body.targetLine === "string" ? body.targetLine : undefined;
+  const syllableTarget = typeof body.syllableTarget === "number" && body.syllableTarget > 0 ? body.syllableTarget : undefined;
   const model = typeof body.model === "string" ? body.model : "gpt-4o-mini";
 
   const result = await callOpenAI(
@@ -73,7 +76,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       messages: [
         { role: "system", content: PROMPTS[suggestType] },
-        { role: "user", content: buildPrompt(title, lines, context, targetLine) },
+        { role: "user", content: buildPrompt(title, lines, context, targetLine, syllableTarget) },
       ],
       max_tokens: suggestType === "line" ? 700 : 600,
       temperature: 0.85,

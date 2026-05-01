@@ -51,13 +51,26 @@
   }
 }
 
+.style-modal-settings {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+
+.style-modal-settings-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 0.55rem;
+}
+
 .appearance-hints-toggle {
   display: flex;
   align-items: flex-start;
   gap: 0.55rem;
-  margin-top: 0.85rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  margin-top: 0.55rem;
   font-size: 0.86rem;
   line-height: 1.45;
   color: var(--muted);

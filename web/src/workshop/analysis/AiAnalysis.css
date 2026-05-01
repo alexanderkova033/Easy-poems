@@ -1413,4 +1413,137 @@
     font-size: 0.82rem;
   }
 }
+
+/* ======================================================
+   AI Chat
+   ====================================================== */
+
+.ai-chat {
+  margin-top: 1.1rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  padding-top: 0.85rem;
+}
+
+.ai-chat-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-bottom: 0.65rem;
+}
+
+.ai-chat-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.ai-chat-hint {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.ai-chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  max-height: 16rem;
+  overflow-y: auto;
+  margin-bottom: 0.65rem;
+  padding: 0.5rem;
+  background: color-mix(in srgb, var(--bg) 55%, var(--surface));
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  scrollbar-width: thin;
+}
+
+.ai-chat-msg {
+  display: flex;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.ai-chat-msg-role {
+  flex-shrink: 0;
+  font-weight: 700;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: 0.1rem;
+  min-width: 2.2rem;
+}
+
+.ai-chat-msg-user .ai-chat-msg-role {
+  color: var(--accent);
+}
+
+.ai-chat-msg-assistant .ai-chat-msg-role {
+  color: var(--muted);
+}
+
+.ai-chat-msg-text {
+  flex: 1;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.ai-chat-msg-loading {
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.ai-chat-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--muted);
+  animation: ssp-bounce 0.9s ease-in-out infinite;
+}
+.ai-chat-dot:nth-child(2) { animation-delay: 0.15s; }
+.ai-chat-dot:nth-child(3) { animation-delay: 0.3s; }
+
+.ai-chat-error {
+  font-size: 0.78rem;
+  color: var(--danger, #d95f5f);
+  margin: 0 0 0.5rem;
+}
+
+.ai-chat-input-row {
+  display: flex;
+  gap: 0.4rem;
+  align-items: flex-end;
+}
+
+.ai-chat-input {
+  flex: 1;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.84rem;
+  resize: none;
+  line-height: 1.5;
+  min-height: 2.8rem;
+  transition: border-color 0.14s;
+}
+.ai-chat-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.ai-chat-input::placeholder {
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.ai-chat-send {
+  flex-shrink: 0;
+  align-self: flex-end;
+}
+
+.ai-chat-enter-hint {
+  margin-top: 0.3rem;
+  text-align: right;
+}
 

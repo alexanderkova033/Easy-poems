@@ -1010,6 +1010,27 @@
   border-bottom: none;
 }
 
+.rhyme-breadth-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.85rem;
+}
+
+.rhyme-breadth-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-right: 0.1rem;
+}
+
+.rhyme-breadth-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  font-weight: 700;
+}
+
 @media (prefers-color-scheme: light) {
   .tools-panel {
     box-shadow: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
@@ -1473,6 +1494,20 @@
   line-height: 1.45;
 }
 
+/* Word-style calm: generous line height in the poem editor on desktop */
+@media (min-width: 900px) {
+  .cm-editor {
+    line-height: 1.85 !important;
+  }
+}
+
+/* Soften border colour in light mode for less visual noise */
+@media (prefers-color-scheme: light) {
+  .editor-meta-grid input {
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+  }
+}
+
 .error.compact {
   margin: 0 0 0.5rem;
   font-size: 0.82rem;
@@ -1581,6 +1616,8 @@
   .results,
   .privacy {
     box-shadow: var(--shadow-1);
+    /* Slightly warmer panel background for a Word/document feel */
+    background: color-mix(in srgb, var(--surface) 94%, #fefffe);
   }
 }
 

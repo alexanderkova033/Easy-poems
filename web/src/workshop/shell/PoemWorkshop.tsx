@@ -26,7 +26,6 @@ import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/a
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
 import { checkShareHash } from "@/workshop/sharing/sharing";
-import { WordLookupPopup } from "@/workshop/vocabulary/WordLookupPopup";
 import { CommandPalette, toolTabActions, type CommandPaletteAction } from "@/workshop/palette/CommandPalette";
 import { FindReplaceBar } from "@/workshop/editor/FindReplaceBar";
 import {
@@ -198,7 +197,6 @@ export function PoemWorkshop() {
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
-  const lastPanelScrollRef = useRef<number>(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
 
   const overlayOpenCount =
@@ -228,32 +226,6 @@ export function PoemWorkshop() {
     overlayOpenCountPrev.current = overlayOpenCount;
   }, [overlayOpenCount]);
 
-  // Scroll the main page when the tools panel is at its boundary and the user
-  // has been idle inside the panel for 2 seconds — prevents accidental overscroll
-  // while still allowing intentional page scrolling after a deliberate pause.
-  useEffect(() => {
-    const FALLBACK_DELAY_MS = 500;
-    const panel = toolsPanelRef.current;
-    if (!panel) return;
-
-    const onWheel = (e: WheelEvent) => {
-      if (e.deltaY === 0) return;
-      const { scrollTop, scrollHeight, clientHeight } = panel;
-      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
-      const atTop = scrollTop <= 0;
-      const panelCanScroll = e.deltaY > 0 ? !atBottom : !atTop;
-
-      if (panelCanScroll) {
-        lastPanelScrollRef.current = Date.now();
-      } else if (Date.now() - lastPanelScrollRef.current >= FALLBACK_DELAY_MS) {
-        e.preventDefault();
-        window.scrollBy({ top: e.deltaY });
-      }
-    };
-
-    panel.addEventListener("wheel", onWheel, { passive: false });
-    return () => panel.removeEventListener("wheel", onWheel);
-  }, []);
 
   // Reset tools panel scroll to top when switching tabs so you always start at the top.
   useEffect(() => {
@@ -982,59 +954,64 @@ export function PoemWorkshop() {
         </div>
 
         {!isFocusMode ? (
-          <nav className="topbar-quick topbar-quick-slim" aria-label="Editing actions" data-tour-id="topbar-actions">
+          <nav className="topbar-quick topbar-icon-row" aria-label="Editing actions" data-tour-id="topbar-actions">
+            {/* Commands */}
             <button
               type="button"
-              className="topbar-quick-btn topbar-quick-cmd"
+              className="topbar-icon-btn"
               onClick={() => setIsCmdkOpen(true)}
-              aria-label="Open command palette"
-              {...hint("Commands — search export, focus mode, templates, and more (⌘/Ctrl+K)")}
+              aria-label="Command palette (⌘K)"
+              {...hint("Commands — search all features (⌘/Ctrl+K)")}
             >
-              <span className="topbar-quick-label">Commands</span>
-              <span className="topbar-quick-keys">
-                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-                <span className="topbar-quick-plus">+</span>
-                <kbd className="kbd-hint">K</kbd>
-              </span>
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
+                <path d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM2 8a6 6 0 1 1 10.89 3.476l4.817 4.817a1 1 0 0 1-1.414 1.414l-4.816-4.816A6 6 0 0 1 2 8z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"/>
+              </svg>
+              <span className="topbar-icon-label">Search</span>
             </button>
+            {/* Find */}
             <button
               type="button"
-              className="topbar-quick-btn topbar-quick-cmd"
-              onClick={() => {
-                setFindMode("find");
-                setIsFindOpen(true);
-              }}
-              aria-label="Find in poem"
+              className="topbar-icon-btn"
+              onClick={() => { setFindMode("find"); setIsFindOpen(true); }}
+              aria-label="Find in poem (⌘F)"
               {...hint("Find text in the poem (⌘/Ctrl+F)")}
             >
-              <span className="topbar-quick-label">Find</span>
-              <span className="topbar-quick-keys">
-                <kbd className="kbd-hint">⌘</kbd>/<kbd className="kbd-hint">Ctrl</kbd>
-                <span className="topbar-quick-plus">+</span>
-                <kbd className="kbd-hint">F</kbd>
-              </span>
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
+                <path d="M4 5h12M4 10h8M4 15h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="15" cy="15" r="3" stroke="currentColor" strokeWidth="1.6"/>
+                <path d="M17.5 17.5l1.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+              </svg>
+              <span className="topbar-icon-label">Find</span>
             </button>
+            {/* Share */}
             <button
               type="button"
-              className="topbar-quick-btn topbar-quick-shortcuts"
-              onClick={() => setIsShortcutsOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={isShortcutsOpen}
-              aria-label="Keyboard shortcuts"
-              {...hint("All keyboard shortcuts for the workshop")}
-            >
-              <span className="topbar-quick-label">Shortcuts</span>
-            </button>
-            <button
-              type="button"
-              className="topbar-quick-btn"
+              className="topbar-icon-btn"
               onClick={() => setIsShareOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={isShareOpen}
               aria-label="Share poem"
-              {...hint("Share — generate a link to this poem (encoded in URL, no server)")}
+              {...hint("Share — generate a link to this poem")}
             >
-              <span className="topbar-quick-label">Share</span>
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
+                <circle cx="15" cy="5" r="2" stroke="currentColor" strokeWidth="1.6"/>
+                <circle cx="5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6"/>
+                <circle cx="15" cy="15" r="2" stroke="currentColor" strokeWidth="1.6"/>
+                <path d="M7 9l6-3M7 11l6 3" stroke="currentColor" strokeWidth="1.4"/>
+              </svg>
+              <span className="topbar-icon-label">Share</span>
+            </button>
+            {/* Shortcuts */}
+            <button
+              type="button"
+              className="topbar-icon-btn"
+              onClick={() => setIsShortcutsOpen(true)}
+              aria-label="Keyboard shortcuts"
+              {...hint("All keyboard shortcuts")}
+            >
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
+                <rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/>
+                <path d="M5 9h1M9 9h1M13 9h1M7 12h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+              <span className="topbar-icon-label">Keys</span>
             </button>
           </nav>
         ) : null}
@@ -1783,14 +1760,29 @@ export function PoemWorkshop() {
               </button>
             </div>
             <AppearanceFormFields appearance={appearance} onChange={setAppearance} />
-            <label className="appearance-hints-toggle">
-              <input
-                type="checkbox"
-                checked={hoverHintsEnabled}
-                onChange={(e) => setHoverHintsEnabled(e.target.checked)}
-              />
-              <span>Show button hints on hover (hover devices only).</span>
-            </label>
+            <div className="style-modal-settings">
+              <h3 className="style-modal-settings-title">Editor settings</h3>
+              <label className="appearance-hints-toggle">
+                <input
+                  type="checkbox"
+                  checked={wordLookupEnabled}
+                  onChange={(e) => {
+                    const next = e.target.checked;
+                    setWordLookupEnabled(next);
+                    try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, next ? "1" : "0"); } catch { /* ignore */ }
+                  }}
+                />
+                <span>Show "Define" button when selecting a word (requires word lookup service).</span>
+              </label>
+              <label className="appearance-hints-toggle">
+                <input
+                  type="checkbox"
+                  checked={hoverHintsEnabled}
+                  onChange={(e) => setHoverHintsEnabled(e.target.checked)}
+                />
+                <span>Show button hints on hover (hover devices only).</span>
+              </label>
+            </div>
           </section>
         </div>
       ) : null}
@@ -2057,14 +2049,6 @@ export function PoemWorkshop() {
                     onShowLineSyllablesChange={setShowLineSyllables}
                     showRhymeScheme={showRhymeScheme}
                     onShowRhymeSchemeChange={setShowRhymeScheme}
-                    rhymeBreadth={rhymeBreadth}
-                    onRhymeBreadthChange={setRhymeBreadth}
-                    wordLookupEnabled={wordLookupEnabled}
-                    onWordLookupToggle={() => {
-                      const next = !wordLookupEnabled;
-                      setWordLookupEnabled(next);
-                      try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, next ? "1" : "0"); } catch { /* ignore */ }
-                    }}
                     lineFocusMode={lineFocusMode}
                     onLineFocusModeChange={setLineFocusMode}
                   />
@@ -2094,20 +2078,13 @@ export function PoemWorkshop() {
                       }}
                     />
                     <InlineRhymeHint editorViewRef={m.editorViewRef} />
-                    <WordLookupPopup
-                      editorViewRef={m.editorViewRef}
-                      enabled={wordLookupEnabled}
-                      onDisable={() => {
-                        setWordLookupEnabled(false);
-                        try { localStorage.setItem(STORAGE_KEY_WORD_LOOKUP_ENABLED, "0"); } catch { /* ignore */ }
-                      }}
-                    />
                     {selectionText && selectionRect && (
                       <SelectionSuggestPopover
                         anchorRect={selectionRect}
                         selectedText={selectionText}
                         poemTitle={m.title}
                         poemLines={m.lines}
+                        wordLookupEnabled={wordLookupEnabled}
                         onApply={(text) => {
                           const view = m.editorViewRef.current;
                           if (!view) return;
@@ -2352,6 +2329,8 @@ export function PoemWorkshop() {
             poemLines={m.lines}
             onInsertSuggestion={m.insertTextAtEnd}
             onReplaceLine={(lineNum, text) => m.applyLineRewrite(lineNum, lineNum, text)}
+            rhymeBreadth={rhymeBreadth}
+            onRhymeBreadthChange={setRhymeBreadth}
           />
         </aside>
       </main>

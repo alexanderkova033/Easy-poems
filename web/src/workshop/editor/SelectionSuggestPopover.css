@@ -1,6 +1,6 @@
 .ssp-wrap {
   z-index: 900;
-  width: 280px;
+  width: 300px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -18,7 +18,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.55rem 0.75rem 0.45rem;
+  padding: 0.5rem 0.75rem 0.4rem;
   border-bottom: 1px solid var(--border);
 }
 
@@ -29,21 +29,142 @@
   letter-spacing: 0.03em;
 }
 
+.ssp-header-actions {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.ssp-back,
 .ssp-close {
   border: none;
   background: none;
   color: var(--muted);
   font-size: 0.8rem;
   cursor: pointer;
-  padding: 0.1rem 0.25rem;
+  padding: 0.1rem 0.3rem;
   border-radius: 4px;
   line-height: 1;
 }
+.ssp-back:hover,
 .ssp-close:hover { color: var(--text); background: var(--bg); }
 
+.ssp-source {
+  display: flex;
+  gap: 0.35rem;
+  align-items: baseline;
+  padding: 0.35rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
+}
+
+.ssp-source-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.ssp-source-text {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Menu ── */
+.ssp-menu {
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.ssp-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.83rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.ssp-menu-btn:hover {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.ssp-menu-btn-primary {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  color: var(--accent);
+  font-weight: 650;
+}
+
+.ssp-menu-btn-primary:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border-color: var(--accent);
+}
+
+.ssp-menu-icon {
+  font-size: 1rem;
+  opacity: 0.75;
+}
+
+/* ── Syllable row ── */
+.ssp-syllable-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg) 40%, var(--surface));
+  flex-wrap: wrap;
+}
+
+.ssp-syllable-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.ssp-syllable-input {
+  width: 4rem;
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  text-align: center;
+}
+.ssp-syllable-input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.ssp-syllable-hint {
+  font-size: 0.68rem;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* ── Loading ── */
 .ssp-loading {
   display: flex;
   gap: 0.35rem;
+  align-items: center;
   justify-content: center;
   padding: 0.85rem;
 }
@@ -63,13 +184,13 @@
   40%           { transform: scale(1);   opacity: 1; }
 }
 
-.ssp-error {
-  margin: 0;
-  padding: 0.7rem 0.75rem;
-  font-size: 0.78rem;
-  color: var(--danger, #d95f5f);
+.ssp-loading-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-left: 0.25rem;
 }
 
+/* ── Rewrite results ── */
 .ssp-list {
   list-style: none;
   margin: 0;
@@ -123,9 +244,7 @@
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .ssp-btn.is-copied { color: var(--ai-score-high, #5fba7d); border-color: var(--ai-score-high, #5fba7d); }
-.ssp-apply {
-  font-weight: 650;
-}
+.ssp-apply { font-weight: 650; }
 
 .ssp-idle {
   padding: 0.6rem 0.75rem;
@@ -152,25 +271,18 @@
   border-color: var(--accent);
 }
 
-.ssp-loading {
-  display: flex;
-  gap: 0.35rem;
-  align-items: center;
-  justify-content: center;
-  padding: 0.85rem;
-}
-
-.ssp-loading-label {
-  font-size: 0.75rem;
-  color: var(--muted);
-  margin-left: 0.25rem;
-}
-
 .ssp-error-wrap {
   padding: 0.5rem 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.ssp-error {
+  margin: 0;
+  padding: 0.7rem 0.75rem;
+  font-size: 0.78rem;
+  color: var(--danger, #d95f5f);
 }
 
 .ssp-retry-btn {
@@ -189,29 +301,74 @@
 }
 .ssp-retry-btn:hover { color: var(--accent); border-color: var(--accent); }
 
-.ssp-source {
-  display: flex;
-  gap: 0.35rem;
-  align-items: baseline;
-  padding: 0.4rem 0.75rem;
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 60%, var(--surface));
+/* ── Define mode ── */
+.ssp-define {
+  padding: 0.6rem 0.75rem 0.75rem;
 }
 
-.ssp-source-label {
+.ssp-define-pos {
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+}
+
+.ssp-define-defs {
+  margin: 0 0 0.65rem 1.15rem;
+  padding: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ssp-define-none {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 0 0 0.5rem;
+}
+
+.ssp-define-syns {
+  border-top: 1px solid var(--border);
+  padding-top: 0.55rem;
+  margin-top: 0.1rem;
+}
+
+.ssp-define-syns-label {
+  display: block;
   font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
-  flex-shrink: 0;
+  margin-bottom: 0.35rem;
 }
 
-.ssp-source-text {
-  font-size: 0.75rem;
-  color: var(--muted);
-  font-style: italic;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.ssp-define-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.ssp-syn-chip {
+  padding: 0.18rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.ssp-syn-chip:hover {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-color: var(--accent);
+  color: var(--accent);
 }

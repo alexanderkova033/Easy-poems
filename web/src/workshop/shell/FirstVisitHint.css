@@ -1,172 +1,72 @@
 /* ── Welcome banner (first-visit) ───────────────────────────────────────── */
 @keyframes welcome-in {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .welcome-banner {
-  animation: welcome-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--bg) 80%, var(--accent) 20%);
-  padding: 1.4rem 1.5rem 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
+  animation: welcome-in 0.38s cubic-bezier(0.22, 1, 0.36, 1) backwards;
   flex-shrink: 0;
 }
 
-/* Headline row */
-.welcome-headline {
+/* Minimal inline strip version */
+.welcome-banner-minimal {
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--accent) 30%);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 85%, var(--accent) 5%);
+  padding: 0.65rem 1rem;
+}
+
+.welcome-minimal-body {
   display: flex;
-  align-items: flex-start;
-  gap: 0.85rem;
+  align-items: center;
+  gap: 0.7rem;
 }
 
 .welcome-leaf {
-  font-size: 1.75rem;
+  font-size: 1.15rem;
   line-height: 1;
   color: var(--accent);
   flex-shrink: 0;
-  margin-top: 0.05rem;
 }
 
-.welcome-title {
-  margin: 0 0 0.2rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.25;
-}
-
-.welcome-sub {
-  margin: 0;
-  font-size: 0.84rem;
+.welcome-minimal-text {
+  flex: 1;
+  font-size: 0.86rem;
   color: var(--muted);
-}
-
-/* Comic strip */
-.welcome-comic-strip {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.6rem;
-}
-
-.welcome-comic-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 0.3rem;
-  padding: 0.85rem 0.6rem 0.75rem;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, var(--accent) 20%);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface) 70%, var(--bg));
-  position: relative;
-}
-
-.welcome-comic-icon {
-  font-size: 1.5rem;
-  line-height: 1;
-  margin-bottom: 0.1rem;
-}
-
-.welcome-comic-num {
-  position: absolute;
-  top: -0.55rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1.2rem;
-  height: 1.2rem;
-  border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.66rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.welcome-comic-title {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1.3;
-}
-
-.welcome-comic-desc {
-  font-size: 0.73rem;
-  color: var(--muted);
-  line-height: 1.4;
-}
-
-/* 2-col on narrow screens */
-@media (max-width: 540px) {
-  .welcome-comic-strip {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.5rem;
-  }
-  .welcome-comic-cell {
-    padding: 0.75rem 0.5rem 0.65rem;
-  }
-  .welcome-comic-title {
-    font-size: 0.74rem;
-  }
-  .welcome-comic-desc {
-    font-size: 0.68rem;
-  }
-}
-
-/* Hide keyboard shortcut hint on touch devices — not relevant */
-@media (hover: none) and (pointer: coarse) {
-  .welcome-cmdk-hint {
-    display: none;
-  }
-}
-
-.welcome-cmdk-hint {
-  margin: 0;
-  font-size: 0.82rem;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 0.2rem;
-  flex-wrap: wrap;
-}
-
-.welcome-kbd {
-  display: inline-block;
-  padding: 0.1rem 0.38rem;
-  border-radius: 5px;
-  border: 1px solid color-mix(in srgb, var(--border) 90%, var(--accent));
-  background: color-mix(in srgb, var(--surface) 80%, var(--bg));
-  font-family: var(--font-metric, ui-monospace, monospace);
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text);
-  box-shadow: 0 1px 2px color-mix(in srgb, #000 12%, transparent);
   line-height: 1.5;
 }
 
-/* Action buttons row */
-.welcome-banner-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
+.welcome-minimal-text strong {
+  color: var(--text);
+}
+
+.welcome-guide-inline {
+  font-size: inherit;
+  color: var(--accent);
+}
+
+.welcome-minimal-dismiss {
+  flex-shrink: 0;
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  line-height: 1;
+  opacity: 0.6;
+}
+.welcome-minimal-dismiss:hover {
+  opacity: 1;
+  color: var(--text);
+  background: color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 @media (max-width: 540px) {
-  .welcome-banner {
-    padding: 1.1rem 1rem 1rem;
-  }
-  .welcome-banner-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .welcome-banner-actions .small-btn {
-    text-align: center;
-    justify-content: center;
+  .welcome-minimal-text {
+    font-size: 0.82rem;
   }
 }

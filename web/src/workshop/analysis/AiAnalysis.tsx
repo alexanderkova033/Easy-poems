@@ -1060,10 +1060,131 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
                 onClick={() => void handleAnalyze()}>
                 Analyze again
               </button>
+              <AiChat title={title} lines={lines} result={result} model={model} />
             </>
           )}
         </div>
       )}
     </section>
+  );
+}
+
+// ---- AI chat component ---- //
+interface ChatMessage {
+  role: "user" | "assistant";
+  text: string;
+}
+
+function AiChat({
+  title,
+  lines,
+  result,
+  model,
+}: {
+  title: string;
+  lines: string[];
+  result: PoemAnalysis | PoemComparison;
+  model: string;
+}) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [chatStatus, setChatStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [chatError, setChatError] = useState("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  const analysisContext = (() => {
+    const parts: string[] = [`Overall score: ${result.overall_score}/100`];
+    if (result.summary) parts.push(`Summary: ${result.summary}`);
+    if (result.issues.length > 0) {
+      parts.push(`Issues (${result.issues.length}): ${result.issues.slice(0, 3).map((i) => i.rationale.slice(0, 60)).join("; ")}`);
+    }
+    return parts.join("\n");
+  })();
+
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || chatStatus === "loading") return;
+    setInput("");
+    setMessages((prev) => [...prev, { role: "user", text }]);
+    setChatStatus("loading");
+    setChatError("");
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, lines, message: text, analysisContext, model }),
+      });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        throw new Error(data.error ?? `HTTP ${res.status}`);
+      }
+      const data = (await res.json()) as { reply?: string };
+      const reply = data.reply ?? "No response.";
+      setMessages((prev) => [...prev, { role: "assistant", text: reply }]);
+      setChatStatus("idle");
+      setTimeout(() => {
+        listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+      }, 50);
+    } catch (err) {
+      setChatError((err as Error).message);
+      setChatStatus("error");
+    }
+  }, [input, chatStatus, title, lines, analysisContext, model]);
+
+  return (
+    <div className="ai-chat">
+      <div className="ai-chat-header">
+        <span className="ai-chat-title">Ask about your poem</span>
+        <span className="ai-chat-hint">Chat with the AI about the feedback or your craft</span>
+      </div>
+
+      {messages.length > 0 && (
+        <div className="ai-chat-messages" ref={listRef}>
+          {messages.map((msg, i) => (
+            <div key={i} className={`ai-chat-msg ai-chat-msg-${msg.role}`}>
+              <span className="ai-chat-msg-role">{msg.role === "user" ? "You" : "AI"}</span>
+              <span className="ai-chat-msg-text">{msg.text}</span>
+            </div>
+          ))}
+          {chatStatus === "loading" && (
+            <div className="ai-chat-msg ai-chat-msg-assistant ai-chat-msg-loading">
+              <span className="ai-chat-msg-role">AI</span>
+              <span className="ai-chat-dot" /><span className="ai-chat-dot" /><span className="ai-chat-dot" />
+            </div>
+          )}
+        </div>
+      )}
+
+      {chatStatus === "error" && (
+        <p className="ai-chat-error" role="alert">{chatError}</p>
+      )}
+
+      <div className="ai-chat-input-row">
+        <textarea
+          ref={inputRef}
+          className="ai-chat-input"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder="Ask anything about your poem or the feedback…"
+          rows={2}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              void handleSend();
+            }
+          }}
+        />
+        <button
+          type="button"
+          className="small-btn small-btn-primary ai-chat-send"
+          onClick={() => void handleSend()}
+          disabled={!input.trim() || chatStatus === "loading"}
+        >
+          {chatStatus === "loading" ? "…" : "Send"}
+        </button>
+      </div>
+      <p className="ai-chat-enter-hint muted small">Enter to send · Shift+Enter for new line</p>
+    </div>
   );
 }

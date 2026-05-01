@@ -226,6 +226,50 @@
   gap: 0.5rem;
 }
 
+/* Compact icon-only topbar row */
+.topbar-icon-row {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-wrap: nowrap;
+}
+
+.topbar-icon-btn {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 8px;
+  transition: background 0.12s, color 0.12s;
+  font: inherit;
+}
+.topbar-icon-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.topbar-icon-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.topbar-icon-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+@media (max-width: 600px) {
+  .topbar-icon-label { display: none; }
+}
+
 .tool-bucket-row {
   display: flex;
   flex-wrap: wrap;
