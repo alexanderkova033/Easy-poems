@@ -847,7 +847,7 @@ html[data-workshop-bg="night"] body::before {
     repeat, repeat, repeat, repeat, repeat,
     repeat,
     no-repeat,
-    no-repeat,
+    repeat,
     repeat-x;
 }
 
@@ -1492,12 +1492,11 @@ html[data-workshop-bg="dusk"] body::before {
     radial-gradient(ellipse 30% 20% at 50% 102%, color-mix(in srgb, #ffb030 40%, transparent), transparent 52%),
     /* Indigo zenith — the twilight sky overhead */
     radial-gradient(ellipse 110% 62% at 50% 0%, color-mix(in srgb, #180840 75%, transparent), transparent 65%),
-    /* Soft crepuscular warmth — amber bands from horizon */
+    /* Soft crepuscular warmth — single smooth peak anchored near the bottom edge */
     linear-gradient(
       180deg,
-      transparent 38%,
-      color-mix(in srgb, #c05018 3.5%, transparent) 58%,
-      color-mix(in srgb, #d87030 2.5%, transparent) 78%,
+      transparent 62%,
+      color-mix(in srgb, #c05018 3%, transparent) 82%,
       transparent 100%
     ),
     /* Silhouetted tree line */
@@ -1522,11 +1521,11 @@ html[data-workshop-bg="dusk"] body::before {
     repeat-x, repeat;
 }
 
-/* Dusk: soft amber horizon glow — wide ellipses so it reads as atmospheric depth, not a line */
+/* Dusk: amber horizon glow anchored to the very bottom — wide and feathered so it never reads as a line */
 html[data-workshop-bg="dusk"]::after {
   background-image:
-    radial-gradient(ellipse 120% 30% at 50% 76%, color-mix(in srgb, #d86820 6%, transparent), transparent 100%),
-    radial-gradient(ellipse 80% 18% at 50% 76%, color-mix(in srgb, #ffb030 4%, transparent), transparent 100%);
+    radial-gradient(ellipse 130% 45% at 50% 100%, color-mix(in srgb, #d86820 14%, transparent), transparent 100%),
+    radial-gradient(ellipse 80% 25% at 50% 100%, color-mix(in srgb, #ffb030 9%, transparent), transparent 100%);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 1;
@@ -1675,7 +1674,7 @@ html[data-workshop-bg="autumn"] body::before {
     repeat, repeat,
     repeat, repeat, repeat,
     repeat,
-    no-repeat,
+    repeat,
     repeat-x,
     repeat, repeat;
 }
@@ -1824,12 +1823,6 @@ html[data-workshop-bg="summer"] body::before {
     60% 2%,
     18% 12%,
     58% 22%;
-  background-repeat:
-    repeat, repeat,
-    repeat, repeat, repeat, repeat,
-    no-repeat,
-    no-repeat,
-    no-repeat;
 }
 
 /* Summer: sky-blue/white horizon haze — wide feathered band, no hard line */
