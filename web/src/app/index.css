@@ -959,14 +959,15 @@ html[data-workshop-bg="dawn"] body::before {
       color-mix(in srgb, #fff 22%, transparent),
       transparent 42%
     ),
-    /* Dawn sky gradient — violet-lavender zenith to rose-gold horizon */
+    /* Dawn sky gradient — deep lavender zenith fading to warm rose-gold horizon */
     linear-gradient(
       180deg,
-      color-mix(in srgb, #9070c8 7%, transparent) 0%,
-      color-mix(in srgb, #c880a8 5%, transparent) 22%,
-      transparent 50%,
-      color-mix(in srgb, var(--accent) 6%, transparent) 74%,
-      color-mix(in srgb, #f8c080 8%, transparent) 100%
+      color-mix(in srgb, #6040b8 16%, transparent) 0%,
+      color-mix(in srgb, #b860a0 12%, transparent) 18%,
+      color-mix(in srgb, #e898c0 6%, transparent) 36%,
+      transparent 52%,
+      color-mix(in srgb, var(--accent) 8%, transparent) 70%,
+      color-mix(in srgb, #f88850 16%, transparent) 100%
     ),
     /* Light-scatter petal ellipses */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3Cellipse cx='40' cy='32' rx='6' ry='3.2' fill='%23b0608010' transform='rotate(-35 40 32)'/%3E%3Cellipse cx='92' cy='48' rx='5' ry='2.8' fill='%23a050780d' transform='rotate(22 92 48)'/%3E%3Cellipse cx='128' cy='88' rx='7' ry='3.5' fill='%23c0709010' transform='rotate(-15 128 88)'/%3E%3Cellipse cx='56' cy='108' rx='4.5' ry='2.5' fill='%239048680c' transform='rotate(48 56 108)'/%3E%3Ccircle cx='72' cy='64' r='0.9' fill='%23fff' fill-opacity='0.18'/%3E%3Ccircle cx='110' cy='124' r='0.7' fill='%23fff' fill-opacity='0.14'/%3E%3C/svg%3E");
@@ -1475,6 +1476,10 @@ html[data-workshop-bg="dusk"] body::before {
     0 0, center top,
     50% 100%,
     12% 8%;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat, repeat,
+    repeat-x, repeat;
 }
 
 html[data-workshop-bg="dusk"] body::after {
@@ -1751,32 +1756,22 @@ html[data-workshop-bg="summer"] body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160'%3E%3Cellipse cx='80' cy='42' rx='55' ry='14' fill='%23fff' fill-opacity='0.10'/%3E%3Cellipse cx='62' cy='42' rx='28' ry='10' fill='%23fff' fill-opacity='0.07'/%3E%3Cellipse cx='108' cy='42' rx='32' ry='10' fill='%23fff' fill-opacity='0.07'/%3E%3Cellipse cx='240' cy='58' rx='48' ry='12' fill='%23fff' fill-opacity='0.08'/%3E%3Cellipse cx='220' cy='58' rx='26' ry='9' fill='%23fff' fill-opacity='0.06'/%3E%3Cellipse cx='268' cy='58' rx='28' ry='9' fill='%23fff' fill-opacity='0.06'/%3E%3C/svg%3E"),
     /* Shimmer / heat shimmer dots */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='40' cy='30' r='1.4' fill='%23fff082' fill-opacity='0.50'/%3E%3Ccircle cx='110' cy='18' r='1.1' fill='%23ffe664' fill-opacity='0.45'/%3E%3Ccircle cx='168' cy='36' r='1.6' fill='%23fff596' fill-opacity='0.42'/%3E%3Ccircle cx='25' cy='76' r='0.9' fill='%23ffee76' fill-opacity='0.36'/%3E%3Ccircle cx='86' cy='60' r='1.3' fill='%23fff28a' fill-opacity='0.32'/%3E%3Ccircle cx='152' cy='68' r='1.1' fill='%23fff8a0' fill-opacity='0.28'/%3E%3Ccircle cx='62' cy='118' r='0.9' fill='%23fff080' fill-opacity='0.22'/%3E%3Ccircle cx='138' cy='108' r='1.1' fill='%23fff594' fill-opacity='0.18'/%3E%3C/svg%3E"),
-    /* Sunbeam shafts from upper-right */
-    repeating-linear-gradient(
-      138deg,
-      transparent,
-      transparent 22px,
-      color-mix(in srgb, #fffae0 2.2%, transparent) 22px,
-      color-mix(in srgb, #fffae0 2.2%, transparent) 30px
-    ),
-    /* Swallow silhouettes against the bright sky */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='180'%3E%3Cpath fill='%23162130' fill-opacity='0.16' d='M42 36 Q47 31 52 34 Q54 29 59 32 Q57 35 52 36 Q47 39 42 36z'/%3E%3Cpath fill='%23162130' fill-opacity='0.13' d='M105 20 Q111 14 117 18 Q120 12 126 16 Q123 20 117 21 Q111 24 105 20z'/%3E%3Cpath fill='%23162130' fill-opacity='0.12' d='M175 42 Q180 37 185 40 Q187 35 192 38 Q190 41 185 42 Q180 45 175 42z'/%3E%3Cpath fill='%23162130' fill-opacity='0.10' d='M248 26 Q254 20 260 24 Q263 18 269 22 Q266 26 260 27 Q254 30 248 26z'/%3E%3Cpath fill='%23162130' fill-opacity='0.09' d='M298 50 Q302 46 306 48 Q308 44 312 46 Q310 49 306 50 Q302 53 298 50z'/%3E%3C/svg%3E");
+    /* Sunlit sparkle scatter — golden glints on grass and water */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='220'%3E%3Ccircle cx='22' cy='158' r='2.2' fill='%23fff082' fill-opacity='0.60'/%3E%3Ccircle cx='68' cy='142' r='1.8' fill='%23ffe84e' fill-opacity='0.55'/%3E%3Ccircle cx='115' cy='168' r='2.5' fill='%23fff5a0' fill-opacity='0.52'/%3E%3Ccircle cx='168' cy='148' r='1.6' fill='%23ffe060' fill-opacity='0.50'/%3E%3Ccircle cx='210' cy='172' r='2.0' fill='%23fff080' fill-opacity='0.48'/%3E%3Ccircle cx='258' cy='155' r='1.9' fill='%23ffee70' fill-opacity='0.46'/%3E%3Ccircle cx='42' cy='188' r='1.5' fill='%23fff596' fill-opacity='0.44'/%3E%3Ccircle cx='92' cy='198' r='2.1' fill='%23ffe870' fill-opacity='0.40'/%3E%3Ccircle cx='148' cy='192' r='1.7' fill='%23fff090' fill-opacity='0.38'/%3E%3Ccircle cx='198' cy='202' r='2.3' fill='%23ffec78' fill-opacity='0.36'/%3E%3Ccircle cx='245' cy='195' r='1.4' fill='%23fff8a0' fill-opacity='0.34'/%3E%3Ccircle cx='30' cy='120' r='1.2' fill='%23fff060' fill-opacity='0.28'/%3E%3Ccircle cx='85' cy='108' r='1.5' fill='%23ffed6a' fill-opacity='0.24'/%3E%3Ccircle cx='145' cy='118' r='1.3' fill='%23fff480' fill-opacity='0.20'/%3E%3Ccircle cx='222' cy='112' r='1.6' fill='%23ffe85e' fill-opacity='0.18'/%3E%3C/svg%3E");
   background-size:
     200% 200%, 200% 200%,
     100% 100%, 100% 100%, 100% 100%, 100% 100%,
     200px 200px,
     320px 160px,
     200px 200px,
-    100% 100%,
-    320px 180px;
+    280px 220px;
   background-position:
     0% 0%, 100% 100%,
     0% 0%, 0% 0%, 0% 0%, 0% 0%,
     60% 2%,
     18% 12%,
     55% 28%,
-    0 0,
-    50% 12%;
+    50% 80%;
 }
 
 html[data-workshop-bg="summer"] body::after {
@@ -1884,6 +1879,11 @@ html[data-workshop-bg="rain"] body::before {
     0 0,
     22% 8%,
     62% 15%;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat, repeat,
+    repeat, repeat,
+    repeat, repeat-x;
 }
 
 html[data-workshop-bg="rain"] body::after {
