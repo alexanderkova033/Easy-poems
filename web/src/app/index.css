@@ -314,14 +314,14 @@ body::after {
   100% { transform: scale(1.04) translate( 1.2%, -0.5%); }
 }
 
-/* Aurora-specific glow shimmer — independent timing from the curtain drift */
+/* Aurora-specific glow shimmer — calmed range so curtain doesn't pulse visibly */
 @keyframes aurora-shimmer {
-  0%   { opacity: 0.42; }
-  20%  { opacity: 0.58; }
-  40%  { opacity: 0.46; }
-  60%  { opacity: 0.64; }
-  80%  { opacity: 0.44; }
-  100% { opacity: 0.52; }
+  0%   { opacity: 0.28; }
+  20%  { opacity: 0.38; }
+  40%  { opacity: 0.30; }
+  60%  { opacity: 0.44; }
+  80%  { opacity: 0.29; }
+  100% { opacity: 0.35; }
 }
 
 /* Manual motion-off toggle (data-backdrop-motion="off" set by JS) */
@@ -636,7 +636,7 @@ html[data-workshop-bg="forest"] {
   --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);
   --danger: #ff9aa1;
-  --net-line: rgba(130, 225, 175, 0.058);
+  --net-line: rgba(130, 225, 175, 0.040);
   --ambient-a: rgba(42, 168, 108, 0.092);
   --ambient-b: rgba(28, 98, 75, 0.075);
   --ambient-c: rgba(64, 148, 118, 0.065);
@@ -843,6 +843,12 @@ html[data-workshop-bg="night"] body::before {
     50% 0%,
     50% 0%,
     50% 100%;
+  background-repeat:
+    repeat, repeat, repeat, repeat, repeat,
+    repeat,
+    no-repeat,
+    no-repeat,
+    repeat-x;
 }
 
 /* Night garden: fireflies drifting low, crescent moon upper-right */
@@ -1283,6 +1289,13 @@ html[data-workshop-bg="ocean"] body::before {
     0 0,
     12% 90%,
     78% 92%;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat,
+    repeat,
+    repeat,
+    no-repeat,
+    no-repeat;
 }
 
 /* ---- Aurora: violet-green northern lights ---- */
@@ -1308,8 +1321,8 @@ html[data-workshop-bg="aurora"] {
   --shine-top: rgba(190, 160, 255, 0.06);
   --shine-mid: rgba(90, 60, 160, 0.038);
   --after-blend: screen;
-  --after-animation: aurora-shimmer 80s ease-in-out infinite;
-  --after-opacity: 0.32;
+  --after-animation: aurora-shimmer 120s ease-in-out infinite;
+  --after-opacity: 0.28;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
@@ -1321,13 +1334,13 @@ html[data-workshop-bg="aurora"] body::before {
     /* Merged ambient washes */
     radial-gradient(ellipse 200% 130% at 5% 10%, color-mix(in srgb, var(--ambient-a) 80%, var(--ambient-c)), transparent 68%),
     radial-gradient(ellipse 200% 130% at 95% 75%, color-mix(in srgb, var(--ambient-b) 80%, var(--ambient-d)), transparent 68%),
-    /* Aurora curtain bands — tall vivid vertical bands */
-    radial-gradient(ellipse 22% 95% at 16% 44%, color-mix(in srgb, #7030d8 28%, transparent), transparent 58%),
-    radial-gradient(ellipse 20% 100% at 48% 38%, color-mix(in srgb, #28b888 26%, transparent), transparent 58%),
-    radial-gradient(ellipse 18% 92% at 74% 42%, color-mix(in srgb, #18d8a8 24%, transparent), transparent 56%),
+    /* Aurora curtain bands — softened so curtains feel atmospheric, not vivid */
+    radial-gradient(ellipse 22% 95% at 16% 44%, color-mix(in srgb, #7030d8 18%, transparent), transparent 58%),
+    radial-gradient(ellipse 20% 100% at 48% 38%, color-mix(in srgb, #28b888 17%, transparent), transparent 58%),
+    radial-gradient(ellipse 18% 92% at 74% 42%, color-mix(in srgb, #18d8a8 16%, transparent), transparent 56%),
     /* Cyan shimmer + violet accent */
-    radial-gradient(ellipse 16% 80% at 64% 32%, color-mix(in srgb, #00d8cc 18%, transparent), transparent 56%),
-    radial-gradient(ellipse 12% 70% at 88% 46%, color-mix(in srgb, #d038a8 14%, transparent), transparent 54%),
+    radial-gradient(ellipse 16% 80% at 64% 32%, color-mix(in srgb, #00d8cc 13%, transparent), transparent 56%),
+    radial-gradient(ellipse 12% 70% at 88% 46%, color-mix(in srgb, #d038a8 10%, transparent), transparent 54%),
     /* Horizon + sky base */
     linear-gradient(180deg, color-mix(in srgb, #050310 40%, transparent) 0%, transparent 42%, color-mix(in srgb, #0e2238 60%, transparent) 100%),
     /* Star field — reduced to 10 circles */
@@ -1509,11 +1522,11 @@ html[data-workshop-bg="dusk"] body::before {
     repeat-x, repeat;
 }
 
-/* Dusk: warm amber horizon band at ~68% */
+/* Dusk: soft amber horizon glow — wide ellipses so it reads as atmospheric depth, not a line */
 html[data-workshop-bg="dusk"]::after {
   background-image:
-    radial-gradient(ellipse 110% 8% at 50% 70%, color-mix(in srgb, #d86820 9%, transparent), transparent 100%),
-    radial-gradient(ellipse 70% 5% at 50% 70%, color-mix(in srgb, #ffb030 6%, transparent), transparent 100%);
+    radial-gradient(ellipse 120% 30% at 50% 76%, color-mix(in srgb, #d86820 6%, transparent), transparent 100%),
+    radial-gradient(ellipse 80% 18% at 50% 76%, color-mix(in srgb, #ffb030 4%, transparent), transparent 100%);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 1;
@@ -1658,6 +1671,13 @@ html[data-workshop-bg="autumn"] body::before {
     50% 100%,
     0 0,
     0 0;
+  background-repeat:
+    repeat, repeat,
+    repeat, repeat, repeat,
+    repeat,
+    no-repeat,
+    repeat-x,
+    repeat, repeat;
 }
 
 /* Autumn body::after uses shared backdrop vars */
@@ -1709,13 +1729,13 @@ html[data-workshop-bg="spring"] body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='200' viewBox='0 0 280 200'%3E%3Cpath fill='none' stroke='%238b5a2b' stroke-opacity='0.12' stroke-width='1.8' stroke-linecap='round' d='M0 185 Q40 145 80 122 Q120 99 145 78 Q168 58 210 38 Q240 20 280 8'/%3E%3Cpath fill='none' stroke='%238b5a2b' stroke-opacity='0.09' stroke-width='1.2' stroke-linecap='round' d='M80 122 Q102 99 114 78 Q122 60 136 48'/%3E%3Cpath fill='none' stroke='%238b5a2b' stroke-opacity='0.08' stroke-width='1.0' stroke-linecap='round' d='M145 78 Q154 62 162 48 Q168 36 184 26'/%3E%3C/svg%3E"),
     /* A few petals (kept sparse to avoid clutter) */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cellipse cx='54' cy='62' rx='7' ry='17' fill='%23ffa0b4' fill-opacity='0.16' transform='rotate(18 54 62)'/%3E%3Cellipse cx='188' cy='48' rx='6' ry='14' fill='%23ffb9c8' fill-opacity='0.12' transform='rotate(-22 188 48)'/%3E%3Cellipse cx='262' cy='98' rx='7' ry='16' fill='%23f291ac' fill-opacity='0.13' transform='rotate(35 262 98)'/%3E%3Cellipse cx='98' cy='152' rx='6' ry='14' fill='%23ffa8be' fill-opacity='0.11' transform='rotate(-28 98 152)'/%3E%3Cellipse cx='214' cy='210' rx='8' ry='18' fill='%23eb9bb6' fill-opacity='0.10' transform='rotate(-35 214 210)'/%3E%3C/svg%3E"),
-    /* Morning sunbeam shafts from upper-right */
+    /* Morning sunbeam shafts from upper-right — kept near-invisible so they don't stripe the page */
     repeating-linear-gradient(
       132deg,
       transparent,
       transparent 26px,
-      color-mix(in srgb, #fff8d0 2%, transparent) 26px,
-      color-mix(in srgb, #fff8d0 2%, transparent) 34px
+      color-mix(in srgb, #fff8d0 0.8%, transparent) 26px,
+      color-mix(in srgb, #fff8d0 0.8%, transparent) 34px
     );
   background-size:
     200% 200%, 200% 200%,
@@ -1804,11 +1824,17 @@ html[data-workshop-bg="summer"] body::before {
     60% 2%,
     18% 12%,
     58% 22%;
+  background-repeat:
+    repeat, repeat,
+    repeat, repeat, repeat, repeat,
+    no-repeat,
+    no-repeat,
+    no-repeat;
 }
 
-/* Summer: sky-blue/white horizon haze at ~65% */
+/* Summer: sky-blue/white horizon haze — wide feathered band, no hard line */
 html[data-workshop-bg="summer"]::after {
-  background-image: linear-gradient(transparent 65%, color-mix(in srgb, #c8e8ff 7%, transparent) 65.1%, color-mix(in srgb, #c8e8ff 4%, transparent) 65.8%, transparent 68%);
+  background-image: linear-gradient(transparent 52%, color-mix(in srgb, #c8e8ff 5%, transparent) 63%, color-mix(in srgb, #c8e8ff 3%, transparent) 70%, transparent 78%);
   background-size: 100% 100%;
   background-repeat: no-repeat;
   opacity: 1;
@@ -1864,13 +1890,13 @@ html[data-workshop-bg="rain"] body::before {
       color-mix(in srgb, var(--accent) 6%, transparent),
       transparent 55%
     ),
-    /* Rain streaks — fine near-vertical lines */
+    /* Rain streaks — barely-there so writing focus isn't broken */
     repeating-linear-gradient(
       173deg,
       transparent,
       transparent 3px,
-      color-mix(in srgb, var(--accent) 1.8%, transparent) 3px,
-      color-mix(in srgb, var(--accent) 1.8%, transparent) 3.5px,
+      color-mix(in srgb, var(--accent) 0.8%, transparent) 3px,
+      color-mix(in srgb, var(--accent) 0.8%, transparent) 3.5px,
       transparent 3.5px,
       transparent 12px
     ),
@@ -1879,8 +1905,8 @@ html[data-workshop-bg="rain"] body::before {
       171deg,
       transparent,
       transparent 7px,
-      color-mix(in srgb, var(--accent) 1.2%, transparent) 7px,
-      color-mix(in srgb, var(--accent) 1.2%, transparent) 7.5px,
+      color-mix(in srgb, var(--accent) 0.5%, transparent) 7px,
+      color-mix(in srgb, var(--accent) 0.5%, transparent) 7.5px,
       transparent 7.5px,
       transparent 24px
     ),
