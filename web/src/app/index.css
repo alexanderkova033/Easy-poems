@@ -127,6 +127,21 @@ html::before {
   mix-blend-mode: overlay;
 }
 
+/* Per-theme micro-detail layer — compositor-safe opacity-only animations */
+html::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+html[data-backdrop-motion="off"] html::after,
+html[data-backdrop-power="very-low"] html::after { opacity: 0 !important; animation: none !important; }
+html[data-backdrop-power="low"] html::after { opacity: 0.5 !important; }
+@media (prefers-reduced-motion: reduce) { html::after { animation: none !important; } }
+
 body {
   margin: 0;
   min-height: 100vh;
@@ -354,6 +369,33 @@ html[data-backdrop-power="very-low"] body::before {
   100% {
     opacity: 0.26;
   }
+}
+
+/* Firefly soft glow — long gaps between pulses so it's barely noticed */
+@keyframes firefly-glow {
+  0%, 30%, 70%, 100% { opacity: 0; }
+  48%, 52%            { opacity: 1; }
+}
+
+/* Snowfall — compositor-safe transform drift, scale(1.06) hides empty edges */
+@keyframes snow-settle {
+  0%   { transform: scale(1.06) translate(-2%, -2.5%); }
+  100% { transform: scale(1.06) translate(1.5%, 2.5%); }
+}
+
+/* Puddle ripple — opacity only, very slow */
+@keyframes ripple-breathe {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.38; }
+}
+
+/* Candle warmth — irregular breathing, nearly imperceptible */
+@keyframes candle-breathe {
+  0%   { opacity: 0.36; }
+  30%  { opacity: 0.44; }
+  60%  { opacity: 0.38; }
+  80%  { opacity: 0.42; }
+  100% { opacity: 0.36; }
 }
 
 html[data-writing-focus-v2] body::before {
@@ -684,7 +726,8 @@ html[data-workshop-bg="stone"] {
   --ambient-d: rgba(90, 86, 76, 0.035);
   --shine-top: rgba(200, 195, 185, 0.05);
   --shine-mid: rgba(130, 124, 112, 0.03);
-  --after-opacity: 0.38;
+  --after-opacity: 0.40;
+  --after-animation: candle-breathe 28s ease-in-out infinite;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 38%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 44%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
@@ -800,6 +843,20 @@ html[data-workshop-bg="night"] body::before {
     50% 0%,
     50% 0%,
     50% 100%;
+}
+
+/* Night garden: fireflies drifting low, crescent moon upper-right */
+html[data-workshop-bg="night"] html::after {
+  background-image:
+    /* Crescent moon — thin sickle, soft glow halo */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Ccircle cx='108' cy='52' r='22' fill='%23d0eed8' fill-opacity='0.08'/%3E%3Ccircle cx='118' cy='46' r='18' fill='%230c1210' fill-opacity='0.72'/%3E%3Ccircle cx='108' cy='52' r='26' fill='none' stroke='%23b8e8cc' stroke-opacity='0.05' stroke-width='0.8'/%3E%3C/svg%3E"),
+    /* Firefly cluster — low in the garden */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Ccircle cx='68' cy='218' r='1.8' fill='%23c8ffb0' fill-opacity='0.70'/%3E%3Ccircle cx='68' cy='218' r='5' fill='%23a0e880' fill-opacity='0.18'/%3E%3Ccircle cx='168' cy='234' r='1.4' fill='%23d0ffb8' fill-opacity='0.65'/%3E%3Ccircle cx='168' cy='234' r='4' fill='%23a8f090' fill-opacity='0.15'/%3E%3Ccircle cx='255' cy='205' r='1.6' fill='%23c0ffaa' fill-opacity='0.60'/%3E%3Ccircle cx='255' cy='205' r='4.5' fill='%2398e870' fill-opacity='0.14'/%3E%3Ccircle cx='318' cy='228' r='1.2' fill='%23d0ffb0' fill-opacity='0.55'/%3E%3Ccircle cx='318' cy='228' r='3.5' fill='%23a8e880' fill-opacity='0.12'/%3E%3Ccircle cx='122' cy='248' r='1.0' fill='%23b8ff98' fill-opacity='0.50'/%3E%3C/svg%3E");
+  background-size: 180px 180px, 100% 100%;
+  background-position: 88% 6%, center center;
+  background-repeat: no-repeat, no-repeat;
+  opacity: 0.9;
+  animation: firefly-glow 48s ease-in-out infinite;
 }
 
 html[data-workshop-bg="forest"] body::before {
@@ -963,6 +1020,14 @@ html[data-workshop-bg="dawn"] body::before {
     28% 72%;
 }
 
+/* Dawn: rose-gold horizon band at ~72% */
+html[data-workshop-bg="dawn"] html::after {
+  background-image: linear-gradient(transparent 72%, color-mix(in srgb, #e09080 8%, transparent) 72.1%, color-mix(in srgb, #e09080 5%, transparent) 72.8%, transparent 74.5%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 1;
+}
+
 html[data-workshop-bg="slate"] body::before {
   animation: ambient-drift 110s ease-in-out infinite alternate;
   background-image:
@@ -1010,7 +1075,9 @@ html[data-workshop-bg="slate"] body::before {
     ),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='75'%3E%3Cpath fill='none' stroke='%238eb8e816' stroke-width='0.85' d='M22 1l19 10v23L22 46 3 33V12L22 1z'/%3E%3Ccircle cx='22' cy='24' r='1.1' fill='%239cc8f812'/%3E%3Cpath fill='none' stroke='%236a8cb00c' stroke-width='0.4' d='M22 8v36'/%3E%3C/svg%3E"),
     /* Star-map constellation dots */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='50' cy='58' r='1.2' fill='%239cc8f814'/%3E%3Ccircle cx='100' cy='42' r='0.9' fill='%2378a8d812'/%3E%3Ccircle cx='150' cy='72' r='1' fill='%239cc8f810'/%3E%3Ccircle cx='72' cy='112' r='0.85' fill='%2388b8e810'/%3E%3Ccircle cx='128' cy='128' r='1.1' fill='%2370a0c80e'/%3E%3Cpath stroke='%2388b0e012' stroke-width='0.55' fill='none' d='M50 58L100 42M100 42l50 30M72 112l56 16'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='50' cy='58' r='1.2' fill='%239cc8f814'/%3E%3Ccircle cx='100' cy='42' r='0.9' fill='%2378a8d812'/%3E%3Ccircle cx='150' cy='72' r='1' fill='%239cc8f810'/%3E%3Ccircle cx='72' cy='112' r='0.85' fill='%2388b8e810'/%3E%3Ccircle cx='128' cy='128' r='1.1' fill='%2370a0c80e'/%3E%3Cpath stroke='%2388b0e012' stroke-width='0.55' fill='none' d='M50 58L100 42M100 42l50 30M72 112l56 16'/%3E%3C/svg%3E"),
+    /* City skyline silhouette — distant buildings at base */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='100' viewBox='0 0 320 100'%3E%3Crect x='0' y='62' width='320' height='38' fill='%230a0d12'/%3E%3Crect x='8' y='42' width='14' height='58' fill='%230d1218'/%3E%3Crect x='12' y='38' width='6' height='4' fill='%230d1218'/%3E%3Crect x='28' y='55' width='10' height='45' fill='%230c1016'/%3E%3Crect x='44' y='30' width='18' height='70' fill='%230e1320'/%3E%3Crect x='48' y='26' width='10' height='4' fill='%230e1320'/%3E%3Crect x='68' y='48' width='12' height='52' fill='%230b1018'/%3E%3Crect x='86' y='35' width='22' height='65' fill='%230f1422'/%3E%3Crect x='91' y='30' width='12' height='5' fill='%230f1422'/%3E%3Crect x='114' y='52' width='8' height='48' fill='%230c1118'/%3E%3Crect x='128' y='28' width='26' height='72' fill='%23101524'/%3E%3Crect x='134' y='22' width='14' height='6' fill='%23101524'/%3E%3Crect x='160' y='44' width='14' height='56' fill='%230d121c'/%3E%3Crect x='180' y='38' width='20' height='62' fill='%230e1320'/%3E%3Crect x='206' y='58' width='8' height='42' fill='%230c1016'/%3E%3Crect x='220' y='32' width='24' height='68' fill='%230f1422'/%3E%3Crect x='226' y='26' width='12' height='6' fill='%230f1422'/%3E%3Crect x='250' y='50' width='10' height='50' fill='%230b1018'/%3E%3Crect x='266' y='40' width='16' height='60' fill='%230d121e'/%3E%3Crect x='288' y='55' width='12' height='45' fill='%230c1016'/%3E%3Crect x='305' y='36' width='15' height='64' fill='%230e1320'/%3E%3Ccircle cx='49' cy='25' r='1' fill='%234488cc' fill-opacity='0.55'/%3E%3Ccircle cx='91' cy='29' r='1' fill='%234488cc' fill-opacity='0.45'/%3E%3Ccircle cx='134' cy='21' r='1' fill='%234488cc' fill-opacity='0.50'/%3E%3Ccircle cx='226' cy='25' r='1' fill='%234488cc' fill-opacity='0.48'/%3E%3Ccircle cx='160' cy='60' r='0.8' fill='%23cc8844' fill-opacity='0.40'/%3E%3Ccircle cx='220' cy='50' r='0.8' fill='%23cc8844' fill-opacity='0.35'/%3E%3Ccircle cx='88' cy='45' r='0.7' fill='%23cc8844' fill-opacity='0.30'/%3E%3C/svg%3E");
   background-size:
     160% 160%,
     155% 155%,
@@ -1022,7 +1089,8 @@ html[data-workshop-bg="slate"] body::before {
     100% 100%,
     100% 100%,
     92px 92px,
-    220px 220px;
+    220px 220px,
+    100% 100px;
   background-position:
     0% 0%,
     100% 0%,
@@ -1034,7 +1102,13 @@ html[data-workshop-bg="slate"] body::before {
     0 0,
     0 0,
     5% 9%,
-    40% 42%;
+    40% 42%,
+    center bottom;
+  background-repeat:
+    repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat,
+    repeat-x;
 }
 
 /* ---- Stone: dark charcoal with cross-hatch + concentric diamond motif ---- */
@@ -1406,6 +1480,14 @@ html[data-workshop-bg="dusk"] body::before {
     repeat-x, repeat;
 }
 
+/* Dusk: warm amber horizon band at ~68% */
+html[data-workshop-bg="dusk"] html::after {
+  background-image: linear-gradient(transparent 68%, color-mix(in srgb, #d86820 10%, transparent) 68.1%, color-mix(in srgb, #d86820 8%, transparent) 68.6%, transparent 70%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 1;
+}
+
 /* Dusk body::after uses shared backdrop vars */
 
 /* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
@@ -1469,6 +1551,18 @@ html[data-workshop-bg="winter"] body::before {
     12% 8%,
     62% 18%,
     50% 100%;
+}
+
+/* Winter: fine snow particles drifting very slowly + pale horizon line */
+html[data-workshop-bg="winter"] html::after {
+  will-change: transform;
+  background-image:
+    linear-gradient(transparent 72%, color-mix(in srgb, #a8c8e8 5%, transparent) 72.1%, color-mix(in srgb, #a8c8e8 3%, transparent) 73%, transparent 75%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Ccircle cx='24' cy='18' r='1.0' fill='%23ddeeff' fill-opacity='0.55'/%3E%3Ccircle cx='88' cy='45' r='0.7' fill='%23e8f4ff' fill-opacity='0.45'/%3E%3Ccircle cx='155' cy='12' r='1.2' fill='%23d8eeff' fill-opacity='0.50'/%3E%3Ccircle cx='222' cy='38' r='0.8' fill='%23e0f0ff' fill-opacity='0.42'/%3E%3Ccircle cx='278' cy='20' r='1.0' fill='%23d4ecff' fill-opacity='0.48'/%3E%3Ccircle cx='48' cy='95' r='0.9' fill='%23e4f6ff' fill-opacity='0.38'/%3E%3Ccircle cx='118' cy='82' r='1.1' fill='%23d8eeff' fill-opacity='0.35'/%3E%3Ccircle cx='196' cy='105' r='0.7' fill='%23e0f2ff' fill-opacity='0.32'/%3E%3Ccircle cx='256' cy='78' r='1.0' fill='%23daeeff' fill-opacity='0.30'/%3E%3Ccircle cx='32' cy='165' r='0.8' fill='%23e2f4ff' fill-opacity='0.28'/%3E%3Ccircle cx='105' cy='148' r='1.2' fill='%23d6ecff' fill-opacity='0.25'/%3E%3Ccircle cx='172' cy='172' r='0.7' fill='%23dff1ff' fill-opacity='0.22'/%3E%3Ccircle cx='240' cy='155' r='0.9' fill='%23d8eeff' fill-opacity='0.20'/%3E%3Ccircle cx='65' cy='235' r='1.0' fill='%23e0f2ff' fill-opacity='0.18'/%3E%3Ccircle cx='145' cy='218' r='0.8' fill='%23daeeff' fill-opacity='0.16'/%3E%3Ccircle cx='210' cy='242' r='1.1' fill='%23d8eeff' fill-opacity='0.14'/%3E%3Ccircle cx='280' cy='225' r='0.7' fill='%23e2f4ff' fill-opacity='0.12'/%3E%3C/svg%3E");
+  background-size: 100% 100%, 300px 300px;
+  background-repeat: no-repeat, repeat;
+  opacity: 0.85;
+  animation: snow-settle 90s ease-in-out infinite alternate;
 }
 
 /* Winter body::after uses shared backdrop vars */
@@ -1675,6 +1769,14 @@ html[data-workshop-bg="summer"] body::before {
     58% 22%;
 }
 
+/* Summer: sky-blue/white horizon haze at ~65% */
+html[data-workshop-bg="summer"] html::after {
+  background-image: linear-gradient(transparent 65%, color-mix(in srgb, #c8e8ff 7%, transparent) 65.1%, color-mix(in srgb, #c8e8ff 4%, transparent) 65.8%, transparent 68%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 1;
+}
+
 /* Summer body::after uses shared backdrop vars */
 
 /* ---- Rainy day: blue-grey overcast, rain streaks ---- */
@@ -1785,6 +1887,16 @@ html[data-workshop-bg="rain"] body::before {
     repeat, repeat-x;
 }
 
+/* Rain: slow ripple pulse on puddle reflections at bottom */
+html[data-workshop-bg="rain"] html::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='120'%3E%3Cellipse cx='80' cy='88' rx='55' ry='12' fill='none' stroke='%236aa8d0' stroke-opacity='0.18' stroke-width='0.8'/%3E%3Cellipse cx='80' cy='88' rx='80' ry='18' fill='none' stroke='%236aa8d0' stroke-opacity='0.09' stroke-width='0.5'/%3E%3Cellipse cx='240' cy='98' rx='42' ry='9' fill='none' stroke='%236aa8d0' stroke-opacity='0.15' stroke-width='0.7'/%3E%3Cellipse cx='240' cy='98' rx='62' ry='14' fill='none' stroke='%236aa8d0' stroke-opacity='0.07' stroke-width='0.4'/%3E%3C/svg%3E");
+  background-size: 100% 120px;
+  background-position: center bottom;
+  background-repeat: no-repeat;
+  opacity: 0.3;
+  animation: ripple-breathe 18s ease-in-out infinite;
+}
+
 /* Rain body::after uses shared backdrop vars */
 
 /* ---- Park afternoon: dappled light, green canopy, warm air ---- */
@@ -1855,6 +1967,14 @@ html[data-workshop-bg="park"] body::before {
     0% 0%, 0% 0%, 0% 0%,
     0 0, 0 0,
     50% 99%;
+}
+
+/* Park: warm green horizon at ~75% */
+html[data-workshop-bg="park"] html::after {
+  background-image: linear-gradient(transparent 75%, color-mix(in srgb, #78c040 6%, transparent) 75.1%, color-mix(in srgb, #78c040 3%, transparent) 75.8%, transparent 77.5%);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 1;
 }
 
 /* Park body::after uses shared backdrop vars */
