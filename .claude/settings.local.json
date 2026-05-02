@@ -78,7 +78,9 @@
       "Bash(./node_modules/.bin/eslint src/workshop/editor/PoemBodyEditor.tsx --format=json)",
       "Bash(python3 -c \"import sys,json; data=json.load\\(sys.stdin\\); [print\\(m['ruleId'], m['line'], m['message']\\) for f in data for m in f['messages']]\")",
       "Bash(node -e \"let d=''; process.stdin.on\\('data',c=>d+=c\\); process.stdin.on\\('end',\\(\\)=>{ const r=JSON.parse\\(d\\); r.forEach\\(f=>f.messages.forEach\\(m=>console.log\\(m.ruleId, m.line, m.message\\)\\)\\); }\\)\")",
-      "Skill(update-config)"
+      "Skill(update-config)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web\\\\src\\\\workshop\\\\shell\\\\PoemWorkshop.css\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(\\(Get-Content \"C:\\\\Users\\\\lorta\\\\Documents\\\\repos\\\\Easy-poems\\\\web\\\\src\\\\app\\\\index.css\" | Measure-Object -Line\\).Lines)"
     ]
   }
 }
