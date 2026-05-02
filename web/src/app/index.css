@@ -42,6 +42,14 @@
   --ambient-d: rgba(100, 165, 145, 0.021);
   --shine-top: rgba(170, 220, 200, 0.028);
   --shine-mid: rgba(90, 150, 130, 0.018);
+  /* Backdrop polish (low-distraction defaults) */
+  --grain-opacity: 0.032;
+  --after-blend: screen;
+  --after-opacity: 0.3;
+  --after-animation: studio-light 48s ease-in-out infinite alternate;
+  --after-corner: rgba(0, 0, 0, 0.09);
+  --after-zenith-top: var(--shine-top);
+  --after-zenith-mid: var(--shine-mid);
   font-family: var(--font-ui);
   line-height: 1.55;
 }
@@ -74,6 +82,10 @@
     --shadow-1: 0 2px 10px color-mix(in srgb, #000 3%, transparent);
     --shadow-2: 0 3px 12px color-mix(in srgb, #000 4%, transparent);
     --shadow-3: 0 12px 40px color-mix(in srgb, #000 24%, transparent);
+    --after-blend: multiply;
+    --after-opacity: 0.16;
+    --after-animation: studio-light-soft 48s ease-in-out infinite alternate;
+    --after-corner: rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -111,7 +123,7 @@ html::before {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='1'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 220px 220px;
-  opacity: 0.032;
+  opacity: var(--grain-opacity);
   mix-blend-mode: overlay;
 }
 
@@ -246,37 +258,18 @@ body::before {
   animation: ambient-drift 140s ease-in-out infinite alternate;
 }
 
-/* Soft zenith glow + edge vignette — matches sage palette */
+/* Theme-matched zenith glow + subtle corner vignette */
 body::after {
   background:
-    /* Soft vignette: frames writing space without crushing midtones */
-    radial-gradient(
-      ellipse 80% 75% at 50% 50%,
-      transparent 40%,
-      rgba(0, 0, 0, 0.12) 100%
-    ),
-    radial-gradient(
-      95% 55% at 50% -12%,
-      var(--shine-top),
-      var(--shine-mid) 38%,
-      transparent 68%
-    ),
-    radial-gradient(
-      80% 70% at 100% 100%,
-      color-mix(in srgb, var(--ambient-b) 40%, transparent),
-      transparent 55%
-    );
-  animation: studio-light 48s ease-in-out infinite alternate;
-  mix-blend-mode: screen;
-  opacity: 0.3;
-}
-
-@media (prefers-color-scheme: light) {
-  body::after {
-    mix-blend-mode: multiply;
-    opacity: 0.16;
-    animation: studio-light-soft 48s ease-in-out infinite alternate;
-  }
+    radial-gradient(ellipse 60% 55% at 0% 0%, var(--after-corner), transparent 65%),
+    radial-gradient(ellipse 60% 55% at 100% 0%, var(--after-corner), transparent 65%),
+    radial-gradient(ellipse 60% 55% at 0% 100%, var(--after-corner), transparent 65%),
+    radial-gradient(ellipse 60% 55% at 100% 100%, var(--after-corner), transparent 65%),
+    radial-gradient(95% 55% at 50% -12%, var(--after-zenith-top), var(--after-zenith-mid) 38%, transparent 68%),
+    radial-gradient(80% 70% at 100% 100%, color-mix(in srgb, var(--ambient-b) 40%, transparent), transparent 55%);
+  animation: var(--after-animation);
+  mix-blend-mode: var(--after-blend);
+  opacity: var(--after-opacity);
 }
 
 /* All drift/pulse keyframes animate transform (compositor-thread) instead of
@@ -319,6 +312,29 @@ body::after {
 /* Manual motion-off toggle (data-backdrop-motion="off" set by JS) */
 html[data-backdrop-motion="off"] body::before,
 html[data-backdrop-motion="off"] body::after {
+  animation: none !important;
+}
+
+/* Manual power toggle (data-backdrop-power="low|very-low" set by JS) */
+html[data-backdrop-power="low"] {
+  --grain-opacity: 0.024;
+  --after-opacity: 0.22;
+}
+
+html[data-backdrop-power="very-low"] {
+  --grain-opacity: 0.018;
+  --after-opacity: 0.14;
+  --after-animation: none;
+}
+
+html[data-backdrop-power="low"] body::before {
+  filter: saturate(0.78) brightness(0.95);
+  opacity: 0.92;
+}
+
+html[data-backdrop-power="very-low"] body::before {
+  filter: saturate(0.72) brightness(0.95);
+  opacity: 0.75;
   animation: none !important;
 }
 
@@ -529,6 +545,9 @@ html[data-workshop-bg="paper"] {
   --ambient-d: rgba(130, 115, 85, 0.042);
   --shine-top: rgba(255, 255, 255, 0.4);
   --shine-mid: rgba(195, 170, 125, 0.048);
+  --after-blend: multiply;
+  --after-opacity: 0.28;
+  --after-animation: studio-light-soft 60s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 16%, transparent);
@@ -536,25 +555,26 @@ html[data-workshop-bg="paper"] {
 
 html[data-workshop-bg="night"] {
   color-scheme: dark;
-  --bg: #050807;
-  --surface: #0c1210;
-  --surface-2: #111a17;
+  --bg: #04060c;
+  --surface: #0b0f1a;
+  --surface-2: #101728;
   --surface-elevated: color-mix(in srgb, var(--surface) 88%, var(--bg));
-  --border: #2c3f34;
-  --text: #d6e8dd;
-  --muted: #80958a;
-  --accent: #7cae8a;
+  --border: #22304a;
+  --text: #dbe6f5;
+  --muted: #7f90ad;
+  --accent: #84b9ff;
   --accent-soft: color-mix(in srgb, var(--accent) 22%, transparent);
-  --selection-bg: color-mix(in srgb, var(--accent) 30%, var(--surface));
+  --selection-bg: color-mix(in srgb, var(--accent) 26%, var(--surface));
   --selection-fg: var(--text);
   --danger: #f09098;
-  --net-line: rgba(175, 225, 200, 0.055);
-  --ambient-a: rgba(50, 128, 102, 0.082);
-  --ambient-b: rgba(38, 92, 75, 0.068);
-  --ambient-c: rgba(68, 132, 110, 0.058);
-  --ambient-d: rgba(92, 160, 135, 0.048);
-  --shine-top: rgba(155, 215, 185, 0.048);
-  --shine-mid: rgba(82, 148, 120, 0.038);
+  --net-line: rgba(150, 190, 240, 0.038);
+  --ambient-a: rgba(40, 90, 160, 0.085);
+  --ambient-b: rgba(30, 55, 110, 0.070);
+  --ambient-c: rgba(70, 120, 200, 0.060);
+  --ambient-d: rgba(18, 28, 70, 0.055);
+  --shine-top: rgba(210, 235, 255, 0.05);
+  --shine-mid: rgba(90, 140, 200, 0.038);
+  --after-opacity: 0.44;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
@@ -581,15 +601,10 @@ html[data-workshop-bg="forest"] {
   --ambient-d: rgba(85, 170, 135, 0.052);
   --shine-top: rgba(105, 235, 170, 0.055);
   --shine-mid: rgba(52, 150, 108, 0.042);
+  --after-opacity: 0.48;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 40%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 48%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 48%, transparent);
-}
-
-/* Zenith wash tuned for moonlit / canopy scenes */
-html[data-workshop-bg="night"] body::after,
-html[data-workshop-bg="forest"] body::after {
-  opacity: 0.48;
 }
 
 html[data-workshop-bg="dawn"] {
@@ -613,6 +628,9 @@ html[data-workshop-bg="dawn"] {
   --ambient-d: rgba(170, 120, 145, 0.038);
   --shine-top: rgba(255, 245, 252, 0.42);
   --shine-mid: rgba(210, 150, 175, 0.042);
+  --after-blend: multiply;
+  --after-opacity: 0.32;
+  --after-animation: studio-light-soft 70s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
@@ -639,6 +657,7 @@ html[data-workshop-bg="slate"] {
   --ambient-d: rgba(70, 110, 160, 0.045);
   --shine-top: rgba(180, 210, 245, 0.06);
   --shine-mid: rgba(90, 130, 180, 0.035);
+  --after-opacity: 0.48;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 42%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 48%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 50%, transparent);
@@ -665,6 +684,7 @@ html[data-workshop-bg="stone"] {
   --ambient-d: rgba(90, 86, 76, 0.035);
   --shine-top: rgba(200, 195, 185, 0.05);
   --shine-mid: rgba(130, 124, 112, 0.03);
+  --after-opacity: 0.38;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 38%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 44%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 52%, transparent);
@@ -747,83 +767,39 @@ html[data-workshop-bg="paper"] body::before {
 html[data-workshop-bg="night"] body::before {
   animation: ambient-drift 150s ease-in-out infinite alternate;
   background-image:
-    radial-gradient(
-      ellipse 120% 100% at 14% 28%,
-      var(--ambient-a),
-      transparent 72%
-    ),
-    radial-gradient(
-      ellipse 100% 90% at 88% 22%,
-      var(--ambient-b),
-      transparent 70%
-    ),
-    radial-gradient(
-      ellipse 130% 110% at 50% 92%,
-      var(--ambient-c),
-      transparent 76%
-    ),
-    radial-gradient(
-      ellipse 95% 85% at 72% 62%,
-      var(--ambient-d),
-      transparent 68%
-    ),
-    radial-gradient(
-      circle at 52% -6%,
-      color-mix(in srgb, var(--accent) 13%, transparent),
-      transparent 44%
-    ),
-    radial-gradient(
-      ellipse 125% 42% at 50% 99%,
-      color-mix(in srgb, var(--accent) 9%, transparent),
-      transparent 65%
-    ),
-    linear-gradient(
-      102deg,
-      transparent 36%,
-      color-mix(in srgb, var(--accent) 5%, transparent) 49%,
-      color-mix(in srgb, #a8c0e8 4%, transparent) 53%,
-      transparent 64%
-    ),
-    radial-gradient(
-      circle at 8% 55%,
-      color-mix(in srgb, var(--accent) 4%, transparent),
-      transparent 48%
-    ),
-    /* Garden tree / hedge silhouettes at the base */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='130' viewBox='0 0 320 130'%3E%3Cpath fill='%23040e09' fill-opacity='0.55' d='M0 130V82L8 70 14 82 22 62 30 80 40 58 50 78 60 65 70 80 82 55 92 76 105 60 115 78 130 52 140 74 155 60 165 78 180 56 192 76 206 58 218 76 232 62 242 78 258 55 268 75 282 60 292 76 308 64 320 78V130z'/%3E%3Cpath fill='%230a1f14' fill-opacity='0.35' d='M0 130V100L12 92 24 100 38 88 52 100 68 92 82 102 98 90 112 100 128 92 142 102 158 90 172 102 188 90 204 100 220 90 236 102 252 90 268 102 284 92 298 100 312 94 320 100V130z'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Ccircle cx='18' cy='26' r='0.65' fill='%23dfffea' fill-opacity='0.24'/%3E%3Ccircle cx='48' cy='12' r='0.48' fill='%23ffffff' fill-opacity='0.2'/%3E%3Ccircle cx='78' cy='22' r='0.72' fill='%23c8ffe8' fill-opacity='0.22'/%3E%3Ccircle cx='102' cy='36' r='0.52' fill='%23fff' fill-opacity='0.16'/%3E%3Ccircle cx='32' cy='64' r='0.58' fill='%23e8fff6' fill-opacity='0.2'/%3E%3Ccircle cx='62' cy='88' r='0.42' fill='%23fff' fill-opacity='0.17'/%3E%3Ccircle cx='92' cy='72' r='0.68' fill='%23d2fff0' fill-opacity='0.18'/%3E%3Ccircle cx='56' cy='44' r='0.38' fill='%23fff' fill-opacity='0.26'/%3E%3Ccircle cx='112' cy='70' r='0.5' fill='%23c5ffea' fill-opacity='0.14'/%3E%3Cpath stroke='%23a8d4c018' stroke-width='0.45' fill='none' d='M22 34l18-8 12-14M76 48l14 18 22 6'/%3E%3Cpath stroke='%23b8e0d010' stroke-width='0.35' fill='none' d='M8 82 L42 68M94 22 L118 8'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='168' height='168'%3E%3Ccircle cx='28' cy='48' r='0.4' fill='%23e8fff4' fill-opacity='0.12'/%3E%3Ccircle cx='62' cy='58' r='0.32' fill='%23fff' fill-opacity='0.1'/%3E%3Ccircle cx='96' cy='38' r='0.5' fill='%23c8f5e6' fill-opacity='0.11'/%3E%3Ccircle cx='124' cy='72' r='0.38' fill='%23fff' fill-opacity='0.09'/%3E%3Ccircle cx='44' cy='102' r='0.45' fill='%23dff8ee' fill-opacity='0.1'/%3E%3Ccircle cx='132' cy='118' r='0.35' fill='%23fff' fill-opacity='0.08'/%3E%3Ccircle cx='82' cy='126' r='0.42' fill='%23c5ffe8' fill-opacity='0.09'/%3E%3C/svg%3E"),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 200 200'%3E%3Cpath fill='none' stroke='%237cae8a34' stroke-width='1.12' d='M100 28c24 18 38 48 38 78a38 38 0 1 1-76 0c0-30 14-60 38-78z'/%3E%3Ccircle cx='100' cy='96' r='3.4' fill='%23b8ffd018'/%3E%3Cpath fill='none' stroke='%237cae8a12' stroke-width='0.5' d='M112 52c8 6 12 14 14 24'/%3E%3Ccircle cx='100' cy='96' r='8' fill='none' stroke='%237cae8a08' stroke-width='0.35'/%3E%3C/svg%3E"),
-    /* Moon halo watermark — a soft luminous disc */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='100' cy='100' r='48' fill='none' stroke='%23c8f0e0' stroke-opacity='0.06' stroke-width='0.8'/%3E%3Ccircle cx='100' cy='100' r='62' fill='none' stroke='%23b0e8d0' stroke-opacity='0.04' stroke-width='0.5'/%3E%3Ccircle cx='100' cy='100' r='36' fill='%23d0f0e4' fill-opacity='0.018'/%3E%3Cpath fill='none' stroke='%23a8d4c0' stroke-opacity='0.1' stroke-width='0.4' d='M100 52 L100 148M52 100 L148 100M66 66 L134 134M134 66 L66 134'/%3E%3C/svg%3E");
+    radial-gradient(ellipse 140% 90% at 50% 0%, color-mix(in srgb, #0b1a3a 85%, transparent), transparent 60%),
+    radial-gradient(ellipse 120% 75% at 18% 28%, var(--ambient-a), transparent 70%),
+    radial-gradient(ellipse 110% 70% at 84% 18%, var(--ambient-b), transparent 72%),
+    radial-gradient(ellipse 140% 90% at 50% 96%, var(--ambient-c), transparent 74%),
+    radial-gradient(ellipse 110% 70% at 72% 62%, var(--ambient-d), transparent 70%),
+    /* Crisp moonlight cone (kept subtle) */
+    linear-gradient(108deg, transparent 40%, color-mix(in srgb, var(--accent) 6%, transparent) 52%, transparent 66%),
+    /* Crescent moon silhouette + halo */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Cdefs%3E%3CradialGradient id='h' cx='50%25' cy='50%25' r='60%25'%3E%3Cstop offset='0%25' stop-color='%23eaf6ff' stop-opacity='0.22'/%3E%3Cstop offset='60%25' stop-color='%23b8dcff' stop-opacity='0.08'/%3E%3Cstop offset='100%25' stop-color='%23000000' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle cx='182' cy='74' r='62' fill='url(%23h)'/%3E%3Cpath fill='%23eef7ff' fill-opacity='0.55' d='M194 36c-18 9-30 28-30 50s12 41 30 50c-30 2-56-23-56-50s26-52 56-50z'/%3E%3C/svg%3E"),
+    /* Sparse starfield */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='220'%3E%3Ccircle cx='22' cy='26' r='0.9' fill='%23ffffff' fill-opacity='0.42'/%3E%3Ccircle cx='68' cy='18' r='0.7' fill='%23d8ecff' fill-opacity='0.30'/%3E%3Ccircle cx='118' cy='34' r='0.85' fill='%23ffffff' fill-opacity='0.28'/%3E%3Ccircle cx='168' cy='22' r='0.7' fill='%23c8e4ff' fill-opacity='0.24'/%3E%3Ccircle cx='248' cy='42' r='0.9' fill='%23ffffff' fill-opacity='0.20'/%3E%3Ccircle cx='282' cy='78' r='0.7' fill='%23e8f4ff' fill-opacity='0.18'/%3E%3Ccircle cx='40' cy='96' r='0.6' fill='%23ffffff' fill-opacity='0.16'/%3E%3Ccircle cx='210' cy='108' r='0.7' fill='%23d8ecff' fill-opacity='0.14'/%3E%3C/svg%3E"),
+    /* Dark garden horizon (grounded night) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='140' viewBox='0 0 320 140'%3E%3Cpath fill='%23020712' fill-opacity='0.72' d='M0 140V96L12 86 18 96 28 78 36 96 48 72 58 94 70 80 82 96 96 70 108 92 122 76 134 94 152 68 164 92 180 78 194 96 210 74 224 94 240 80 254 96 270 76 284 94 300 82 312 96 320 88V140z'/%3E%3C/svg%3E");
   background-size:
+    150% 150%,
     160% 160%,
     155% 155%,
     170% 170%,
     150% 150%,
-    135% 95%,
-    130% 45%,
-    150% 40%,
-    90% 90%,
-    320px 130px,
-    128px 128px,
-    168px 168px,
-    268px 268px,
-    200px 200px;
+    140% 70%,
+    260px 260px,
+    320px 220px,
+    320px 140px;
   background-position:
+    50% 0%,
     0% 0%,
     100% 0%,
     50% 100%,
     72% 55%,
+    0 0,
     50% 0%,
-    50% 100%,
-    48% -6%,
-    4% 48%,
-    50% 100%,
-    6% 9%,
-    72% 28%,
-    91% 10%,
-    78% 18%;
+    50% 0%,
+    50% 100%;
 }
 
 html[data-workshop-bg="forest"] body::before {
@@ -881,10 +857,6 @@ html[data-workshop-bg="forest"] body::before {
     ),
     /* Tree canopy silhouette at top */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='120' viewBox='0 0 320 120'%3E%3Cpath fill='%230d2218' fill-opacity='0.45' d='M0 0 Q20 28 0 55L0 0zM0 0 Q60 35 40 70 Q20 88 0 80L0 0zM320 0 Q300 28 320 55L320 0zM320 0 Q260 35 280 70 Q300 88 320 80L320 0z'/%3E%3Cpath fill='%23162e20' fill-opacity='0.30' d='M0 120V60 Q25 40 50 55 Q75 70 100 50 Q125 30 150 50 Q175 70 200 48 Q225 26 250 50 Q275 74 300 52 Q315 40 320 55V120z'/%3E%3C/svg%3E"),
-    /* Leaf / frond scatter */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='132' height='132'%3E%3Cpath fill='%2358d49814' d='M66 3 Q92 30 78 58 Q66 42 40 52 Q52 22 66 3'/%3E%3Cpath fill='%2348b8820f' transform='translate(24,46)' d='M24 2 Q42 20 35 44 Q22 26 6 32 Q12 11 24 2'/%3E%3Cpath fill='%2370e8b00d' transform='translate(64,62) rotate(38)' d='M20 0 Q34 16 27 36 Q15 21 4 26 Q9 9 20 0'/%3E%3Cpath fill='%2348a8780b' transform='translate(8,78) rotate(-12)' d='M18 4 Q30 14 26 32 Q14 20 4 24 Q8 10 18 4'/%3E%3Cpath fill='%2338786009' transform='translate(72,8) rotate(8)' d='M12 8 Q24 20 20 36 Q8 24 4 32 Q6 14 12 8'/%3E%3C/svg%3E"),
-    /* Forest floor bioluminescent dot scatter */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Ccircle cx='22' cy='28' r='1' fill='%2348c09012'/%3E%3Ccircle cx='48' cy='18' r='0.7' fill='%2370e8b00e'/%3E%3Ccircle cx='78' cy='36' r='0.85' fill='%2348c09010'/%3E%3Ccircle cx='112' cy='24' r='0.65' fill='%2358d4980c'/%3E%3Ccircle cx='32' cy='72' r='0.9' fill='%2348b8820d'/%3E%3Ccircle cx='96' cy='68' r='0.75' fill='%2348c0900a'/%3E%3Ccircle cx='66' cy='98' r='0.8' fill='%2370e8b00b'/%3E%3Ccircle cx='124' cy='92' r='0.6' fill='%2348c09009'/%3E%3Ccircle cx='14' cy='108' r='0.55' fill='%2358d4980a'/%3E%3Cpath fill='%2348a87809' d='M70 118l4-18 6 4-8 14zM38 122l8-12 4 8z'/%3E%3Cellipse cx='88' cy='36' rx='4' ry='2.2' fill='%2358d49808' transform='rotate(-28 88 36)'/%3E%3C/svg%3E"),
     /* Horizon depth — tree line and mist */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160' viewBox='0 0 320 160'%3E%3Cpath fill='none' stroke='%2348786816' stroke-width='1.3' stroke-linecap='round' d='M-20 142 Q80 88 160 78 T360 52'/%3E%3Cpath fill='none' stroke='%2338907012' stroke-width='1' d='M40 155 Q120 120 200 118 T320 108'/%3E%3Cpath fill='none' stroke='%2348a8780e' stroke-width='0.8' d='M180 138 Q220 105 280 100'/%3E%3C/svg%3E");
   background-size:
@@ -897,8 +869,6 @@ html[data-workshop-bg="forest"] body::before {
     100% 100%, 100% 100%,
     130% 38%,
     320px 120px,
-    270px 270px,
-    156px 156px,
     320px 165px;
   background-position:
     0% 0%,
@@ -910,8 +880,6 @@ html[data-workshop-bg="forest"] body::before {
     0 0, 0 0,
     50% 0%,
     50% 0%,
-    8% 11%,
-    88% 78%,
     50% 99%;
 }
 
@@ -1137,6 +1105,7 @@ html[data-workshop-bg="crimson"] {
   --ambient-d: rgba(100, 30, 45, 0.05);
   --shine-top: rgba(255, 160, 170, 0.055);
   --shine-mid: rgba(160, 50, 65, 0.04);
+  --after-opacity: 0.48;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 45%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 55%, transparent);
@@ -1195,6 +1164,7 @@ html[data-workshop-bg="ocean"] {
   --ambient-d: rgba(15, 60, 100, 0.052);
   --shine-top: rgba(140, 220, 255, 0.06);
   --shine-mid: rgba(60, 140, 190, 0.04);
+  --after-opacity: 0.42;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
@@ -1253,6 +1223,9 @@ html[data-workshop-bg="aurora"] {
   --ambient-d: rgba(50, 180, 140, 0.05);
   --shine-top: rgba(190, 160, 255, 0.06);
   --shine-mid: rgba(90, 60, 160, 0.038);
+  --after-blend: screen;
+  --after-animation: aurora-shimmer 32s ease-in-out infinite;
+  --after-opacity: 0.32;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 46%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 52%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 56%, transparent);
@@ -1298,47 +1271,7 @@ html[data-workshop-bg="aurora"] body::before {
     12% 18%;
 }
 
-html[data-workshop-bg="aurora"] body::after {
-  mix-blend-mode: screen;
-  animation: aurora-shimmer 32s ease-in-out infinite;
-}
-
-/* Per-theme body::after zenith-glow tuning.
-   Light themes need mix-blend-mode: multiply so the glow darkens rather than washes.
-   Dark themes can boost opacity since backgrounds are deeper. */
-html[data-workshop-bg="dawn"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.32;
-  animation: studio-light-soft 70s ease-in-out infinite alternate;
-}
-
-html[data-workshop-bg="paper"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.28;
-  animation: studio-light-soft 60s ease-in-out infinite alternate;
-}
-
-html[data-workshop-bg="parchment"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.35;
-  animation: studio-light-soft 65s ease-in-out infinite alternate;
-}
-
-html[data-workshop-bg="slate"] body::after {
-  opacity: 0.48;
-}
-
-html[data-workshop-bg="stone"] body::after {
-  opacity: 0.38;
-}
-
-html[data-workshop-bg="crimson"] body::after {
-  opacity: 0.48;
-}
-
-html[data-workshop-bg="ocean"] body::after {
-  opacity: 0.42;
-}
+/* Per-theme body::after tuning now lives in CSS variables on each theme. */
 
 /* ---- Old parchment: aged cream warm light ---- */
 html[data-workshop-bg="parchment"] {
@@ -1362,6 +1295,9 @@ html[data-workshop-bg="parchment"] {
   --ambient-d: rgba(120, 90, 45, 0.045);
   --shine-top: rgba(255, 250, 225, 0.5);
   --shine-mid: rgba(200, 165, 100, 0.055);
+  --after-blend: multiply;
+  --after-opacity: 0.35;
+  --after-animation: studio-light-soft 65s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 8%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 18%, transparent);
@@ -1384,32 +1320,20 @@ html[data-workshop-bg="parchment"] body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Cline x1='0' y1='2' x2='6' y2='2' stroke='%237a502810' stroke-width='0.4'/%3E%3Cline x1='0' y1='5' x2='6' y2='5' stroke='%237a502807' stroke-width='0.3'/%3E%3C/svg%3E"),
     /* Ruled lines */
     repeating-linear-gradient(0deg, transparent, transparent 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 28px, color-mix(in srgb, var(--net-line) 48%, transparent) 29px),
-    /* Age spots */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Ccircle cx='45' cy='68' r='7' fill='%238b6030' fill-opacity='0.055'/%3E%3Ccircle cx='45' cy='68' r='4.5' fill='%237a5028' fill-opacity='0.04'/%3E%3Ccircle cx='220' cy='42' r='9' fill='%23906535' fill-opacity='0.05'/%3E%3Ccircle cx='220' cy='42' r='5.5' fill='%237a5028' fill-opacity='0.035'/%3E%3Ccircle cx='278' cy='195' r='6' fill='%23855830' fill-opacity='0.045'/%3E%3Ccircle cx='278' cy='195' r='3.8' fill='%237a5028' fill-opacity='0.03'/%3E%3Ccircle cx='88' cy='245' r='8' fill='%238a6032' fill-opacity='0.05'/%3E%3Ccircle cx='88' cy='245' r='5' fill='%23805030' fill-opacity='0.038'/%3E%3Ccircle cx='165' cy='148' r='5' fill='%23906838' fill-opacity='0.04'/%3E%3Ccircle cx='305' cy='108' r='4' fill='%238a6030' fill-opacity='0.04'/%3E%3Ccircle cx='140' cy='295' r='7.5' fill='%237a5028' fill-opacity='0.05'/%3E%3Ccircle cx='255' cy='268' r='5.5' fill='%23886030' fill-opacity='0.042'/%3E%3Ccircle cx='18' cy='180' r='6.5' fill='%238a6032' fill-opacity='0.048'/%3E%3C/svg%3E"),
-    /* Astrolabe / compass rose watermark */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Ccircle cx='140' cy='140' r='55' fill='none' stroke='%237a502810' stroke-width='0.8'/%3E%3Ccircle cx='140' cy='140' r='44' fill='none' stroke='%237a502808' stroke-width='0.6'/%3E%3Ccircle cx='140' cy='140' r='33' fill='none' stroke='%237a502808' stroke-width='0.5'/%3E%3Cpath fill='none' stroke='%238a602010' stroke-width='0.5' d='M140 85 Q155 100 160 120 Q165 140 155 158 Q145 175 128 182 Q110 188 96 178 Q82 168 80 148 Q79 128 90 112 Q102 97 118 88 Q130 82 140 85z'/%3E%3Cpath fill='none' stroke='%237a500c08' stroke-width='0.4' d='M115 95 Q118 88 125 86M158 112 Q165 118 168 128M162 162 Q158 172 150 178M118 178 Q108 182 98 178'/%3E%3Ccircle cx='140' cy='140' r='4' fill='%237a502808'/%3E%3C/svg%3E"),
-    /* Quill feather (large, bottom-right watermark) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='360' viewBox='0 0 130 180'%3E%3Cpath fill='%237a502809' stroke='%237a502812' stroke-width='0.5' d='M65 4 Q90 18 108 40 Q124 62 120 90 Q116 118 100 138 Q84 158 65 168 Q46 158 30 138 Q14 118 10 90 Q6 62 22 40 Q40 18 65 4z'/%3E%3Cpath stroke='%237a50280e' stroke-width='0.8' fill='none' d='M65 4 L65 168'/%3E%3Cpath stroke='%237a502808' stroke-width='0.4' fill='none' d='M65 30 Q82 38 95 52M65 50 Q79 56 90 68M65 70 Q77 74 86 84M65 90 Q76 93 83 102M65 110 Q74 112 79 120M65 30 Q48 38 35 52M65 50 Q51 56 40 68M65 70 Q53 74 44 84M65 90 Q54 93 47 102M65 110 Q56 112 51 120'/%3E%3Cpath fill='%237a502806' d='M62 165 Q65 178 68 165 Q66 162 65 158 Q64 162 62 165z'/%3E%3C/svg%3E"),
-    /* Ink blot (small, top-left) */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cellipse cx='38' cy='42' rx='14' ry='10' fill='%232e241812' transform='rotate(-18 38 42)'/%3E%3Cellipse cx='42' cy='40' rx='10' ry='7' fill='%232e24180e' transform='rotate(12 42 40)'/%3E%3Ccircle cx='30' cy='38' r='4' fill='%232e24180a'/%3E%3Ccircle cx='50' cy='44' r='3' fill='%232e241808'/%3E%3Cpath fill='%232e24180c' d='M38 30 Q40 26 44 28 Q46 34 44 36 Q40 38 38 30z'/%3E%3C/svg%3E");
+    /* Soft age spots (one layer only) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320'%3E%3Ccircle cx='54' cy='74' r='8' fill='%238b6030' fill-opacity='0.045'/%3E%3Ccircle cx='54' cy='74' r='5' fill='%237a5028' fill-opacity='0.032'/%3E%3Ccircle cx='232' cy='50' r='10' fill='%23906535' fill-opacity='0.040'/%3E%3Ccircle cx='232' cy='50' r='6' fill='%237a5028' fill-opacity='0.028'/%3E%3Ccircle cx='284' cy='204' r='7' fill='%23855830' fill-opacity='0.038'/%3E%3Ccircle cx='96' cy='252' r='9' fill='%238a6032' fill-opacity='0.038'/%3E%3Ccircle cx='182' cy='158' r='6' fill='%23906838' fill-opacity='0.032'/%3E%3C/svg%3E");
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
     75% 70%, 40% 50%,
     70% 70%, 60% 60%,
     6px 6px, 100% 100%,
-    320px 320px,
-    280px 280px,
-    220px 300px,
-    80px 80px;
+    320px 320px;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 70% 55%,
     28% 58%, 88% 82%,
     0% 0%, 100% 100%,
     0 0, 0 0,
-    50% 50%,
-    38% 42%,
-    84% 70%,
-    8% 12%;
+    50% 46%;
 }
 
 /* ---- Amber dusk: twilight sky — indigo zenith fading to amber horizon ---- */
@@ -1482,9 +1406,7 @@ html[data-workshop-bg="dusk"] body::before {
     repeat-x, repeat;
 }
 
-html[data-workshop-bg="dusk"] body::after {
-  opacity: 0.45;
-}
+/* Dusk body::after uses shared backdrop vars */
 
 /* ---- Winter: pale ice-blue, crystalline light, cool silver ---- */
 html[data-workshop-bg="winter"] {
@@ -1508,6 +1430,9 @@ html[data-workshop-bg="winter"] {
   --ambient-d: rgba(55, 95, 148, 0.04);
   --shine-top: rgba(255, 255, 255, 0.55);
   --shine-mid: rgba(160, 200, 240, 0.05);
+  --after-blend: multiply;
+  --after-opacity: 0.22;
+  --after-animation: studio-light-soft 58s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 14%, transparent);
@@ -1528,37 +1453,25 @@ html[data-workshop-bg="winter"] body::before {
     radial-gradient(ellipse 90% 40% at 50% 100%, color-mix(in srgb, #9ab8d8 10%, transparent), transparent 55%),
     /* Snowflake / ice crystal lattice */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cg stroke='%233a78b812' stroke-width='0.6' fill='none'%3E%3Cline x1='40' y1='4' x2='40' y2='76'/%3E%3Cline x1='4' y1='40' x2='76' y2='40'/%3E%3Cline x1='12' y1='12' x2='68' y2='68'/%3E%3Cline x1='68' y1='12' x2='12' y2='68'/%3E%3Cline x1='40' y1='4' x2='34' y2='14'/%3E%3Cline x1='40' y1='4' x2='46' y2='14'/%3E%3Cline x1='40' y1='76' x2='34' y2='66'/%3E%3Cline x1='40' y1='76' x2='46' y2='66'/%3E%3Cline x1='4' y1='40' x2='14' y2='34'/%3E%3Cline x1='4' y1='40' x2='14' y2='46'/%3E%3Cline x1='76' y1='40' x2='66' y2='34'/%3E%3Cline x1='76' y1='40' x2='66' y2='46'/%3E%3C/g%3E%3Ccircle cx='40' cy='40' r='2' fill='%233a78b810'/%3E%3C/svg%3E"),
-    /* Frost / ice crystal scatter */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='28' cy='32' r='0.8' fill='%23a0c4e8' fill-opacity='0.45'/%3E%3Ccircle cx='72' cy='18' r='0.6' fill='%23c8dff5' fill-opacity='0.4'/%3E%3Ccircle cx='118' cy='28' r='0.9' fill='%23b0d0ec' fill-opacity='0.38'/%3E%3Ccircle cx='162' cy='14' r='0.7' fill='%23a8cceb' fill-opacity='0.35'/%3E%3Ccircle cx='44' cy='68' r='0.65' fill='%23b8d8f4' fill-opacity='0.32'/%3E%3Ccircle cx='96' cy='56' r='0.75' fill='%23c4dcf5' fill-opacity='0.3'/%3E%3Ccircle cx='148' cy='72' r='0.8' fill='%23a8caeb' fill-opacity='0.28'/%3E%3Ccircle cx='186' cy='52' r='0.55' fill='%23bcd4f2' fill-opacity='0.26'/%3E%3Ccircle cx='18' cy='108' r='0.7' fill='%23b0cced' fill-opacity='0.24'/%3E%3Ccircle cx='68' cy='98' r='0.6' fill='%23c0d8f4' fill-opacity='0.22'/%3E%3Ccircle cx='124' cy='110' r='0.85' fill='%23a4c8ea' fill-opacity='0.2'/%3E%3Ccircle cx='172' cy='96' r='0.65' fill='%23bcd6f2' fill-opacity='0.18'/%3E%3C/svg%3E"),
-    /* Large ice-fern / dendritic watermark */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cg stroke='%233a78b810' stroke-width='0.7' fill='none'%3E%3Cline x1='150' y1='20' x2='150' y2='280'/%3E%3Cline x1='20' y1='150' x2='280' y2='150'/%3E%3Cline x1='56' y1='56' x2='244' y2='244'/%3E%3Cline x1='244' y1='56' x2='56' y2='244'/%3E%3Cline x1='150' y1='20' x2='136' y2='44'/%3E%3Cline x1='150' y1='20' x2='164' y2='44'/%3E%3Cline x1='150' y1='70' x2='132' y2='90'/%3E%3Cline x1='150' y1='70' x2='168' y2='90'/%3E%3Cline x1='150' y1='120' x2='126' y2='148'/%3E%3Cline x1='150' y1='120' x2='174' y2='148'/%3E%3Cline x1='150' y1='280' x2='136' y2='256'/%3E%3Cline x1='150' y1='280' x2='164' y2='256'/%3E%3Cline x1='20' y1='150' x2='44' y2='136'/%3E%3Cline x1='20' y1='150' x2='44' y2='164'/%3E%3Cline x1='280' y1='150' x2='256' y2='136'/%3E%3Cline x1='280' y1='150' x2='256' y2='164'/%3E%3C/g%3E%3Ccircle cx='150' cy='150' r='5' fill='none' stroke='%233a78b80e' stroke-width='0.6'/%3E%3Ccircle cx='150' cy='150' r='20' fill='none' stroke='%233a78b808' stroke-width='0.4'/%3E%3Ccircle cx='150' cy='150' r='50' fill='none' stroke='%233a78b806' stroke-width='0.35'/%3E%3C/svg%3E"),
-    /* Falling snow particles */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Ccircle cx='18' cy='22' r='1.2' fill='%23c8dff5' fill-opacity='0.60'/%3E%3Ccircle cx='55' cy='8' r='0.9' fill='%23ddeeff' fill-opacity='0.55'/%3E%3Ccircle cx='98' cy='18' r='1.4' fill='%23c0d8f0' fill-opacity='0.52'/%3E%3Ccircle cx='148' cy='5' r='1.0' fill='%23d8eeff' fill-opacity='0.50'/%3E%3Ccircle cx='195' cy='15' r='1.2' fill='%23c4dcf2' fill-opacity='0.48'/%3E%3Ccircle cx='232' cy='28' r='0.8' fill='%23e0f0ff' fill-opacity='0.45'/%3E%3Ccircle cx='32' cy='58' r='1.0' fill='%23cce4f8' fill-opacity='0.42'/%3E%3Ccircle cx='76' cy='42' r='1.3' fill='%23d4ebff' fill-opacity='0.40'/%3E%3Ccircle cx='122' cy='52' r='0.8' fill='%23c8e0f4' fill-opacity='0.38'/%3E%3Ccircle cx='165' cy='38' r='1.1' fill='%23ddeeff' fill-opacity='0.36'/%3E%3Ccircle cx='210' cy='55' r='1.4' fill='%23cae2f8' fill-opacity='0.34'/%3E%3Ccircle cx='8' cy='95' r='1.1' fill='%23c8dff5' fill-opacity='0.30'/%3E%3Ccircle cx='48' cy='88' r='0.8' fill='%23d8eeff' fill-opacity='0.28'/%3E%3Ccircle cx='92' cy='100' r='1.3' fill='%23c0d8f0' fill-opacity='0.26'/%3E%3Ccircle cx='138' cy='84' r='1.0' fill='%23d4ebff' fill-opacity='0.24'/%3E%3Ccircle cx='182' cy='98' r='1.2' fill='%23cce4f8' fill-opacity='0.22'/%3E%3Ccircle cx='225' cy='82' r='0.8' fill='%23e0f0ff' fill-opacity='0.20'/%3E%3C/svg%3E"),
+    /* A few snow motes (static, sparse) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Ccircle cx='22' cy='30' r='1.2' fill='%23ddeeff' fill-opacity='0.22'/%3E%3Ccircle cx='68' cy='18' r='0.9' fill='%23c8dff5' fill-opacity='0.18'/%3E%3Ccircle cx='122' cy='34' r='1.3' fill='%23d8eeff' fill-opacity='0.16'/%3E%3Ccircle cx='178' cy='22' r='1.0' fill='%23cce4f8' fill-opacity='0.14'/%3E%3Ccircle cx='210' cy='62' r='0.8' fill='%23e0f0ff' fill-opacity='0.12'/%3E%3Ccircle cx='44' cy='92' r='1.0' fill='%23d4ebff' fill-opacity='0.12'/%3E%3Ccircle cx='156' cy='108' r='1.2' fill='%23cae2f8' fill-opacity='0.10'/%3E%3Ccircle cx='92' cy='146' r='0.9' fill='%23ddeeff' fill-opacity='0.10'/%3E%3Ccircle cx='220' cy='148' r='1.1' fill='%23c8dff5' fill-opacity='0.09'/%3E%3C/svg%3E"),
     /* Bare winter tree silhouettes at horizon */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160' viewBox='0 0 320 160'%3E%3Cpath fill='%231e2a38' fill-opacity='0.16' d='M0 160V108L6 96 10 106 16 88 22 105 30 82 38 104 48 90 56 108 66 78 76 102 88 84 96 108 110 76 118 100 130 86 138 108 150 78 160 104 172 86 180 110 192 78 202 104 216 84 224 108 238 76 248 100 260 86 268 108 282 80 290 104 302 88 310 108 320 92V160z'/%3E%3Cpath fill='%231e2a38' fill-opacity='0.09' d='M0 160V130L12 124 24 130 38 120 52 130 68 122 82 132 98 120 114 130 130 122 144 130 160 120 176 130 192 120 208 130 226 120 240 130 258 118 274 128 292 120 308 128 320 122V160z'/%3E%3C/svg%3E");
   background-size:
     160% 160%, 155% 155%, 170% 170%, 150% 150%,
     100% 55%, 65% 50%, 100% 40%,
     160px 160px,
-    200px 200px,
-    300px 300px,
-    250px 250px,
+    260px 260px,
     320px 160px;
   background-position:
     0% 0%, 100% 0%, 50% 100%, 70% 55%,
     50% 0%, 0% 0%, 50% 100%,
     12% 8%,
-    68% 28%,
-    42% 52%,
-    28% 15%,
+    62% 18%,
     50% 100%;
 }
 
-html[data-workshop-bg="winter"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.22;
-  animation: studio-light-soft 58s ease-in-out infinite alternate;
-}
+/* Winter body::after uses shared backdrop vars */
 
 /* ---- Autumn: warm dark amber, falling leaves ---- */
 html[data-workshop-bg="autumn"] {
@@ -1582,6 +1495,7 @@ html[data-workshop-bg="autumn"] {
   --ambient-d: rgba(145, 68, 14, 0.042);
   --shine-top: rgba(220, 165, 75, 0.052);
   --shine-mid: rgba(155, 78, 18, 0.038);
+  --after-opacity: 0.48;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 48%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 55%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 58%, transparent);
@@ -1625,10 +1539,7 @@ html[data-workshop-bg="autumn"] body::before {
     0 0;
 }
 
-html[data-workshop-bg="autumn"] body::after {
-  opacity: 0.48;
-  animation: ember-drift 130s ease-in-out infinite alternate;
-}
+/* Autumn body::after uses shared backdrop vars */
 
 /* ---- Spring: fresh green, cherry blossoms ---- */
 html[data-workshop-bg="spring"] {
@@ -1652,6 +1563,9 @@ html[data-workshop-bg="spring"] {
   --ambient-d: rgba(45, 95, 35, 0.038);
   --shine-top: rgba(255, 255, 255, 0.40);
   --shine-mid: rgba(140, 200, 110, 0.038);
+  --after-blend: multiply;
+  --after-opacity: 0.28;
+  --after-animation: studio-light-soft 62s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 3%, transparent);
   --shadow-2: 0 3px 14px color-mix(in srgb, #000 5%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 22%, transparent);
@@ -1672,10 +1586,8 @@ html[data-workshop-bg="spring"] body::before {
     radial-gradient(ellipse 120% 45% at 50% 100%, color-mix(in srgb, #78cc48 16%, transparent), transparent 55%),
     /* Cherry blossom branch silhouette — upper left corner */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='200' viewBox='0 0 280 200'%3E%3Cpath fill='none' stroke='%238b5a2b' stroke-opacity='0.12' stroke-width='1.8' stroke-linecap='round' d='M0 185 Q40 145 80 122 Q120 99 145 78 Q168 58 210 38 Q240 20 280 8'/%3E%3Cpath fill='none' stroke='%238b5a2b' stroke-opacity='0.09' stroke-width='1.2' stroke-linecap='round' d='M80 122 Q102 99 114 78 Q122 60 136 48'/%3E%3Cpath fill='none' stroke='%238b5a2b' stroke-opacity='0.08' stroke-width='1.0' stroke-linecap='round' d='M145 78 Q154 62 162 48 Q168 36 184 26'/%3E%3C/svg%3E"),
-    /* Blossom petal scatter */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Cellipse cx='52' cy='44' rx='7' ry='17' fill='%23ffa0b4' fill-opacity='0.28' transform='rotate(20 52 44)'/%3E%3Cellipse cx='140' cy='28' rx='5' ry='13' fill='%23ffb9c8' fill-opacity='0.22' transform='rotate(-18 140 28)'/%3E%3Cellipse cx='225' cy='55' rx='6' ry='15' fill='%23f291ac' fill-opacity='0.24' transform='rotate(38 225 55)'/%3E%3Cellipse cx='22' cy='115' rx='8' ry='18' fill='%23ffa8be' fill-opacity='0.18' transform='rotate(-28 22 115)'/%3E%3Cellipse cx='178' cy='90' rx='4' ry='11' fill='%23deb4e8' fill-opacity='0.22' transform='rotate(52 178 90)'/%3E%3Cellipse cx='265' cy='80' rx='7' ry='16' fill='%23ff98b2' fill-opacity='0.16' transform='rotate(-12 265 80)'/%3E%3Cellipse cx='95' cy='155' rx='5' ry='12' fill='%23f8afc3' fill-opacity='0.15' transform='rotate(42 95 155)'/%3E%3Cellipse cx='220' cy='148' rx='6' ry='14' fill='%23eb9bb6' fill-opacity='0.13' transform='rotate(-35 220 148)'/%3E%3Cellipse cx='58' cy='225' rx='8' ry='16' fill='%23ffaac0' fill-opacity='0.12' transform='rotate(15 58 225)'/%3E%3Cellipse cx='175' cy='240' rx='5' ry='12' fill='%23e8a4bc' fill-opacity='0.10' transform='rotate(-45 175 240)'/%3E%3C/svg%3E"),
-    /* Dewdrop scatter */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='28' cy='35' r='1.2' fill='%23b4e6a0' fill-opacity='0.55'/%3E%3Ccircle cx='72' cy='18' r='0.9' fill='%23c8f0b4' fill-opacity='0.50'/%3E%3Ccircle cx='118' cy='28' r='1.1' fill='%23aae196' fill-opacity='0.45'/%3E%3Ccircle cx='162' cy='14' r='0.8' fill='%23beeba5' fill-opacity='0.42'/%3E%3Ccircle cx='44' cy='70' r='0.9' fill='%23b2e49b' fill-opacity='0.38'/%3E%3Ccircle cx='98' cy='56' r='1.0' fill='%23c3ebaa' fill-opacity='0.35'/%3E%3Ccircle cx='148' cy='72' r='1.2' fill='%23a8dc91' fill-opacity='0.30'/%3E%3Ccircle cx='18' cy='112' r='0.8' fill='%23b6e69e' fill-opacity='0.26'/%3E%3Ccircle cx='86' cy='100' r='0.9' fill='%23c6eeac' fill-opacity='0.22'/%3E%3Ccircle cx='148' cy='110' r='1.0' fill='%23ace196' fill-opacity='0.18'/%3E%3C/svg%3E"),
+    /* A few petals (kept sparse to avoid clutter) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'%3E%3Cellipse cx='54' cy='62' rx='7' ry='17' fill='%23ffa0b4' fill-opacity='0.16' transform='rotate(18 54 62)'/%3E%3Cellipse cx='188' cy='48' rx='6' ry='14' fill='%23ffb9c8' fill-opacity='0.12' transform='rotate(-22 188 48)'/%3E%3Cellipse cx='262' cy='98' rx='7' ry='16' fill='%23f291ac' fill-opacity='0.13' transform='rotate(35 262 98)'/%3E%3Cellipse cx='98' cy='152' rx='6' ry='14' fill='%23ffa8be' fill-opacity='0.11' transform='rotate(-28 98 152)'/%3E%3Cellipse cx='214' cy='210' rx='8' ry='18' fill='%23eb9bb6' fill-opacity='0.10' transform='rotate(-35 214 210)'/%3E%3C/svg%3E"),
     /* Morning sunbeam shafts from upper-right */
     repeating-linear-gradient(
       132deg,
@@ -1683,32 +1595,22 @@ html[data-workshop-bg="spring"] body::before {
       transparent 26px,
       color-mix(in srgb, #fff8d0 2%, transparent) 26px,
       color-mix(in srgb, #fff8d0 2%, transparent) 34px
-    ),
-    /* Butterfly silhouettes drifting through the scene */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='200'%3E%3Cellipse cx='68' cy='52' rx='9' ry='6' fill='%23d870a8' fill-opacity='0.18' transform='rotate(-20 68 52)'/%3E%3Cellipse cx='80' cy='50' rx='8' ry='5' fill='%23d870a8' fill-opacity='0.15' transform='rotate(20 80 50)'/%3E%3Ccircle cx='74' cy='52' r='1.2' fill='%23b84890' fill-opacity='0.20'/%3E%3Cellipse cx='168' cy='32' rx='7' ry='5' fill='%23a060c8' fill-opacity='0.14' transform='rotate(-25 168 32)'/%3E%3Cellipse cx='180' cy='30' rx='6' ry='4' fill='%23a060c8' fill-opacity='0.12' transform='rotate(25 180 30)'/%3E%3Ccircle cx='174' cy='32' r='1' fill='%238040b0' fill-opacity='0.16'/%3E%3Cellipse cx='228' cy='88' rx='6' ry='4' fill='%23e88040' fill-opacity='0.12' transform='rotate(-18 228 88)'/%3E%3Cellipse cx='238' cy='86' rx='5' ry='3.5' fill='%23e88040' fill-opacity='0.10' transform='rotate(18 238 86)'/%3E%3Ccircle cx='233' cy='88' r='0.9' fill='%23c05820' fill-opacity='0.14'/%3E%3C/svg%3E");
+    );
   background-size:
     200% 200%, 200% 200%,
     100% 100%, 100% 100%, 100% 100%, 100% 100%,
     280px 200px,
-    300px 300px,
-    200px 200px,
-    100% 100%,
-    280px 200px;
+    320px 320px,
+    100% 100%;
   background-position:
     0% 0%, 100% 100%,
     0% 0%, 0% 0%, 0% 0%, 0% 0%,
     2% 4%,
-    28% 16%,
-    68% 32%,
-    0 0,
-    48% 28%;
+    18% 16%,
+    0 0;
 }
 
-html[data-workshop-bg="spring"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.28;
-  animation: studio-light-soft 62s ease-in-out infinite alternate;
-}
+/* Spring body::after uses shared backdrop vars */
 
 /* ---- Summer: bright sky, golden sun ---- */
 html[data-workshop-bg="summer"] {
@@ -1732,6 +1634,9 @@ html[data-workshop-bg="summer"] {
   --ambient-d: rgba(20, 80, 140, 0.038);
   --shine-top: rgba(255, 255, 255, 0.50);
   --shine-mid: rgba(100, 180, 230, 0.040);
+  --after-blend: multiply;
+  --after-opacity: 0.30;
+  --after-animation: studio-light-soft 55s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 3px 14px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 20%, transparent);
@@ -1754,31 +1659,23 @@ html[data-workshop-bg="summer"] body::before {
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='162' cy='38' r='22' fill='%23ffd840' fill-opacity='0.20'/%3E%3Ccircle cx='162' cy='38' r='34' fill='%23ffe060' fill-opacity='0.12'/%3E%3Ccircle cx='162' cy='38' r='50' fill='%23fff080' fill-opacity='0.07'/%3E%3C/svg%3E"),
     /* Wispy cloud forms */
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='160'%3E%3Cellipse cx='80' cy='42' rx='55' ry='14' fill='%23fff' fill-opacity='0.10'/%3E%3Cellipse cx='62' cy='42' rx='28' ry='10' fill='%23fff' fill-opacity='0.07'/%3E%3Cellipse cx='108' cy='42' rx='32' ry='10' fill='%23fff' fill-opacity='0.07'/%3E%3Cellipse cx='240' cy='58' rx='48' ry='12' fill='%23fff' fill-opacity='0.08'/%3E%3Cellipse cx='220' cy='58' rx='26' ry='9' fill='%23fff' fill-opacity='0.06'/%3E%3Cellipse cx='268' cy='58' rx='28' ry='9' fill='%23fff' fill-opacity='0.06'/%3E%3C/svg%3E"),
-    /* Shimmer / heat shimmer dots */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ccircle cx='40' cy='30' r='1.4' fill='%23fff082' fill-opacity='0.50'/%3E%3Ccircle cx='110' cy='18' r='1.1' fill='%23ffe664' fill-opacity='0.45'/%3E%3Ccircle cx='168' cy='36' r='1.6' fill='%23fff596' fill-opacity='0.42'/%3E%3Ccircle cx='25' cy='76' r='0.9' fill='%23ffee76' fill-opacity='0.36'/%3E%3Ccircle cx='86' cy='60' r='1.3' fill='%23fff28a' fill-opacity='0.32'/%3E%3Ccircle cx='152' cy='68' r='1.1' fill='%23fff8a0' fill-opacity='0.28'/%3E%3Ccircle cx='62' cy='118' r='0.9' fill='%23fff080' fill-opacity='0.22'/%3E%3Ccircle cx='138' cy='108' r='1.1' fill='%23fff594' fill-opacity='0.18'/%3E%3C/svg%3E"),
-    /* Sunlit sparkle scatter — golden glints on grass and water */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='220'%3E%3Ccircle cx='22' cy='158' r='2.2' fill='%23fff082' fill-opacity='0.60'/%3E%3Ccircle cx='68' cy='142' r='1.8' fill='%23ffe84e' fill-opacity='0.55'/%3E%3Ccircle cx='115' cy='168' r='2.5' fill='%23fff5a0' fill-opacity='0.52'/%3E%3Ccircle cx='168' cy='148' r='1.6' fill='%23ffe060' fill-opacity='0.50'/%3E%3Ccircle cx='210' cy='172' r='2.0' fill='%23fff080' fill-opacity='0.48'/%3E%3Ccircle cx='258' cy='155' r='1.9' fill='%23ffee70' fill-opacity='0.46'/%3E%3Ccircle cx='42' cy='188' r='1.5' fill='%23fff596' fill-opacity='0.44'/%3E%3Ccircle cx='92' cy='198' r='2.1' fill='%23ffe870' fill-opacity='0.40'/%3E%3Ccircle cx='148' cy='192' r='1.7' fill='%23fff090' fill-opacity='0.38'/%3E%3Ccircle cx='198' cy='202' r='2.3' fill='%23ffec78' fill-opacity='0.36'/%3E%3Ccircle cx='245' cy='195' r='1.4' fill='%23fff8a0' fill-opacity='0.34'/%3E%3Ccircle cx='30' cy='120' r='1.2' fill='%23fff060' fill-opacity='0.28'/%3E%3Ccircle cx='85' cy='108' r='1.5' fill='%23ffed6a' fill-opacity='0.24'/%3E%3Ccircle cx='145' cy='118' r='1.3' fill='%23fff480' fill-opacity='0.20'/%3E%3Ccircle cx='222' cy='112' r='1.6' fill='%23ffe85e' fill-opacity='0.18'/%3E%3C/svg%3E");
+    /* Tiny heat shimmer dots (kept very subtle) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Ccircle cx='48' cy='38' r='1.2' fill='%23fff082' fill-opacity='0.22'/%3E%3Ccircle cx='142' cy='24' r='1.0' fill='%23ffe664' fill-opacity='0.18'/%3E%3Ccircle cx='188' cy='62' r='1.4' fill='%23fff596' fill-opacity='0.16'/%3E%3Ccircle cx='68' cy='98' r='0.9' fill='%23ffee76' fill-opacity='0.14'/%3E%3Ccircle cx='164' cy='112' r='1.1' fill='%23fff28a' fill-opacity='0.12'/%3E%3C/svg%3E");
   background-size:
     200% 200%, 200% 200%,
     100% 100%, 100% 100%, 100% 100%, 100% 100%,
     200px 200px,
     320px 160px,
-    200px 200px,
-    280px 220px;
+    220px 220px;
   background-position:
     0% 0%, 100% 100%,
     0% 0%, 0% 0%, 0% 0%, 0% 0%,
     60% 2%,
     18% 12%,
-    55% 28%,
-    50% 80%;
+    58% 22%;
 }
 
-html[data-workshop-bg="summer"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.30;
-  animation: studio-light-soft 55s ease-in-out infinite alternate;
-}
+/* Summer body::after uses shared backdrop vars */
 
 /* ---- Rainy day: blue-grey overcast, rain streaks ---- */
 html[data-workshop-bg="rain"] {
@@ -1802,6 +1699,8 @@ html[data-workshop-bg="rain"] {
   --ambient-d: rgba(55, 85, 130, 0.042);
   --shine-top: rgba(160, 195, 225, 0.055);
   --shine-mid: rgba(80, 120, 165, 0.038);
+  --after-opacity: 0.35;
+  --after-animation: studio-light-soft 60s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 42%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 50%, transparent);
   --shadow-3: 0 10px 38px color-mix(in srgb, #000 50%, transparent);
@@ -1886,10 +1785,7 @@ html[data-workshop-bg="rain"] body::before {
     repeat, repeat-x;
 }
 
-html[data-workshop-bg="rain"] body::after {
-  opacity: 0.35;
-  animation: studio-light-soft 60s ease-in-out infinite alternate;
-}
+/* Rain body::after uses shared backdrop vars */
 
 /* ---- Park afternoon: dappled light, green canopy, warm air ---- */
 html[data-workshop-bg="park"] {
@@ -1913,6 +1809,9 @@ html[data-workshop-bg="park"] {
   --ambient-d: rgba(140, 200, 90, 0.038);
   --shine-top: rgba(255, 255, 255, 0.45);
   --shine-mid: rgba(140, 200, 90, 0.040);
+  --after-blend: multiply;
+  --after-opacity: 0.22;
+  --after-animation: studio-light-soft 65s ease-in-out infinite alternate;
   --shadow-1: 0 3px 14px color-mix(in srgb, #000 4%, transparent);
   --shadow-2: 0 4px 18px color-mix(in srgb, #000 6%, transparent);
   --shadow-3: 0 14px 46px color-mix(in srgb, #000 16%, transparent);
@@ -1944,30 +1843,18 @@ html[data-workshop-bg="park"] body::before {
       color-mix(in srgb, #d4e8a0 2.5%, transparent) 44px,
       color-mix(in srgb, #d4e8a0 2.5%, transparent) 50px
     ),
-    /* Park scene — winding path, bench, lamp post */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Cpath fill='none' stroke='%23305820' stroke-opacity='0.09' stroke-width='1.4' stroke-linecap='round' d='M-20 158 Q60 112 140 100 Q220 88 360 68'/%3E%3Cpath fill='none' stroke='%23386825' stroke-opacity='0.07' stroke-width='1.0' d='M40 172 Q120 140 200 135 T320 125'/%3E%3Cpath fill='none' stroke='%234a7830' stroke-opacity='0.08' stroke-width='0.8' d='M180 165 Q230 130 295 122'/%3E%3Cg stroke='%23305820' stroke-opacity='0.13' fill='none'%3E%3Crect x='58' y='118' width='36' height='4' rx='1' stroke-width='1'/%3E%3Crect x='60' y='122' width='32' height='8' rx='1' stroke-width='1'/%3E%3Cline x1='63' y1='130' x2='63' y2='142' stroke-width='1.2'/%3E%3Cline x1='88' y1='130' x2='88' y2='142' stroke-width='1.2'/%3E%3Crect x='58' y='110' width='36' height='8' rx='1' stroke-width='0.8'/%3E%3C/g%3E%3Cg stroke='%23305820' stroke-opacity='0.10' fill='none'%3E%3Cline x1='218' y1='85' x2='218' y2='140' stroke-width='1.2'/%3E%3Ccircle cx='218' cy='83' r='7' stroke-width='0.8'/%3E%3Cline x1='216' y1='86' x2='212' y2='95' stroke-width='0.7'/%3E%3C/g%3E%3Cpath fill='none' stroke='%23305820' stroke-opacity='0.07' stroke-width='0.8' d='M100 155 Q110 148 125 150 Q140 152 150 145'/%3E%3C/svg%3E"),
-    /* Leaf scatter */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cpath fill='%2358a030' fill-opacity='0.14' d='M30 15 Q55 8 62 30 Q50 38 28 30 Q24 22 30 15'/%3E%3Cpath fill='%2348901e' fill-opacity='0.11' transform='translate(80,28) rotate(-22)' d='M20 8 Q38 4 42 22 Q33 28 18 22 Q16 14 20 8'/%3E%3Cpath fill='%2368b840' fill-opacity='0.12' transform='translate(148,12) rotate(18)' d='M16 6 Q30 2 34 18 Q26 24 14 18 Q12 10 16 6'/%3E%3Cpath fill='%2340882a' fill-opacity='0.10' transform='translate(12,75) rotate(-8)' d='M22 10 Q42 5 47 24 Q37 32 20 26 Q17 17 22 10'/%3E%3Cpath fill='%2360a838' fill-opacity='0.09' transform='translate(110,65) rotate(35)' d='M14 6 Q26 3 29 16 Q22 21 12 16 Q10 10 14 6'/%3E%3Cpath fill='%2350982c' fill-opacity='0.08' transform='translate(168,80) rotate(-15)' d='M18 8 Q34 4 38 20 Q29 26 16 20 Q14 13 18 8'/%3E%3C/svg%3E"),
-    /* Sunlight sparkle dots */
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Ccircle cx='42' cy='22' r='1.4' fill='%23fff8c8' fill-opacity='0.55'/%3E%3Ccircle cx='108' cy='15' r='1.1' fill='%23fffacc' fill-opacity='0.50'/%3E%3Ccircle cx='180' cy='30' r='1.6' fill='%23fff6c0' fill-opacity='0.48'/%3E%3Ccircle cx='22' cy='65' r='0.9' fill='%23fffabe' fill-opacity='0.42'/%3E%3Ccircle cx='78' cy='52' r='1.2' fill='%23fff8cc' fill-opacity='0.38'/%3E%3Ccircle cx='145' cy='68' r='1.0' fill='%23fff4c4' fill-opacity='0.35'/%3E%3Ccircle cx='218' cy='44' r='1.4' fill='%23fffac8' fill-opacity='0.32'/%3E%3Ccircle cx='55' cy='112' r='0.8' fill='%23fff8c0' fill-opacity='0.28'/%3E%3Ccircle cx='122' cy='100' r='1.1' fill='%23fffac4' fill-opacity='0.24'/%3E%3C/svg%3E");
+    /* A single winding path line to "set" the scene (no bench/lamp clutter) */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='320' height='200' viewBox='0 0 320 200'%3E%3Cpath fill='none' stroke='%23305820' stroke-opacity='0.10' stroke-width='1.6' stroke-linecap='round' d='M-20 160 Q60 120 140 108 Q220 96 360 74'/%3E%3Cpath fill='none' stroke='%23386825' stroke-opacity='0.07' stroke-width='1.1' stroke-linecap='round' d='M40 176 Q120 146 200 140 T320 130'/%3E%3C/svg%3E");
   background-size:
     200% 200%, 200% 200%,
     100% 100%, 100% 100%, 100% 100%,
     100% 100%, 100% 100%,
-    320px 200px,
-    200px 200px,
-    240px 240px;
+    320px 200px;
   background-position:
     0% 0%, 100% 100%,
     0% 0%, 0% 0%, 0% 0%,
     0 0, 0 0,
-    50% 99%,
-    28% 22%,
-    55% 18%;
+    50% 99%;
 }
 
-html[data-workshop-bg="park"] body::after {
-  mix-blend-mode: multiply;
-  opacity: 0.22;
-  animation: studio-light-soft 65s ease-in-out infinite alternate;
-}
+/* Park body::after uses shared backdrop vars */
