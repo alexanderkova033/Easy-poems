@@ -268,10 +268,22 @@ function loadCustomBackground(v: unknown): CustomBackgroundTheme | null {
 
 const APPEARANCE_SCHEMA_VERSION = 3;
 
+/** Curated backgrounds shown at random to first-time visitors. */
+const RANDOM_FIRST_VISIT_BACKGROUNDS: BackgroundId[] = [
+  "aurora", "night", "forest", "ocean", "parchment",
+  "dusk", "winter", "autumn", "rain", "dawn",
+];
+
+function pickRandomFirstVisitBackground(): BackgroundId {
+  const idx = Math.floor(Math.random() * RANDOM_FIRST_VISIT_BACKGROUNDS.length);
+  return RANDOM_FIRST_VISIT_BACKGROUNDS[idx]!;
+}
+
 export function loadAppearance(): AppearanceSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULTS };
+    // First visit: no saved preference → pick a random atmospheric background
+    if (!raw) return { ...DEFAULTS, background: pickRandomFirstVisitBackground() };
     const v = JSON.parse(raw) as unknown;
     if (!v || typeof v !== "object") return { ...DEFAULTS };
     const o = v as Record<string, unknown>;
