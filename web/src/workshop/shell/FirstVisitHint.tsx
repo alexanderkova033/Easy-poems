@@ -4,9 +4,11 @@ import { FIRST_VISIT_HINT_STORAGE_KEY, readFirstVisitHintDismissed } from "./fir
 
 export function FirstVisitHint({
   onOpenGuide,
+  onSuggest,
 }: {
   onDismissed?: () => void;
   onOpenGuide?: () => void;
+  onSuggest?: () => void;
 }) {
   const [visible, setVisible] = useState(() => !readFirstVisitHintDismissed());
 
@@ -22,13 +24,20 @@ export function FirstVisitHint({
       <div className="welcome-minimal-body">
         <span className="welcome-leaf" aria-hidden>❧</span>
         <div className="welcome-minimal-text">
-          <strong>Welcome.</strong>{" "}
-          Type your poem in the editor — rhyme, rhythm, and syllable counts appear automatically on the right.
-          {" "}
-          {onOpenGuide && (
-            <button type="button" className="linkish welcome-guide-inline" onClick={() => { onOpenGuide(); dismiss(); }}>
-              Show me a quick tour →
+          <strong>Start writing</strong> — or{" "}
+          {onSuggest ? (
+            <button type="button" className="linkish welcome-guide-inline" onClick={() => { onSuggest(); dismiss(); }}>
+              get a poem idea ✦
             </button>
+          ) : (
+            "open the Suggest tab for ideas"
+          )}
+          {". "}
+          Rhyme scheme, rhythm, and syllable counts appear on the right as you type.
+          {onOpenGuide && (
+            <>{" "}<button type="button" className="linkish welcome-guide-inline" onClick={() => { onOpenGuide(); dismiss(); }}>
+              Tour →
+            </button></>
           )}
         </div>
         <button

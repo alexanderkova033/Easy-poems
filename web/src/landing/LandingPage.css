@@ -106,11 +106,15 @@
 
 .landing-headline {
   margin: 0;
-  font-size: clamp(2.6rem, 7vw, 4rem);
+  font-size: clamp(2.4rem, 6.5vw, 3.8rem);
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: -0.03em;
   color: var(--text);
+}
+
+.landing-headline-accent {
+  color: var(--accent);
 }
 
 .landing-sub {
@@ -134,6 +138,149 @@
   font-size: 0.8rem;
   color: color-mix(in srgb, var(--muted) 65%, transparent);
   letter-spacing: 0.02em;
+}
+
+/* ── Live demo ────────────────────────────────────────────────────────────── */
+
+.landing-demo {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.landing-demo-editor {
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.1rem 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-family: var(--font-poem);
+  font-size: 0.9rem;
+  text-align: left;
+  box-shadow: 0 4px 24px color-mix(in srgb, #000 12%, transparent);
+}
+
+.landing-demo-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.22rem 0;
+  min-height: 1.65rem;
+}
+
+.landing-demo-text {
+  flex: 1;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Typewriter reveal — each line appears in sequence */
+@keyframes demo-reveal {
+  from { max-width: 0; opacity: 0; }
+  to   { max-width: 100%; opacity: 1; }
+}
+
+@keyframes demo-fade-in {
+  from { opacity: 0; transform: translateX(4px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.landing-demo-text-1 { animation: demo-reveal 0.8s steps(33, end) 0.3s both; }
+.landing-demo-text-2 { animation: demo-reveal 0.85s steps(35, end) 1.4s both; }
+.landing-demo-text-3 { animation: demo-reveal 0.8s steps(33, end) 2.5s both; }
+.landing-demo-text-4 { animation: demo-reveal 0.85s steps(34, end) 3.6s both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-demo-text-1,
+  .landing-demo-text-2,
+  .landing-demo-text-3,
+  .landing-demo-text-4 { animation: none; }
+}
+
+/* Blinking cursor on the last line while it types */
+.landing-demo-cursor {
+  width: 2px;
+  height: 1rem;
+  background: var(--accent);
+  border-radius: 1px;
+  flex-shrink: 0;
+  animation: demo-cursor-blink 0.9s step-end infinite, demo-cursor-hide 0.1s 4.5s forwards;
+}
+
+@keyframes demo-cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+@keyframes demo-cursor-hide {
+  to { opacity: 0; width: 0; }
+}
+
+/* Rhyme scheme badges */
+.landing-demo-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.06em 0.4em;
+  border-radius: 4px;
+  flex-shrink: 0;
+  opacity: 0;
+}
+
+.landing-demo-badge-a {
+  background: color-mix(in srgb, #4c8eff 28%, var(--bg));
+  color: color-mix(in srgb, #4c8eff 95%, var(--text));
+}
+
+.landing-demo-badge-b {
+  background: color-mix(in srgb, #27ae60 28%, var(--bg));
+  color: color-mix(in srgb, #27ae60 95%, var(--text));
+}
+
+.landing-demo-badge-1 { animation: demo-fade-in 0.35s ease 1.15s both; }
+.landing-demo-badge-2 { animation: demo-fade-in 0.35s ease 2.3s both; }
+.landing-demo-badge-3 { animation: demo-fade-in 0.35s ease 3.35s both; }
+.landing-demo-badge-4 { animation: demo-fade-in 0.35s ease 4.45s both; }
+
+/* Syllable count */
+.landing-demo-syl {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-family: var(--font-metric);
+  flex-shrink: 0;
+  min-width: 1.4rem;
+  text-align: right;
+  opacity: 0;
+}
+
+.landing-demo-syl-1 { animation: demo-fade-in 0.3s ease 1.2s both; }
+.landing-demo-syl-2 { animation: demo-fade-in 0.3s ease 2.35s both; }
+.landing-demo-syl-3 { animation: demo-fade-in 0.3s ease 3.4s both; }
+.landing-demo-syl-4 { animation: demo-fade-in 0.3s ease 4.5s both; }
+
+.landing-demo-labels {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: demo-fade-in 0.5s ease 4.8s both;
+}
+
+.landing-demo-label-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  padding: 0.2rem 0.6rem;
+  border-radius: 99px;
+  letter-spacing: 0.01em;
 }
 
 /* ── Buttons ──────────────────────────────────────────────────────────────── */

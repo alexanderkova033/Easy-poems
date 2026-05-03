@@ -83,7 +83,11 @@ export function SelectionSuggestPopover({
   onApply,
   onClose,
 }: SelectionSuggestPopoverProps) {
-  const [mode, setMode] = useState<"menu" | "rewrite" | "define">("menu");
+  const isSingleWord = !selectedText.trim().includes(" ") && selectedText.trim().length >= 2;
+  const trimmedText = selectedText.trim();
+  const autoDefine = isSingleWord && wordLookupEnabled;
+
+  const [mode, setMode] = useState<"menu" | "rewrite" | "define">(autoDefine ? "define" : "menu");
   const [rewritePhase, setRewritePhase] = useState<"idle" | "loading" | "results" | "error">("idle");
   const [definePhase, setDefinePhase] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -92,9 +96,6 @@ export function SelectionSuggestPopover({
   const [syllableInput, setSyllableInput] = useState("");
   const popoverRef = useRef<HTMLDivElement>(null);
   const defineAbortRef = useRef<AbortController | null>(null);
-
-  const isSingleWord = !selectedText.trim().includes(" ") && selectedText.trim().length >= 2;
-  const trimmedText = selectedText.trim();
 
   const handleRewrite = useCallback(async () => {
     setRewritePhase("loading");
@@ -130,6 +131,11 @@ export function SelectionSuggestPopover({
   }, [trimmedText]);
 
   useEffect(() => () => { defineAbortRef.current?.abort(); }, []);
+
+  // Auto-fetch definition on mount when a single word is selected
+  useEffect(() => {
+    if (autoDefine) void handleDefine();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {

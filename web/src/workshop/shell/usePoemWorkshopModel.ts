@@ -91,6 +91,7 @@ import {
 } from "@/workshop/editor/focus-line-in-editor";
 import { isTypingInField } from "@/workshop/hints/keyboard-field-target";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
+import { readFirstVisitHintDismissed } from "./firstVisitHintStorage";
 import {
   COMPARE_CURRENT_ID,
   compareBodyForId,
@@ -103,7 +104,16 @@ import {
 import {
   STORAGE_KEY_LAST_EXPORT_AT,
   STORAGE_KEY_LAST_TOOL_TAB,
+  STORAGE_KEY_SAMPLE_DISMISSED,
 } from "@/shared/storage-keys";
+
+export const SAMPLE_POEM_TITLE = "The Candle";
+export const SAMPLE_POEM_BODY =
+  `The candle burns in winter's grip,\nand shadows stretch across the floor.\nA moth has pressed its paper wing\nagainst the cold and frosted door.\n\nThe candle knows it cannot last —\nits wax grows thin, its circle bright.\nBut still it burns to hold the past,\nand moths will linger in its light.`;
+
+function isSampleDismissed(): boolean {
+  try { return !!localStorage.getItem(STORAGE_KEY_SAMPLE_DISMISSED); } catch { return false; }
+}
 
 const LAST_TOOL_TAB_KEY = STORAGE_KEY_LAST_TOOL_TAB;
 const LAST_EXPORT_KEY = STORAGE_KEY_LAST_EXPORT_AT;
@@ -153,6 +163,8 @@ function readSessionToolTab(): ToolTab {
   } catch {
     /* sessionStorage unavailable */
   }
+  // First-time visitors land on Suggest so they immediately have something to do
+  if (!readFirstVisitHintDismissed()) return "suggest";
   return "totals";
 }
 
@@ -176,6 +188,7 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
   const [body, setBody] = useState("");
   /** Bumped when the poem body is replaced outside the editor (load draft, restore snapshot). */
   const [bodySyncNonce, setBodySyncNonce] = useState(0);
+  const [samplePoemActive, setSamplePoemActive] = useState(false);
   /** Latest body from CodeMirror; React `body` may trail by {@link BODY_TO_REACT_DEBOUNCE_MS}. */
   const bodyLiveRef = useRef("");
   const bodyToReactTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -603,6 +616,16 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     setSpellMode(p.spellMode ?? "permissive");
     setRevisions(loadRevisions(lib.activeId));
     setBodySyncNonce((n) => n + 1);
+
+    // Inject sample poem for first-time visitors with an empty draft
+    if (!readFirstVisitHintDismissed() && !isSampleDismissed() && !p.body.trim()) {
+      setSamplePoemActive(true);
+      setTitle(SAMPLE_POEM_TITLE);
+      setBody(SAMPLE_POEM_BODY);
+      bodyLiveRef.current = SAMPLE_POEM_BODY;
+      setHeavyBody(SAMPLE_POEM_BODY);
+      setBodySyncNonce((n) => n + 1);
+    }
   }, []);
 
   const selectPoem = useCallback(
@@ -1121,6 +1144,21 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     [],
   );
 
+  const clearSamplePoem = useCallback(() => {
+    try { localStorage.setItem(STORAGE_KEY_SAMPLE_DISMISSED, "1"); } catch { /* ignore */ }
+    setSamplePoemActive(false);
+    setTitle("");
+    setBody("");
+    bodyLiveRef.current = "";
+    setHeavyBody("");
+    setBodySyncNonce((n) => n + 1);
+  }, []);
+
+  const keepSamplePoem = useCallback(() => {
+    try { localStorage.setItem(STORAGE_KEY_SAMPLE_DISMISSED, "1"); } catch { /* ignore */ }
+    setSamplePoemActive(false);
+  }, []);
+
   return {
     title,
     setTitle,
@@ -1130,6 +1168,9 @@ export function usePoemWorkshopModel(rhymeBreadth: RhymeBreadth = "near") {
     bodySyncNonce,
     onEditorBody,
     setBody,
+    samplePoemActive,
+    clearSamplePoem,
+    keepSamplePoem,
     spellMode,
     setSpellMode,
     savedFlash,

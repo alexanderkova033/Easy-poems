@@ -41,3 +41,8 @@ export const STORAGE_KEY_AI_MODEL = "ep_openai_model";
 
 // Landing page
 export const STORAGE_KEY_LANDING_DISMISSED = "easy-poems:landing-dismissed";
+
+// Onboarding
+export const STORAGE_KEY_SAMPLE_DISMISSED = "easy-poems:sample-dismissed";
+export const STORAGE_KEY_TABS_EXPANDED = "easy-poems:tabs-expanded";
+export const STORAGE_KEY_MOBILE_NUDGE_DISMISSED = "easy-poems:mobile-nudge-dismissed";

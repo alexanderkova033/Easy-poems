@@ -11,6 +11,7 @@ import { AppearanceFormFields } from "@/workshop/appearance/AppearanceFormFields
 import { BackdropFormFields } from "@/workshop/appearance/BackdropFormFields";
 import { BackgroundPicker } from "@/workshop/appearance/BackgroundPicker";
 import { FirstVisitHint } from "./FirstVisitHint";
+import { SamplePoemBanner } from "./SamplePoemBanner";
 import { FeedbackWidget } from "./FeedbackWidget";
 import { PoemBodyEditor } from "@/workshop/editor/PoemBodyEditor";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
@@ -37,7 +38,7 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_MOBILE_NUDGE_DISMISSED } from "@/shared/storage-keys";
 import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar } from "./MobileActionBar";
@@ -124,6 +125,16 @@ export function PoemWorkshop() {
   const librarySearchRef = useRef<HTMLInputElement | null>(null);
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
+  const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
+    try { return !!localStorage.getItem(STORAGE_KEY_TABS_EXPANDED); } catch { return false; }
+  });
+  const expandAllTabs = () => {
+    try { localStorage.setItem(STORAGE_KEY_TABS_EXPANDED, "1"); } catch { /* ignore */ }
+    setAllTabsExpanded(true);
+  };
+  const [mobileNudgeDismissed, setMobileNudgeDismissed] = useState(() => {
+    try { return !!localStorage.getItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED); } catch { return false; }
+  });
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
   const [selectionText, setSelectionText] = useState<string | null>(null);
@@ -775,7 +786,9 @@ export function PoemWorkshop() {
               </div>
             </div>
             <p className="brand-sub">
-              For poets who want real analysis tools — private, local, no account.
+              {m.library.poems.length > 1
+                ? `${m.library.poems.length} drafts saved · private, local, no account`
+                : "Private, local, no account"}
             </p>
           </div>
 
@@ -1017,7 +1030,17 @@ export function PoemWorkshop() {
         ) : null}
       </header>
 
-      <FirstVisitHint onOpenGuide={() => setIsGuideOpen(true)} />
+      <FirstVisitHint
+        onOpenGuide={() => setIsGuideOpen(true)}
+        onSuggest={() => m.setToolTab("suggest")}
+      />
+
+      {m.samplePoemActive && (
+        <SamplePoemBanner
+          onClear={m.clearSamplePoem}
+          onKeep={m.keepSamplePoem}
+        />
+      )}
 
       {m.persistenceError ? (
         <div
@@ -2184,6 +2207,28 @@ export function PoemWorkshop() {
           </div>
         </section>
 
+        {/* Mobile nudge — appears after 2+ lines to prompt discovering tools */}
+        {!mobileNudgeDismissed && !mobileToolsExpanded && m.quickDocStats.nonEmptyLines >= 2 && (
+          <div className="mobile-tools-nudge" role="status">
+            <span className="mobile-tools-nudge-text">Your analysis is ready →</span>
+            <button
+              type="button"
+              className="mobile-tools-nudge-btn"
+              onClick={() => { setMobileToolsExpanded(true); setMobileNudgeDismissed(true); try { localStorage.setItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED, "1"); } catch { /* ignore */ } }}
+            >
+              See tools
+            </button>
+            <button
+              type="button"
+              className="mobile-tools-nudge-dismiss"
+              aria-label="Dismiss"
+              onClick={() => { setMobileNudgeDismissed(true); try { localStorage.setItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED, "1"); } catch { /* ignore */ } }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <aside
           ref={toolsPanelRef}
           className={`tools-panel ${isFocusMode ? "is-collapsed" : ""} ${!mobileToolsExpanded ? "is-mobile-collapsed" : ""}`}
@@ -2253,25 +2298,47 @@ export function PoemWorkshop() {
               aria-label="Tools in this group"
               onKeyDown={onToolTabKeyDown}
             >
-              {TOOL_TABS.filter((t) => bucketTabs.includes(t.id)).map(
-                ({ id, label, desc, Icon }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    id={`tool-tab-${id}`}
-                    aria-selected={m.toolTab === id}
-                    aria-controls={`tool-panel-${id}`}
-                    tabIndex={m.toolTab === id ? 0 : -1}
-                    className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
-                    onClick={() => m.setToolTab(id)}
-                    title={desc}
-                  >
-                    <Icon />
-                    <span className="tool-tab-label">{label}</span>
-                  </button>
-                ),
-              )}
+              {(() => {
+                const CORE_OVERVIEW: string[] = ["issues", "totals", "lines"];
+                const visibleTabs = TOOL_TABS.filter((t) => bucketTabs.includes(t.id));
+                const isOverview = toolTabBucket(m.toolTab) === "overview";
+                const collapsed = isOverview && !allTabsExpanded;
+                const shown = collapsed
+                  ? visibleTabs.filter((t) => CORE_OVERVIEW.includes(t.id) || m.toolTab === t.id)
+                  : visibleTabs;
+                return (
+                  <>
+                    {shown.map(({ id, label, desc, Icon }) => (
+                      <button
+                        key={id}
+                        type="button"
+                        role="tab"
+                        id={`tool-tab-${id}`}
+                        aria-selected={m.toolTab === id}
+                        aria-controls={`tool-panel-${id}`}
+                        tabIndex={m.toolTab === id ? 0 : -1}
+                        className={`tool-tab ${m.toolTab === id ? "active" : ""}`}
+                        onClick={() => m.setToolTab(id)}
+                        title={desc}
+                      >
+                        <Icon />
+                        <span className="tool-tab-label">{label}</span>
+                      </button>
+                    ))}
+                    {collapsed && (
+                      <button
+                        type="button"
+                        className="tool-tab tool-tab-more"
+                        onClick={expandAllTabs}
+                        title="Show all tools"
+                      >
+                        <span className="tool-tab-more-dots">•••</span>
+                        <span className="tool-tab-label">More</span>
+                      </button>
+                    )}
+                  </>
+                );
+              })()}
             </nav>
           </div>
 

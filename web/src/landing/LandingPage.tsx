@@ -43,22 +43,51 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
             <span className="landing-brand-name">easywriting-poem</span>
           </div>
           <h1 className="landing-headline">
-            A quiet place<br />
-            to write poetry.
+            Type a poem.<br />
+            <span className="landing-headline-accent">See it analyzed — live.</span>
           </h1>
           <p className="landing-sub">
-            Your editor listens as you write — live rhyme, rhythm, and syllable feedback,
-            plus AI that reads your poem line by line. No account. Nothing stored online.
+            Rhyme scheme, syllable counts, and meter update as you type.
+            AI suggestions when you're stuck. No account. Your words stay private.
           </p>
+
+          {/* Live typing demo */}
+          <div className="landing-demo" aria-hidden>
+            <div className="landing-demo-editor">
+              <div className="landing-demo-line">
+                <span className="landing-demo-text landing-demo-text-1">The candle burns in winter's grip,</span>
+                <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-1">A</span>
+                <span className="landing-demo-syl landing-demo-syl-1">8</span>
+              </div>
+              <div className="landing-demo-line">
+                <span className="landing-demo-text landing-demo-text-2">and shadows stretch across the floor.</span>
+                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-2">B</span>
+                <span className="landing-demo-syl landing-demo-syl-2">8</span>
+              </div>
+              <div className="landing-demo-line">
+                <span className="landing-demo-text landing-demo-text-3">A moth has pressed its paper wing</span>
+                <span className="landing-demo-badge landing-demo-badge-a landing-demo-badge-3">A</span>
+                <span className="landing-demo-syl landing-demo-syl-3">8</span>
+              </div>
+              <div className="landing-demo-line landing-demo-line-typing">
+                <span className="landing-demo-text landing-demo-text-4">against the cold and frosted door.</span>
+                <span className="landing-demo-cursor" />
+                <span className="landing-demo-badge landing-demo-badge-b landing-demo-badge-4">B</span>
+                <span className="landing-demo-syl landing-demo-syl-4">8</span>
+              </div>
+            </div>
+            <div className="landing-demo-labels">
+              <span className="landing-demo-label-tag">Rhyme: ABAB</span>
+              <span className="landing-demo-label-tag">8 syllables / line</span>
+            </div>
+          </div>
+
           <div className="landing-ctas">
             <button type="button" className="landing-btn landing-btn-primary" onClick={onEnter}>
-              Start writing →
+              Try it free — no account needed →
             </button>
-            <a href="#how-it-works" className="landing-btn landing-btn-ghost">
-              See how it works
-            </a>
           </div>
-          <p className="landing-hero-reassurance">Free to use · Saves in your browser · No sign-up</p>
+          <p className="landing-hero-reassurance">Free · Saves in your browser · No sign-up · Private</p>
         </div>
       </section>
 
@@ -180,10 +209,10 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       {/* CTA footer */}
       <section className="landing-footer-cta">
         <p className="landing-footer-tagline">
-          Whether you're writing a birthday poem or a Shakespearean sonnet — easywriting-poem makes the craft more approachable.
+          Whether you're drafting a birthday poem or a Shakespearean sonnet — start with a blank page and let the analysis guide you.
         </p>
         <button type="button" className="landing-btn landing-btn-primary landing-btn-lg" onClick={onEnter}>
-          Open the workshop →
+          Open the workshop — it's free →
         </button>
       </section>
     </div>

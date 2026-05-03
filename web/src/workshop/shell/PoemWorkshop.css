@@ -161,7 +161,6 @@
   backdrop-filter: saturate(1.02) blur(8px);
   -webkit-backdrop-filter: saturate(1.02) blur(8px);
   scroll-padding-block: 0.75rem;
-  overscroll-behavior-y: contain;
   isolation: isolate;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--muted) 40%, transparent) transparent;
@@ -2756,22 +2755,21 @@
   flex-shrink: 0;
 }
 
-/* Color-coded scheme letters A–N; text uses color-mix against var(--text) so it
-   stays legible on both light and dark backdrop themes. */
-.rhyme-label-a { background: color-mix(in srgb, #4c8eff 18%, var(--bg)); color: color-mix(in srgb, #4c8eff 72%, var(--text)); }
-.rhyme-label-b { background: color-mix(in srgb, #27ae60 18%, var(--bg)); color: color-mix(in srgb, #27ae60 72%, var(--text)); }
-.rhyme-label-c { background: color-mix(in srgb, #e67e22 18%, var(--bg)); color: color-mix(in srgb, #e67e22 72%, var(--text)); }
-.rhyme-label-d { background: color-mix(in srgb, #9b59b6 18%, var(--bg)); color: color-mix(in srgb, #9b59b6 72%, var(--text)); }
-.rhyme-label-e { background: color-mix(in srgb, #e74c3c 18%, var(--bg)); color: color-mix(in srgb, #e74c3c 72%, var(--text)); }
-.rhyme-label-f { background: color-mix(in srgb, #1abc9c 18%, var(--bg)); color: color-mix(in srgb, #1abc9c 72%, var(--text)); }
-.rhyme-label-g { background: color-mix(in srgb, #f39c12 18%, var(--bg)); color: color-mix(in srgb, #f39c12 72%, var(--text)); }
-.rhyme-label-h { background: color-mix(in srgb, #5d8ecc 18%, var(--bg)); color: color-mix(in srgb, #5d8ecc 72%, var(--text)); }
-.rhyme-label-i { background: color-mix(in srgb, #e056a0 18%, var(--bg)); color: color-mix(in srgb, #e056a0 72%, var(--text)); }
-.rhyme-label-j { background: color-mix(in srgb, #00bcd4 18%, var(--bg)); color: color-mix(in srgb, #00bcd4 72%, var(--text)); }
-.rhyme-label-k { background: color-mix(in srgb, #8bc34a 18%, var(--bg)); color: color-mix(in srgb, #8bc34a 72%, var(--text)); }
-.rhyme-label-l { background: color-mix(in srgb, #ff7043 18%, var(--bg)); color: color-mix(in srgb, #ff7043 72%, var(--text)); }
-.rhyme-label-m { background: color-mix(in srgb, #7c4dff 18%, var(--bg)); color: color-mix(in srgb, #7c4dff 72%, var(--text)); }
-.rhyme-label-n { background: color-mix(in srgb, #26c6da 18%, var(--bg)); color: color-mix(in srgb, #26c6da 72%, var(--text)); }
+/* Color-coded scheme letters A–N */
+.rhyme-label-a { background: color-mix(in srgb, #4c8eff 28%, var(--bg)); color: color-mix(in srgb, #4c8eff 95%, var(--text)); }
+.rhyme-label-b { background: color-mix(in srgb, #27ae60 28%, var(--bg)); color: color-mix(in srgb, #27ae60 95%, var(--text)); }
+.rhyme-label-c { background: color-mix(in srgb, #e67e22 28%, var(--bg)); color: color-mix(in srgb, #e67e22 95%, var(--text)); }
+.rhyme-label-d { background: color-mix(in srgb, #9b59b6 28%, var(--bg)); color: color-mix(in srgb, #9b59b6 95%, var(--text)); }
+.rhyme-label-e { background: color-mix(in srgb, #e74c3c 28%, var(--bg)); color: color-mix(in srgb, #e74c3c 95%, var(--text)); }
+.rhyme-label-f { background: color-mix(in srgb, #1abc9c 28%, var(--bg)); color: color-mix(in srgb, #1abc9c 95%, var(--text)); }
+.rhyme-label-g { background: color-mix(in srgb, #f39c12 28%, var(--bg)); color: color-mix(in srgb, #f39c12 95%, var(--text)); }
+.rhyme-label-h { background: color-mix(in srgb, #5d8ecc 28%, var(--bg)); color: color-mix(in srgb, #5d8ecc 95%, var(--text)); }
+.rhyme-label-i { background: color-mix(in srgb, #e056a0 28%, var(--bg)); color: color-mix(in srgb, #e056a0 95%, var(--text)); }
+.rhyme-label-j { background: color-mix(in srgb, #00bcd4 28%, var(--bg)); color: color-mix(in srgb, #00bcd4 95%, var(--text)); }
+.rhyme-label-k { background: color-mix(in srgb, #8bc34a 28%, var(--bg)); color: color-mix(in srgb, #8bc34a 95%, var(--text)); }
+.rhyme-label-l { background: color-mix(in srgb, #ff7043 28%, var(--bg)); color: color-mix(in srgb, #ff7043 95%, var(--text)); }
+.rhyme-label-m { background: color-mix(in srgb, #7c4dff 28%, var(--bg)); color: color-mix(in srgb, #7c4dff 95%, var(--text)); }
+.rhyme-label-n { background: color-mix(in srgb, #26c6da 28%, var(--bg)); color: color-mix(in srgb, #26c6da 95%, var(--text)); }
 
 /* cliche jump button */
 .cliche-line-btn {
@@ -2817,6 +2815,74 @@
     transform: scale(0.95);
     box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 18%, transparent);
   }
+}
+
+/* ---- Mobile tools nudge ---- */
+.mobile-tools-nudge {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .mobile-tools-nudge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: fixed;
+    bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    left: 1rem;
+    right: 1rem;
+    z-index: 28;
+    padding: 0.65rem 0.85rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--surface) 96%, var(--accent));
+    box-shadow: 0 4px 20px color-mix(in srgb, #000 22%, transparent);
+    animation: nudge-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes nudge-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-tools-nudge { animation: none; }
+  }
+}
+
+.mobile-tools-nudge-text {
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mobile-tools-nudge-btn {
+  appearance: none;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.35rem 0.85rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 2.2rem;
+}
+
+.mobile-tools-nudge-dismiss {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.25rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
 }
 
 /* ---- Snapshot history list ---- */
