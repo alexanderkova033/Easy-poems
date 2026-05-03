@@ -2079,8 +2079,7 @@ export function PoemWorkshop() {
               <div className="row body-row">
                 <div className="body-label-row">
                   <label id="poem-body-label" htmlFor="poem-body">
-                    Poem{" "}
-                    <span className="label-hint">(one line per line break)</span>
+                    Poem
                   </label>
                   <div data-tour-id="format-toolbar">
                   <FormatToolbar
@@ -2252,6 +2251,14 @@ export function PoemWorkshop() {
           </div>
         )}
 
+        {/* Resize gutter — positioned absolutely in the grid wrapper, never clipped */}
+        <div
+          className="tools-resize-gutter"
+          onMouseDown={handleResizeStart}
+          aria-hidden
+          title="Drag to resize tools panel"
+        />
+
         <aside
           ref={toolsPanelRef}
           className={`tools-panel ${isFocusMode ? "is-collapsed" : ""} ${!mobileToolsExpanded ? "is-mobile-collapsed" : ""}`}
@@ -2259,13 +2266,6 @@ export function PoemWorkshop() {
           id="writing-tools"
           data-tour-id="tools-panel"
         >
-          {/* Drag handle — desktop only */}
-          <div
-            className="tools-resize-handle"
-            onMouseDown={handleResizeStart}
-            aria-hidden
-            title="Drag to resize panel"
-          />
           <div className="tools-sticky-head">
             <div className="tools-swipe-handle" aria-hidden />
             <div className="tools-head-row tools-head-row-simple">

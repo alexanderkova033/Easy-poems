@@ -8,9 +8,11 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit } from "./_rate-limit";
 import { callOpenAI } from "./_openai";
 
-type SuggestType = "continue" | "words" | "rhyme" | "spark" | "line";
+type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
 
 const PROMPTS: Record<SuggestType, string> = {
+  idea: `Generate 3 distinct poem concepts for a writer starting from scratch. Each concept should include: a specific central image or scene, a mood or emotional undercurrent, and an optional opening line or phrase they could use. Make the concepts concrete and evocative — not generic topics like "love" or "nature", but specific, surprising angles like "the weight of an empty birdcage" or "a lighthouse keeper who has forgotten what ships look like". Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each suggestion is 2-3 sentences. No markdown fences.`,
+
   continue: `The user is writing a poem and is stuck on what comes next. Study the poem's tone, imagery, and direction, then suggest 3 possible next lines or short stanzas that feel natural and continue the poem. Each suggestion should be distinct in approach. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each suggestion is 1-2 lines of verse. No markdown fences.`,
 
   words: `The user is writing a poem and wants more interesting word choices. Analyze the existing lines and suggest 6 evocative, specific words or short phrases (nouns, verbs, or adjectives) that would fit the poem's theme and mood. Return valid JSON: { "suggestions": ["word1", "word2", "word3", "word4", "word5", "word6"] }. No explanations, just the words. No markdown fences.`,

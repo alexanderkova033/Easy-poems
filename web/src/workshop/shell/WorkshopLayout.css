@@ -2,6 +2,7 @@
   display: grid;
   gap: 1.45rem;
   align-items: start;
+  position: relative;
 }
 
 /* Desktop 3-column layout — rail + editor + resizable tools panel */
