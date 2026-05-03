@@ -12,6 +12,17 @@
     grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) var(--tools-col, 380px);
     gap: 1.55rem;
   }
+
+  /* When a panel is fully collapsed, remove its column from the grid */
+  .workshop-grid.tools-collapsed {
+    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) 0px;
+  }
+  .workshop-grid.rail-collapsed {
+    grid-template-columns: 0px minmax(0, 1.35fr) var(--tools-col, 380px);
+  }
+  .workshop-grid.tools-collapsed.rail-collapsed {
+    grid-template-columns: 0px minmax(0, 1fr) 0px;
+  }
 }
 
 /* Tablet (900–1199px): tools become a fixed right drawer, grid collapses to 2 columns */

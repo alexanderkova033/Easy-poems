@@ -138,68 +138,92 @@ export function PoemWorkshop() {
     setAllTabsExpanded(true);
   };
 
+  const DEFAULT_TOOLS_W = 380;
+  const DEFAULT_RAIL_W  = 64;
+  const SNAP_PX = 36; // snap to 0 when dragged this narrow
+
   const [toolsPanelWidth, setToolsPanelWidth] = useState(() => {
     try {
       const v = parseInt(localStorage.getItem(STORAGE_KEY_TOOLS_WIDTH) ?? "", 10);
-      if (v >= 200 && v <= 800) return v;
+      if (v >= 0 && v <= 1200) return v;
     } catch { /* ignore */ }
-    return 380;
+    return DEFAULT_TOOLS_W;
   });
-
-  const handleResizeStart = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startW = parseInt(
-      workshopGridRef.current?.style.getPropertyValue("--tools-col") || "380", 10,
-    );
-    const onMove = (ev: MouseEvent) => {
-      const next = Math.max(200, Math.min(800, startW - (ev.clientX - startX)));
-      setToolsPanelWidth(next);
-      workshopGridRef.current?.style.setProperty("--tools-col", `${next}px`);
-    };
-    const onUp = () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
-      try {
-        const final = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10);
-        localStorage.setItem(STORAGE_KEY_TOOLS_WIDTH, String(final));
-      } catch { /* ignore */ }
-    };
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
-  }, []);
 
   const [railWidth, setRailWidth] = useState(() => {
     try {
       const v = parseInt(localStorage.getItem(STORAGE_KEY_RAIL_WIDTH) ?? "", 10);
-      if (v >= 44 && v <= 240) return v;
+      if (v >= 0 && v <= 320) return v;
     } catch { /* ignore */ }
-    return 64;
+    return DEFAULT_RAIL_W;
   });
 
-  const handleRailResizeStart = useCallback((e: React.MouseEvent) => {
+  const applyToolsW = useCallback((w: number) => {
+    const el = workshopGridRef.current;
+    if (!el) return;
+    el.style.setProperty("--tools-col", `${w}px`);
+    el.classList.toggle("tools-collapsed", w === 0);
+    setToolsPanelWidth(w);
+  }, []);
+
+  const applyRailW = useCallback((w: number) => {
+    const el = workshopGridRef.current;
+    if (!el) return;
+    el.style.setProperty("--rail-col", `${w}px`);
+    el.classList.toggle("rail-collapsed", w === 0);
+    setRailWidth(w);
+  }, []);
+
+  const saveToolsW = useCallback((w: number) => {
+    try { localStorage.setItem(STORAGE_KEY_TOOLS_WIDTH, String(w)); } catch { /* ignore */ }
+  }, []);
+
+  const saveRailW = useCallback((w: number) => {
+    try { localStorage.setItem(STORAGE_KEY_RAIL_WIDTH, String(w)); } catch { /* ignore */ }
+  }, []);
+
+  const resetLayout = useCallback(() => {
+    applyToolsW(DEFAULT_TOOLS_W);
+    applyRailW(DEFAULT_RAIL_W);
+    saveToolsW(DEFAULT_TOOLS_W);
+    saveRailW(DEFAULT_RAIL_W);
+  }, [applyToolsW, applyRailW, saveToolsW, saveRailW]);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startW = parseInt(
-      workshopGridRef.current?.style.getPropertyValue("--rail-col") || "64", 10,
-    );
+    const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
     const onMove = (ev: MouseEvent) => {
-      // Drag right → rail grows; drag left → shrinks
-      const next = Math.max(44, Math.min(240, startW + (ev.clientX - startX)));
-      setRailWidth(next);
-      workshopGridRef.current?.style.setProperty("--rail-col", `${next}px`);
+      const raw = startW - (ev.clientX - startX); // drag left → wider
+      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(Math.round(window.innerWidth * 0.82), raw));
+      applyToolsW(next);
     };
     const onUp = () => {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
-      try {
-        const final = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10);
-        localStorage.setItem(STORAGE_KEY_RAIL_WIDTH, String(final));
-      } catch { /* ignore */ }
+      saveToolsW(parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10));
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  }, []);
+  }, [applyToolsW, saveToolsW]);
+
+  const handleRailResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
+    const onMove = (ev: MouseEvent) => {
+      const raw = startW + (ev.clientX - startX); // drag right → wider
+      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(320, raw));
+      applyRailW(next);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      saveRailW(parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10));
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [applyRailW, saveRailW]);
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
   useEffect(() => { if (!m.title.trim()) setMetaOpen(true); }, [m.title]);
@@ -472,13 +496,8 @@ export function PoemWorkshop() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  useEffect(() => {
-    workshopGridRef.current?.style.setProperty("--tools-col", `${toolsPanelWidth}px`);
-  }, [toolsPanelWidth]);
-
-  useEffect(() => {
-    workshopGridRef.current?.style.setProperty("--rail-col", `${railWidth}px`);
-  }, [railWidth]);
+  useEffect(() => { applyToolsW(toolsPanelWidth); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { applyRailW(railWidth); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!topbarOverflowOpen) return;
@@ -1068,6 +1087,10 @@ export function PoemWorkshop() {
                       </button>
                       <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsExportOpen(true); setTopbarOverflowOpen(false); }}>
                         <span>Export poem</span>
+                      </button>
+                      <hr className="topbar-overflow-divider" />
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { resetLayout(); setTopbarOverflowOpen(false); }}>
+                        <span>Reset panel layout</span>
                       </button>
                     </div>
                   )}
@@ -1912,6 +1935,28 @@ export function PoemWorkshop() {
         onChange={m.onImportBackupFile}
       />
 
+      {/* Expand pills — appear at viewport edges when a panel is fully collapsed */}
+      {railWidth === 0 && (
+        <button
+          type="button"
+          className="panel-expand-pill panel-expand-pill-rail"
+          onClick={() => { applyRailW(DEFAULT_RAIL_W); saveRailW(DEFAULT_RAIL_W); }}
+          aria-label="Expand rail"
+        >
+          <span>›</span>
+        </button>
+      )}
+      {toolsPanelWidth === 0 && (
+        <button
+          type="button"
+          className="panel-expand-pill panel-expand-pill-tools"
+          onClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
+          aria-label="Expand tools panel"
+        >
+          <span>‹</span>
+        </button>
+      )}
+
       {/* Tablet scrim — fixed overlay, NOT a grid item */}
       {mobileToolsExpanded && (
         <div
@@ -2330,20 +2375,22 @@ export function PoemWorkshop() {
         </section>
 
 
-        {/* Rail resize gutter — drag right edge of rail to resize it */}
+        {/* Rail resize gutter */}
         <div
           className="rail-resize-gutter"
           onMouseDown={handleRailResizeStart}
+          onDoubleClick={() => { applyRailW(DEFAULT_RAIL_W); saveRailW(DEFAULT_RAIL_W); }}
           aria-hidden
-          title="Drag to resize rail"
+          title="Drag to resize · double-click to reset"
         />
 
-        {/* Tools resize gutter — drag left edge of tools panel */}
+        {/* Tools resize gutter */}
         <div
           className="tools-resize-gutter"
           onMouseDown={handleResizeStart}
+          onDoubleClick={() => { applyToolsW(DEFAULT_TOOLS_W); saveToolsW(DEFAULT_TOOLS_W); }}
           aria-hidden
-          title="Drag to resize tools panel"
+          title="Drag to resize · double-click to reset"
         />
 
         <aside

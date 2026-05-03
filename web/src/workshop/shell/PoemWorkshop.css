@@ -264,7 +264,7 @@
 
 /* Sits at the boundary between editor and tools as an absolutely-positioned
    element inside the grid wrapper. Hidden on mobile and tablet. */
-/* ── Shared resize gutter styles ─────────────────────────────────────────── */
+/* ── Resize gutters ───────────────────────────────────────────────────────── */
 
 .tools-resize-gutter,
 .rail-resize-gutter {
@@ -274,25 +274,53 @@
 @media (min-width: 1200px) {
   .tools-resize-gutter,
   .rail-resize-gutter {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: absolute;
     top: 0;
     bottom: 0;
-    width: 10px;
+    width: 16px;
     cursor: col-resize;
-    z-index: 20;
+    z-index: 22;
+    /* Subtle background tint that reveals on hover */
+    border-radius: 3px;
+    transition: background 0.18s;
   }
 
-  /* Tools gutter: between editor and tools panel */
-  .tools-resize-gutter {
-    right: calc(var(--tools-col, 380px) - 5px);
+  .tools-resize-gutter:hover,
+  .rail-resize-gutter:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
   }
 
-  /* Rail gutter: between rail and editor */
-  .rail-resize-gutter {
-    left: calc(var(--rail-col, 64px) - 5px);
+  /* Position: tools gutter sits at the tools panel's left edge */
+  .tools-resize-gutter { right: calc(var(--tools-col, 380px) - 8px); }
+  /* Position: rail gutter sits at the rail's right edge */
+  .rail-resize-gutter  { left:  calc(var(--rail-col,   64px) - 8px); }
+
+  /* The visible divider line (::before) — always present, subtle */
+  .tools-resize-gutter::before,
+  .rail-resize-gutter::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: color-mix(in srgb, var(--border) 65%, transparent);
+    transition: width 0.2s ease, background 0.18s;
+    border-radius: 1px;
+    pointer-events: none;
   }
 
+  .tools-resize-gutter:hover::before,
+  .rail-resize-gutter:hover::before {
+    width: 2px;
+    background: var(--accent);
+  }
+
+  /* Grip dots (::after) — 3 dots that fade in on hover */
   .tools-resize-gutter::after,
   .rail-resize-gutter::after {
     content: "";
@@ -300,19 +328,91 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 2px;
-    height: 2.5rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--border) 80%, transparent);
-    transition: background 0.15s, height 0.15s;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: transparent;
+    /* 3 dots via box-shadow */
+    box-shadow:
+      0 -9px 0 1.5px color-mix(in srgb, var(--border) 55%, transparent),
+      0   0px 0 1.5px color-mix(in srgb, var(--border) 55%, transparent),
+      0   9px 0 1.5px color-mix(in srgb, var(--border) 55%, transparent);
+    opacity: 0;
+    transition: opacity 0.18s, box-shadow 0.18s;
     pointer-events: none;
   }
 
   .tools-resize-gutter:hover::after,
   .rail-resize-gutter:hover::after {
-    background: var(--accent);
-    height: 4rem;
+    opacity: 1;
+    box-shadow:
+      0 -9px 0 1.5px var(--accent),
+      0   0px 0 1.5px var(--accent),
+      0   9px 0 1.5px var(--accent);
   }
+
+  /* When a panel is fully collapsed, hide the gutter (expand pill takes over) */
+  .workshop-grid.tools-collapsed .tools-resize-gutter,
+  .workshop-grid.rail-collapsed  .rail-resize-gutter {
+    display: none;
+  }
+
+  /* Hide collapsed panels in the grid */
+  .workshop-grid.tools-collapsed .tools-panel {
+    display: none;
+  }
+  .workshop-grid.rail-collapsed .workshop-rail {
+    display: none;
+  }
+}
+
+/* ── Expand pills — appear at viewport edges when a panel is closed ─────── */
+
+.panel-expand-pill {
+  display: none;
+}
+
+@media (min-width: 1200px) {
+  .panel-expand-pill {
+    display: flex;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 30;
+    align-items: center;
+    justify-content: center;
+    width: 1.4rem;
+    height: 3.5rem;
+    background: color-mix(in srgb, var(--surface) 94%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+    box-shadow: 0 2px 10px color-mix(in srgb, #000 12%, transparent);
+  }
+
+  .panel-expand-pill:hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+    color: var(--accent);
+  }
+
+  .panel-expand-pill-rail {
+    left: 0;
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    transform: translateY(-50%);
+  }
+
+  .panel-expand-pill-tools {
+    right: 0;
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    transform: translateY(-50%);
+  }
+
+  .panel-expand-pill-rail:hover  { transform: translateY(-50%) translateX( 2px); }
+  .panel-expand-pill-tools:hover { transform: translateY(-50%) translateX(-2px); }
 }
 
 .tools-panel {
