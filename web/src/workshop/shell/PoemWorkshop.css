@@ -102,46 +102,158 @@
   scroll-margin-top: 1.15rem;
 }
 
+/* ── Virtual keyboard: hide topbar to reclaim ~50px of writing space ────────── */
+@media (max-width: 899px) {
+  html.vp-keyboard-open .topbar {
+    height: 0 !important;
+    min-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-width: 0 !important;
+    overflow: hidden;
+    transition: height 0.18s ease, padding 0.18s ease;
+  }
+}
+
 /* ---- Mobile: safe area + touch target fixes ---- */
 @media (max-width: 899px) {
-  /* Respect home indicator / notch on iOS/Android */
   .poem-workshop {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  /* Tighten editor padding on narrow phones */
   .editor-panel {
-    padding: 1rem 0.9rem 1.15rem;
+    padding: 0.85rem 0.85rem 1rem;
   }
 
-  /* Poem body font should be comfortable to read/type on mobile */
   .cm-editor {
     font-size: 1rem !important;
-    line-height: 1.7 !important;
+    line-height: 1.75 !important;
   }
 
-  /* Tool bucket tabs: ensure 44px touch targets */
+  /* ── Tool bucket tabs — much larger on mobile ── */
+  .tool-bucket-row {
+    gap: 0.3rem;
+    padding: 0.4rem 0.75rem 0;
+  }
+
   .tool-bucket-tab {
-    min-height: 2.75rem;
-    padding: 0.45rem 0.55rem;
+    min-height: 3rem;
+    padding: 0.6rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-radius: 10px;
+    flex: 1;
+    text-align: center;
   }
 
-  /* Tool tab pills: ensure 44px */
+  /* ── Tool sub-tabs — scrollable row ── */
+  .tool-tabs {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 0.25rem;
+    padding: 0.4rem 0.75rem 0.35rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tool-tabs::-webkit-scrollbar { display: none; }
+
   .tool-tab {
-    min-height: 2.75rem;
+    min-height: 2.6rem;
+    flex-shrink: 0;
+    padding: 0.4rem 0.65rem 0.35rem;
   }
 
-  /* Small buttons used in tools / topbar — enforce 44px touch target */
   .small-btn {
     min-height: 2.75rem;
     padding: 0.45rem 0.75rem;
   }
+
+  /* ── Copy button — full-width on mobile ── */
+  .poem-editor-copy-box {
+    margin-top: 0.75rem;
+  }
+
+  .poem-editor-copy-slot-inner {
+    width: 100%;
+  }
+
+  .quick-copy-face-icon {
+    width: 100%;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 650;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--surface) 60%, transparent);
+    color: var(--muted);
+    min-height: 2.75rem;
+  }
+
+  .quick-copy-face-icon::before {
+    content: "Copy poem";
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-weight: 650;
+  }
+
+  /* ── Collapsible title ── */
+  .editor-meta-grid-hidden {
+    display: none;
+  }
+
+  .editor-meta-collapsed {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    width: 100%;
+    padding: 0.55rem 0.75rem 0.55rem 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font: inherit;
+    color: var(--text);
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    margin-bottom: 0.25rem;
+  }
+
+  .editor-meta-collapsed-title {
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: var(--font-poem);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .editor-meta-collapsed-form {
+    font-size: 0.78rem;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+
+  .editor-meta-collapsed-chevron {
+    font-size: 1rem;
+    color: var(--muted);
+    flex-shrink: 0;
+    opacity: 0.6;
+  }
+}
+
+/* On desktop the collapsed view is never shown */
+@media (min-width: 900px) {
+  .editor-meta-collapsed { display: none; }
+  .editor-meta-grid-hidden { display: grid; }
 }
 
 @media (max-width: 520px) {
-  /* Very narrow phones: extra tight padding */
   .editor-panel {
-    padding: 0.85rem 0.75rem 1rem;
+    padding: 0.75rem 0.7rem 0.9rem;
   }
   .tools-panel {
     border-radius: var(--radius-md, 10px);
@@ -2824,38 +2936,10 @@
 }
 
 /* ---- Mobile floating Analyse FAB ---- */
+/* mobile-analyse-fab: replaced by Analyse tab in MobileActionBar */
 .mobile-analyse-fab {
-  display: none;
+  display: none !important;
 }
-
-@media (max-width: 899px) {
-  .mobile-analyse-fab {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    position: fixed;
-    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
-    right: 1rem;
-    z-index: 30;
-    padding: 0.6rem 1.1rem;
-    border-radius: 99px;
-    border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
-    background: color-mix(in srgb, var(--accent) 18%, var(--surface));
-    color: var(--text);
-    font: inherit;
-    font-size: 0.88rem;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 18px color-mix(in srgb, var(--accent) 22%, transparent),
-                0 2px 8px color-mix(in srgb, #000 18%, transparent);
-    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .mobile-analyse-fab:active {
-    transform: scale(0.95);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 18%, transparent);
-  }
 }
 
 /* ---- Mobile tools nudge ---- */

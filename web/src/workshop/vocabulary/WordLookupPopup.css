@@ -315,36 +315,31 @@
   align-items: flex-start;
   gap: 0.5rem;
   width: 100%;
-  position: relative; /* Rhyme bar is abs-positioned within this */
-}
-
-/* Pad right only when the bar is present so the editor doesn't slide under it */
-.poem-editor-with-scheme:has(.editor-rhyme-scheme) {
-  padding-right: 3.1rem;
+  min-width: 0;
+  overflow: hidden; /* prevent any x-scroll leaking out */
 }
 
 .poem-editor-with-scheme .poem-editor-shell {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
+  overflow: hidden;
 }
 
-/* ── Right-column rhyme scheme ────────────────────────────────── */
+/* ── Right-column rhyme scheme — regular flex item, not absolute ── */
 .editor-rhyme-scheme {
-  /* Absolutely positioned so its height is constrained to the editor wrapper
-     height rather than growing beyond the poem text. */
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 100%; /* = poem-editor-with-scheme height = editor shell height */
-  overflow-y: hidden; /* Clip any rows that exceed the editor height */
+  flex: 0 0 2.6rem;
+  width: 2.6rem;
+  /* Clip rows beyond the poem text without scrollbars */
+  overflow-y: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
-  width: 2.6rem;
   padding: 4px 0.2rem 0;
   border-radius: 8px;
   border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+  /* Align with the top of the editor */
+  align-self: flex-start;
 }
 
 /* Every row — labeled or blank — gets the same height as one editor line so the

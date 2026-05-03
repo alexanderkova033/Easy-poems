@@ -39,10 +39,10 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_MOBILE_NUDGE_DISMISSED, STORAGE_KEY_TOOLS_WIDTH } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH } from "@/shared/storage-keys";
 import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
-import { MobileActionBar } from "./MobileActionBar";
+import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
 import type { RhymeBreadth } from "@/workshop/analysis/rhyme-scheme";
 import { KeyboardShortcutsContent } from "./KeyboardShortcutsContent";
@@ -125,7 +125,9 @@ export function PoemWorkshop() {
   const [libraryShowArchived, setLibraryShowArchived] = useState(false);
   const librarySearchRef = useRef<HTMLInputElement | null>(null);
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
-  const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"write" | "tools" | "library">("write");
+  const mobileToolsExpanded = mobileTab === "tools";
+  const setMobileToolsExpanded = (v: boolean) => setMobileTab(v ? "tools" : "write");
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
   const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
@@ -135,14 +137,11 @@ export function PoemWorkshop() {
     try { localStorage.setItem(STORAGE_KEY_TABS_EXPANDED, "1"); } catch { /* ignore */ }
     setAllTabsExpanded(true);
   };
-  const [mobileNudgeDismissed, setMobileNudgeDismissed] = useState(() => {
-    try { return !!localStorage.getItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED); } catch { return false; }
-  });
 
   const [toolsPanelWidth, setToolsPanelWidth] = useState(() => {
     try {
       const v = parseInt(localStorage.getItem(STORAGE_KEY_TOOLS_WIDTH) ?? "", 10);
-      if (v >= 260 && v <= 680) return v;
+      if (v >= 200 && v <= 800) return v;
     } catch { /* ignore */ }
     return 380;
   });
@@ -150,9 +149,14 @@ export function PoemWorkshop() {
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
-    const startW = toolsPanelWidth;
+    // Read current width from the CSS variable for accuracy
+    const startW = parseInt(
+      workshopGridRef.current?.style.getPropertyValue("--tools-col") || "380",
+      10,
+    );
     const onMove = (ev: MouseEvent) => {
-      const next = Math.max(260, Math.min(680, startW - (ev.clientX - startX)));
+      // Drag left → panel grows; drag right → panel shrinks
+      const next = Math.max(200, Math.min(800, startW - (ev.clientX - startX)));
       setToolsPanelWidth(next);
       workshopGridRef.current?.style.setProperty("--tools-col", `${next}px`);
     };
@@ -160,15 +164,38 @@ export function PoemWorkshop() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       try {
-        localStorage.setItem(
-          STORAGE_KEY_TOOLS_WIDTH,
-          String(parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") ?? String(startW), 10)),
+        const final = parseInt(
+          workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW),
+          10,
         );
+        localStorage.setItem(STORAGE_KEY_TOOLS_WIDTH, String(final));
       } catch { /* ignore */ }
     };
     window.addEventListener("mousemove", onMove);
     window.addEventListener("mouseup", onUp);
-  }, [toolsPanelWidth]);
+  }, []);
+  // Collapsible title area on mobile
+  const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
+  useEffect(() => { if (!m.title.trim()) setMetaOpen(true); }, [m.title]);
+
+  // Swipe gesture state
+  const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
+
+  // Hide topbar when virtual keyboard is open
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handler = () => {
+      const open = vv.height < window.innerHeight * 0.78;
+      document.documentElement.classList.toggle("vp-keyboard-open", open);
+    };
+    vv.addEventListener("resize", handler);
+    return () => {
+      vv.removeEventListener("resize", handler);
+      document.documentElement.classList.remove("vp-keyboard-open");
+    };
+  }, []);
+
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
   const [selectionText, setSelectionText] = useState<string | null>(null);
@@ -214,10 +241,10 @@ export function PoemWorkshop() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY_SHOW_RHYME_SCHEME);
       if (raw === "0" || raw === "false") return false;
-    } catch {
-      /* ignore */
-    }
-    return true;
+      if (raw === "1" || raw === "true") return true;
+    } catch { /* ignore */ }
+    // Default off on phones — the narrow column eats too much screen width
+    return window.innerWidth >= 900;
   });
   const [wordLookupEnabled, setWordLookupEnabled] = useState(() => {
     try {
@@ -1005,6 +1032,12 @@ export function PoemWorkshop() {
                       </button>
                       <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsFocusMode(true); setTopbarOverflowOpen(false); }}>
                         <span>Focus mode</span>
+                      </button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsReadingMode(true); setTopbarOverflowOpen(false); }}>
+                        <span>Reading view</span>
+                      </button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsExportOpen(true); setTopbarOverflowOpen(false); }}>
+                        <span>Export poem</span>
                       </button>
                     </div>
                   )}
@@ -1865,13 +1898,31 @@ export function PoemWorkshop() {
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
         aria-label="Poetry workshop"
+        onTouchStart={(e) => {
+          const t = e.touches[0];
+          if (!t) return;
+          swipeRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+        }}
+        onTouchEnd={(e) => {
+          const start = swipeRef.current;
+          swipeRef.current = null;
+          if (!start) return;
+          const t = e.changedTouches[0];
+          if (!t) return;
+          const dx = t.clientX - start.x;
+          const dy = t.clientY - start.y;
+          const dt = Date.now() - start.t;
+          if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.8 || dt > 450) return;
+          if (dx < 0 && mobileTab === "write") setMobileTab("tools");
+          else if (dx > 0 && mobileTab === "tools") setMobileTab("write");
+        }}
       >
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           {/* Tablet-only tools drawer toggle */}
           <button
             type="button"
             className="rail-btn tablet-tools-toggle"
-            onClick={() => setMobileToolsExpanded((v) => !v)}
+            onClick={() => setMobileToolsExpanded(!mobileToolsExpanded)}
             aria-label={mobileToolsExpanded ? "Close tools" : "Open tools"}
             aria-expanded={mobileToolsExpanded}
           >
@@ -2044,7 +2095,24 @@ export function PoemWorkshop() {
         >
           <div className="editor-print-hide">
             <div className="editor-stack">
-              <div className="editor-meta-grid" aria-label="Draft metadata">
+              {/* Mobile collapsed header — tapping expands inputs */}
+              {!metaOpen && (
+                <button
+                  type="button"
+                  className="editor-meta-collapsed"
+                  onClick={() => setMetaOpen(true)}
+                  aria-label="Edit title and form"
+                >
+                  <span className="editor-meta-collapsed-title">
+                    {m.title.trim() || "Untitled"}
+                  </span>
+                  {m.formNote.trim() && (
+                    <span className="editor-meta-collapsed-form">· {m.formNote.trim()}</span>
+                  )}
+                  <span className="editor-meta-collapsed-chevron" aria-hidden>›</span>
+                </button>
+              )}
+              <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}`} aria-label="Draft metadata">
                 <div className="row title-row">
                   <label htmlFor="poem-title">Title</label>
                   <input
@@ -2052,6 +2120,7 @@ export function PoemWorkshop() {
                     type="text"
                     value={m.title}
                     onChange={(e) => m.setTitle(e.target.value)}
+                    onBlur={() => { if (m.title.trim()) setMetaOpen(false); }}
                     placeholder="Optional"
                     autoComplete="off"
                     spellCheck={false}
@@ -2064,6 +2133,7 @@ export function PoemWorkshop() {
                     type="text"
                     value={m.formNote}
                     onChange={(e) => m.setFormNote(e.target.value)}
+                    onBlur={() => { if (m.title.trim()) setMetaOpen(false); }}
                     placeholder="e.g. sonnet, free verse"
                     autoComplete="off"
                     spellCheck={false}
@@ -2229,27 +2299,6 @@ export function PoemWorkshop() {
           </div>
         </section>
 
-        {/* Mobile nudge — appears after 2+ lines to prompt discovering tools */}
-        {!mobileNudgeDismissed && !mobileToolsExpanded && m.quickDocStats.nonEmptyLines >= 2 && (
-          <div className="mobile-tools-nudge" role="status">
-            <span className="mobile-tools-nudge-text">Your analysis is ready →</span>
-            <button
-              type="button"
-              className="mobile-tools-nudge-btn"
-              onClick={() => { setMobileToolsExpanded(true); setMobileNudgeDismissed(true); try { localStorage.setItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED, "1"); } catch { /* ignore */ } }}
-            >
-              See tools
-            </button>
-            <button
-              type="button"
-              className="mobile-tools-nudge-dismiss"
-              aria-label="Dismiss"
-              onClick={() => { setMobileNudgeDismissed(true); try { localStorage.setItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED, "1"); } catch { /* ignore */ } }}
-            >
-              ✕
-            </button>
-          </div>
-        )}
 
         {/* Resize gutter — positioned absolutely in the grid wrapper, never clipped */}
         <div
@@ -2271,16 +2320,7 @@ export function PoemWorkshop() {
             <div className="tools-head-row tools-head-row-simple">
               <div>
                 <h2 className="tools-heading">Tools</h2>
-                <p className="tools-panel-hint muted">Live analysis — updates as you write</p>
               </div>
-              <button
-                type="button"
-                className="mobile-tools-panel-toggle"
-                onClick={() => setMobileToolsExpanded(false)}
-                aria-label="Back to editor"
-              >
-                Editor
-              </button>
             </div>
             <div
               className="tool-bucket-row"
@@ -2434,17 +2474,18 @@ export function PoemWorkshop() {
 
       <MobileActionBar
         isFocusMode={isFocusMode}
-        mobileToolsExpanded={mobileToolsExpanded}
-        isLibraryOpen={isLibraryOpen}
-        isExportOpen={isExportOpen}
-        onShowEditor={() => setMobileToolsExpanded(false)}
-        onShowTools={() => setMobileToolsExpanded(true)}
-        onOpenLibrary={() => setIsLibraryOpen(true)}
-        onOpenExport={() => setIsExportOpen(true)}
-        analyseVisible={!mobileToolsExpanded}
+        activeTab={mobileTab}
+        onTab={(tab: MobileTab) => {
+          if (tab === "library") {
+            setIsLibraryOpen(true);
+            setMobileTab("write");
+          } else {
+            setMobileTab(tab);
+          }
+        }}
         onAnalyse={() => {
           mobileAnalyzeFnRef.current?.();
-          setMobileToolsExpanded(true);
+          setMobileTab("tools");
           m.setToolTab("issues");
         }}
       />

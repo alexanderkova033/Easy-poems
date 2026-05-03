@@ -92,8 +92,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    /* Bottom padding clears fixed action bar + safe-area */
-    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+    /* Bottom padding clears the tab bar (3rem) + safe-area */
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
     will-change: transform;
     transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
     overflow-y: auto;

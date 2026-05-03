@@ -513,45 +513,75 @@
   }
 }
 
-/* ---- Mobile topbar compact mode ---- */
-@media (max-width: 640px) {
-  /* Shrink topbar padding on phones */
+/* ---- Mobile topbar: single slim row ---- */
+@media (max-width: 899px) {
   .topbar {
-    padding: 0.55rem 0.65rem 0.5rem;
-    gap: 0.35rem;
+    padding: 0.45rem 0.75rem 0.4rem;
+    gap: 0;
   }
 
-  /* Hide the long tagline under the brand on phones — it wastes space */
-  .brand-sub {
+  /* Single flex row: brand + spacer + status */
+  .topbar-primary-tiered {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    grid-template-columns: none;
+  }
+
+  /* Brand takes up left side, shrinks to fit */
+  .topbar-cluster-brand {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /* Context stats (word/line count) hidden — shown in editor gutter */
+  .topbar-cluster-context {
     display: none;
   }
 
-  /* Tighten brand mark size */
-  .brand-mark {
-    font-size: 1.05rem;
+  /* Status cluster pushes to right */
+  .topbar-cluster-status {
+    margin-left: auto;
+    flex-shrink: 0;
+    gap: 0.3rem 0.35rem;
   }
 
-  /* Tighten topbar quick links row */
-  .topbar-quick {
+  .brand-sub { display: none; }
+  .brand-mark { font-size: 1rem; }
+
+  /* Slim ghost buttons on mobile */
+  .topbar-ghost-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  /* Draft selector: full-width, stacked below brand mark */
+  .topbar-cluster-brand {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .brand-tiered {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+  }
+
+  .topbar-draft-inline {
+    width: 100%;
     gap: 0.3rem;
   }
 
-  /* 44px minimum touch target */
-  .topbar-quick-btn {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.84rem;
-    min-height: 2.75rem;
+  .draft-library-select {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+    font-size: 0.88rem;
   }
 
-  /* Hide keyboard shortcut KBD hints on phones — clutters small bar */
-  .topbar-quick-keys {
-    display: none;
-  }
-
-  /* Ghost icon buttons: 44px touch target */
-  .topbar-ghost-btn {
-    width: 2.75rem;
-    height: 2.75rem;
+  .draft-library-label {
+    font-size: 0.72rem;
   }
 }
 
