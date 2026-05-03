@@ -5,11 +5,11 @@
   position: relative;
 }
 
-/* Desktop 3-column layout — rail + editor + resizable tools panel */
+/* Desktop 3-column layout — all three columns user-resizable */
 @media (min-width: 900px) {
   .workshop-grid {
-    /* --tools-col is set by JS (resize drag); fallback 380px */
-    grid-template-columns: 64px minmax(0, 1.35fr) var(--tools-col, 380px);
+    /* --rail-col and --tools-col set by JS resize; fallbacks 64px / 380px */
+    grid-template-columns: var(--rail-col, 64px) minmax(0, 1.35fr) var(--tools-col, 380px);
     gap: 1.55rem;
   }
 }
@@ -48,13 +48,20 @@
   }
 }
 
-/* Scrim: always position:fixed so it's never a grid item */
+/* Scrim: tablet-only — mobile panels are full-screen slides that don't need a scrim */
 .tablet-tools-scrim {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, #000 32%, transparent);
-  z-index: 59;
-  cursor: pointer;
+  display: none;
+}
+
+@media (min-width: 900px) and (max-width: 1199px) {
+  .tablet-tools-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: color-mix(in srgb, #000 32%, transparent);
+    z-index: 59;
+    cursor: pointer;
+  }
 }
 
 .poem-workshop.is-focus-mode .workshop-grid {
@@ -263,10 +270,22 @@
     position: sticky;
     top: 1.15rem;
     align-self: start;
+    overflow: hidden; /* clip label text gracefully as rail narrows */
   }
 
   .workshop-rail.is-hidden {
     display: none;
+  }
+
+  /* When rail is wider than default 64px, show labels more prominently */
+  .rail-btn {
+    width: 100%;
+  }
+
+  .rail-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

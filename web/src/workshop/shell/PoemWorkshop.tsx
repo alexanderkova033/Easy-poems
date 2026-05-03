@@ -39,7 +39,7 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_TOOLS_WIDTH, STORAGE_KEY_RAIL_WIDTH } from "@/shared/storage-keys";
 import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
@@ -149,13 +149,10 @@ export function PoemWorkshop() {
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
-    // Read current width from the CSS variable for accuracy
     const startW = parseInt(
-      workshopGridRef.current?.style.getPropertyValue("--tools-col") || "380",
-      10,
+      workshopGridRef.current?.style.getPropertyValue("--tools-col") || "380", 10,
     );
     const onMove = (ev: MouseEvent) => {
-      // Drag left → panel grows; drag right → panel shrinks
       const next = Math.max(200, Math.min(800, startW - (ev.clientX - startX)));
       setToolsPanelWidth(next);
       workshopGridRef.current?.style.setProperty("--tools-col", `${next}px`);
@@ -164,11 +161,40 @@ export function PoemWorkshop() {
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
       try {
-        const final = parseInt(
-          workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW),
-          10,
-        );
+        const final = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(startW), 10);
         localStorage.setItem(STORAGE_KEY_TOOLS_WIDTH, String(final));
+      } catch { /* ignore */ }
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, []);
+
+  const [railWidth, setRailWidth] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem(STORAGE_KEY_RAIL_WIDTH) ?? "", 10);
+      if (v >= 44 && v <= 240) return v;
+    } catch { /* ignore */ }
+    return 64;
+  });
+
+  const handleRailResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = parseInt(
+      workshopGridRef.current?.style.getPropertyValue("--rail-col") || "64", 10,
+    );
+    const onMove = (ev: MouseEvent) => {
+      // Drag right → rail grows; drag left → shrinks
+      const next = Math.max(44, Math.min(240, startW + (ev.clientX - startX)));
+      setRailWidth(next);
+      workshopGridRef.current?.style.setProperty("--rail-col", `${next}px`);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      try {
+        const final = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(startW), 10);
+        localStorage.setItem(STORAGE_KEY_RAIL_WIDTH, String(final));
       } catch { /* ignore */ }
     };
     window.addEventListener("mousemove", onMove);
@@ -449,6 +475,10 @@ export function PoemWorkshop() {
   useEffect(() => {
     workshopGridRef.current?.style.setProperty("--tools-col", `${toolsPanelWidth}px`);
   }, [toolsPanelWidth]);
+
+  useEffect(() => {
+    workshopGridRef.current?.style.setProperty("--rail-col", `${railWidth}px`);
+  }, [railWidth]);
 
   useEffect(() => {
     if (!topbarOverflowOpen) return;
@@ -2300,7 +2330,15 @@ export function PoemWorkshop() {
         </section>
 
 
-        {/* Resize gutter — positioned absolutely in the grid wrapper, never clipped */}
+        {/* Rail resize gutter — drag right edge of rail to resize it */}
+        <div
+          className="rail-resize-gutter"
+          onMouseDown={handleRailResizeStart}
+          aria-hidden
+          title="Drag to resize rail"
+        />
+
+        {/* Tools resize gutter — drag left edge of tools panel */}
         <div
           className="tools-resize-gutter"
           onMouseDown={handleResizeStart}

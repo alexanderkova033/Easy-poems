@@ -268,7 +268,6 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
 
   const extensions = useMemo(
     () => [
-      EditorView.lineWrapping,
       EditorView.contentAttributes.of({ spellcheck: "true" }),
       spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
       search({ top: true }),

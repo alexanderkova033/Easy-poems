@@ -264,24 +264,37 @@
 
 /* Sits at the boundary between editor and tools as an absolutely-positioned
    element inside the grid wrapper. Hidden on mobile and tablet. */
-.tools-resize-gutter {
+/* ── Shared resize gutter styles ─────────────────────────────────────────── */
+
+.tools-resize-gutter,
+.rail-resize-gutter {
   display: none;
 }
 
 @media (min-width: 1200px) {
-  .tools-resize-gutter {
+  .tools-resize-gutter,
+  .rail-resize-gutter {
     display: block;
     position: absolute;
     top: 0;
     bottom: 0;
-    /* Right edge sits at the tools panel's left edge; width centres the grab zone */
-    right: calc(var(--tools-col, 380px) - 5px);
     width: 10px;
     cursor: col-resize;
     z-index: 20;
   }
 
-  .tools-resize-gutter::after {
+  /* Tools gutter: between editor and tools panel */
+  .tools-resize-gutter {
+    right: calc(var(--tools-col, 380px) - 5px);
+  }
+
+  /* Rail gutter: between rail and editor */
+  .rail-resize-gutter {
+    left: calc(var(--rail-col, 64px) - 5px);
+  }
+
+  .tools-resize-gutter::after,
+  .rail-resize-gutter::after {
     content: "";
     position: absolute;
     left: 50%;
@@ -295,7 +308,8 @@
     pointer-events: none;
   }
 
-  .tools-resize-gutter:hover::after {
+  .tools-resize-gutter:hover::after,
+  .rail-resize-gutter:hover::after {
     background: var(--accent);
     height: 4rem;
   }

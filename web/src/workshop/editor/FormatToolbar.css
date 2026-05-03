@@ -294,6 +294,8 @@
 
 .poem-cm-wrap {
   width: 100%;
+  min-width: 0;
+  overflow: hidden; /* contain CM's horizontal expansion */
 }
 
 .poem-cm-wrap .cm-editor {
@@ -301,10 +303,14 @@
   background: color-mix(in srgb, var(--surface-2) 28%, var(--bg)) !important;
   outline: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
   outline-offset: 0;
+  /* Prevent the editor from stretching its flex parent horizontally */
+  max-width: 100%;
 }
 
+/* Horizontal scroll lives inside CM — never leaks to the page */
 .poem-cm-wrap .cm-scroller {
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
   background: transparent !important;
 }
 
