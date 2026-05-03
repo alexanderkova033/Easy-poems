@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   applyAppearance,
@@ -39,7 +39,7 @@ import {
   tabsForBucket,
   toolTabBucket,
 } from "./workshop-helpers";
-import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_MOBILE_NUDGE_DISMISSED } from "@/shared/storage-keys";
+import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE_KEY_RHYME_SCHEME_BREADTH, STORAGE_KEY_WORD_LOOKUP_ENABLED, STORAGE_KEY_TABS_EXPANDED, STORAGE_KEY_MOBILE_NUDGE_DISMISSED, STORAGE_KEY_TOOLS_WIDTH } from "@/shared/storage-keys";
 import { wordDiff } from "@/workshop/library/text-diff";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar } from "./MobileActionBar";
@@ -138,6 +138,37 @@ export function PoemWorkshop() {
   const [mobileNudgeDismissed, setMobileNudgeDismissed] = useState(() => {
     try { return !!localStorage.getItem(STORAGE_KEY_MOBILE_NUDGE_DISMISSED); } catch { return false; }
   });
+
+  const [toolsPanelWidth, setToolsPanelWidth] = useState(() => {
+    try {
+      const v = parseInt(localStorage.getItem(STORAGE_KEY_TOOLS_WIDTH) ?? "", 10);
+      if (v >= 260 && v <= 680) return v;
+    } catch { /* ignore */ }
+    return 380;
+  });
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = toolsPanelWidth;
+    const onMove = (ev: MouseEvent) => {
+      const next = Math.max(260, Math.min(680, startW - (ev.clientX - startX)));
+      setToolsPanelWidth(next);
+      workshopGridRef.current?.style.setProperty("--tools-col", `${next}px`);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      try {
+        localStorage.setItem(
+          STORAGE_KEY_TOOLS_WIDTH,
+          String(parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") ?? String(startW), 10)),
+        );
+      } catch { /* ignore */ }
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [toolsPanelWidth]);
   const [issueHighlight, setIssueHighlight] = useState<[number, number, string?] | null>(null);
   const [persistentIssueHighlights, setPersistentIssueHighlights] = useState<Array<[number, number, string?]>>([]);
   const [selectionText, setSelectionText] = useState<string | null>(null);
@@ -387,6 +418,10 @@ export function PoemWorkshop() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    workshopGridRef.current?.style.setProperty("--tools-col", `${toolsPanelWidth}px`);
+  }, [toolsPanelWidth]);
 
   useEffect(() => {
     if (!topbarOverflowOpen) return;
@@ -1814,6 +1849,15 @@ export function PoemWorkshop() {
         onChange={m.onImportBackupFile}
       />
 
+      {/* Tablet scrim — fixed overlay, NOT a grid item */}
+      {mobileToolsExpanded && (
+        <div
+          className="tablet-tools-scrim"
+          aria-hidden
+          onClick={() => setMobileToolsExpanded(false)}
+        />
+      )}
+
       <main
         id="workshop-main"
         className="workshop-grid"
@@ -1822,13 +1866,6 @@ export function PoemWorkshop() {
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
         aria-label="Poetry workshop"
       >
-        {/* Tablet scrim — click to close tools drawer */}
-        <div
-          className="tablet-tools-scrim"
-          aria-hidden
-          onClick={() => setMobileToolsExpanded(false)}
-        />
-
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           {/* Tablet-only tools drawer toggle */}
           <button
@@ -2222,6 +2259,13 @@ export function PoemWorkshop() {
           id="writing-tools"
           data-tour-id="tools-panel"
         >
+          {/* Drag handle — desktop only */}
+          <div
+            className="tools-resize-handle"
+            onMouseDown={handleResizeStart}
+            aria-hidden
+            title="Drag to resize panel"
+          />
           <div className="tools-sticky-head">
             <div className="tools-swipe-handle" aria-hidden />
             <div className="tools-head-row tools-head-row-simple">

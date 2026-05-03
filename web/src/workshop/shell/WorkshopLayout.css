@@ -4,17 +4,21 @@
   align-items: start;
 }
 
-/* Desktop 3-column layout — all widths ≥900px */
+/* Desktop 3-column layout — rail + editor + resizable tools panel */
 @media (min-width: 900px) {
   .workshop-grid {
-    grid-template-columns: 64px minmax(0, 1.35fr) minmax(320px, 480px);
+    /* --tools-col is set by JS (resize drag); fallback 380px */
+    grid-template-columns: 64px minmax(0, 1.35fr) var(--tools-col, 380px);
     gap: 1.55rem;
   }
 }
 
-/* Tablet (900–1199px): tools panel slides in as a fixed overlay instead of a grid column */
+/* Tablet (900–1199px): tools become a fixed right drawer, grid collapses to 2 columns */
 @media (min-width: 900px) and (max-width: 1199px) {
-  /* Tools panel becomes a fixed right drawer — still in the grid but visually overlaid */
+  .workshop-grid {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
   .tools-panel {
     position: fixed !important;
     top: 0;
@@ -33,33 +37,23 @@
     will-change: transform;
   }
 
-  /* The grid 3rd column is still 0px wide — editor gets the full remaining space */
-  .workshop-grid {
-    grid-template-columns: 64px minmax(0, 1fr) 0px;
-  }
-
   .workshop-grid[data-tools-open="true"] .tools-panel {
     transform: translateX(0);
-  }
-
-  /* Scrim behind the tools drawer */
-  .tablet-tools-scrim {
-    display: none;
-  }
-
-  .workshop-grid[data-tools-open="true"] .tablet-tools-scrim {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: color-mix(in srgb, #000 32%, transparent);
-    z-index: 59;
-    cursor: pointer;
   }
 
   /* Tablet tools toggle button — visible in the rail */
   .tablet-tools-toggle {
     display: flex !important;
   }
+}
+
+/* Scrim: always position:fixed so it's never a grid item */
+.tablet-tools-scrim {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, #000 32%, transparent);
+  z-index: 59;
+  cursor: pointer;
 }
 
 .poem-workshop.is-focus-mode .workshop-grid {

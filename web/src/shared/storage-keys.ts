@@ -46,3 +46,6 @@ export const STORAGE_KEY_LANDING_DISMISSED = "easy-poems:landing-dismissed";
 export const STORAGE_KEY_SAMPLE_DISMISSED = "easy-poems:sample-dismissed";
 export const STORAGE_KEY_TABS_EXPANDED = "easy-poems:tabs-expanded";
 export const STORAGE_KEY_MOBILE_NUDGE_DISMISSED = "easy-poems:mobile-nudge-dismissed";
+
+// Layout
+export const STORAGE_KEY_TOOLS_WIDTH = "easy-poems:tools-panel-width";
