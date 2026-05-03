@@ -4,7 +4,59 @@
   align-items: start;
 }
 
-@media (min-width: 900px) {
+/* Tablet (900–1199px): 2-column — rail + editor, tools as slide-in overlay */
+@media (min-width: 900px) and (max-width: 1199px) {
+  .workshop-grid {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 1.35rem;
+    position: relative;
+  }
+
+  /* Tools panel overlays from the right as a fixed drawer */
+  .tools-panel {
+    position: fixed !important;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(400px, 90vw);
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    border-right: none !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    z-index: 60;
+    transform: translateX(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    overflow-y: auto;
+    will-change: transform;
+  }
+
+  .workshop-grid[data-tools-open="true"] .tools-panel {
+    transform: translateX(0);
+  }
+
+  /* Scrim behind the tools drawer on tablet */
+  .tablet-tools-scrim {
+    display: none;
+  }
+
+  .workshop-grid[data-tools-open="true"] .tablet-tools-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: color-mix(in srgb, #000 32%, transparent);
+    z-index: 59;
+    cursor: pointer;
+  }
+
+  /* Tablet tools toggle button — visible in the rail area */
+  .tablet-tools-toggle {
+    display: flex !important;
+  }
+}
+
+/* Desktop (≥1200px): full 3-column */
+@media (min-width: 1200px) {
   .workshop-grid {
     grid-template-columns: 64px minmax(0, 1.35fr) minmax(320px, 480px);
     gap: 1.55rem;
@@ -323,6 +375,11 @@
   text-transform: uppercase;
   color: var(--muted);
   line-height: 1.1;
+}
+
+/* Tablet tools toggle — hidden by default, shown only at 900-1199px */
+.tablet-tools-toggle {
+  display: none;
 }
 
 /* "More" expander tab for progressive disclosure */

@@ -49,7 +49,9 @@ export interface StuckHelperProps {
 }
 
 export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelperProps) {
-  const [activeType, setActiveType] = useState<SuggestType | null>(null);
+  const [activeType, setActiveType] = useState<SuggestType>(() =>
+    lines.some((l) => l.trim().length > 0) ? "continue" : "idea"
+  );
   const [context, setContext] = useState("");
   const [targetLineNum, setTargetLineNum] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -66,8 +68,6 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
     ? (lines[targetLineNum - 1] ?? "")
     : "";
 
-  const hasPoem = nonEmptyLines.length > 0;
-
   // When switching to "line" mode, auto-select last non-empty line if none picked
   useEffect(() => {
     if (activeType === "line" && targetLineNum == null && nonEmptyLines.length > 0) {
@@ -82,7 +82,6 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
   }, []);
 
   const handleGenerate = useCallback(async () => {
-    if (!activeType) return;
     setLoading(true);
     setResult(null);
     setError(null);
@@ -133,7 +132,7 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
       </div>
 
       {/* Active mode body */}
-      {activeType && (
+      {(
         <div className="sh-body">
           {/* Line picker for "Fix a line" */}
           {activeType === "line" && (
@@ -205,6 +204,7 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
       )}
 
       {/* Error */}
+      {/* (closing brace removed — activeType is always set) */}
       {error && (
         <div className="sh-error" role="alert">{error}</div>
       )}
@@ -240,16 +240,6 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
         </div>
       )}
 
-      {/* Idle state */}
-      {!activeType && (
-        <div className="sh-idle">
-          <p className="sh-idle-hint">
-            {hasPoem
-              ? "Pick a mode above to get AI suggestions. Try \"Poem idea\" for a fresh concept, or \"Continue\" to carry on from where you are."
-              : "Not sure what to write? Try \"Poem idea\" above — or write a few lines and come back for suggestions."}
-          </p>
-        </div>
-      )}
     </div>
   );
 }

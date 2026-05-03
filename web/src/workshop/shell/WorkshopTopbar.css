@@ -842,6 +842,22 @@
   width: auto;
 }
 
+.brand-product-badge {
+  font-size: 0.6em;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  padding: 0.15em 0.5em;
+  border-radius: 5px;
+  line-height: 1.5;
+  align-self: center;
+  flex-shrink: 0;
+}
+
 .brand-sub {
   margin: 0;
   font-size: 0.84rem;
@@ -853,6 +869,103 @@
 
 .brand-sub.is-concealed {
   display: none;
+}
+
+/* ── Overflow menu ──────────────────────────────────────────────────────── */
+
+.topbar-overflow-wrap {
+  position: relative;
+}
+
+.topbar-overflow-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  min-width: 200px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px color-mix(in srgb, #000 22%, transparent);
+  padding: 0.45rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  animation: overflow-menu-in 0.18s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes overflow-menu-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.topbar-overflow-item {
+  appearance: none;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topbar-overflow-item:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  color: var(--text);
+}
+
+.topbar-overflow-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.3rem 0.35rem;
+}
+
+.topbar-overflow-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.topbar-overflow-label {
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.topbar-overflow-value {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.topbar-overflow-action {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s;
+}
+
+.topbar-overflow-action:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+.topbar-word-goal-menu {
+  font-size: 0.8rem;
 }
 
 .topbar-saved {

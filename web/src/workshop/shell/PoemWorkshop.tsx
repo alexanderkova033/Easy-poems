@@ -12,6 +12,7 @@ import { BackdropFormFields } from "@/workshop/appearance/BackdropFormFields";
 import { BackgroundPicker } from "@/workshop/appearance/BackgroundPicker";
 import { FirstVisitHint } from "./FirstVisitHint";
 import { SamplePoemBanner } from "./SamplePoemBanner";
+import { RhymeTooltip } from "./RhymeTooltip";
 import { FeedbackWidget } from "./FeedbackWidget";
 import { PoemBodyEditor } from "@/workshop/editor/PoemBodyEditor";
 import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
@@ -125,6 +126,8 @@ export function PoemWorkshop() {
   const librarySearchRef = useRef<HTMLInputElement | null>(null);
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
   const [mobileToolsExpanded, setMobileToolsExpanded] = useState(false);
+  const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
+  const overflowMenuRef = useRef<HTMLDivElement | null>(null);
   const [allTabsExpanded, setAllTabsExpanded] = useState(() => {
     try { return !!localStorage.getItem(STORAGE_KEY_TABS_EXPANDED); } catch { return false; }
   });
@@ -370,6 +373,7 @@ export function PoemWorkshop() {
         setIsReadingMode((v) => !v);
         return;
       }
+      if (e.key === "Escape") setTopbarOverflowOpen(false);
       if (e.key !== "Escape") return;
       setIsLibraryOpen(false);
       setIsStyleOpen(false);
@@ -383,6 +387,17 @@ export function PoemWorkshop() {
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
+
+  useEffect(() => {
+    if (!topbarOverflowOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (overflowMenuRef.current && !overflowMenuRef.current.contains(e.target as Node)) {
+        setTopbarOverflowOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [topbarOverflowOpen]);
 
   const focusPoemTitle = () => {
     document.getElementById("poem-title")?.focus();
@@ -741,7 +756,7 @@ export function PoemWorkshop() {
                     strokeLinejoin="round"
                   />
                 </svg>
-                easywriting-poem
+                easywriting<span className="brand-product-badge">poem</span>
               </h1>
               <div className="topbar-draft-inline">
                 <label className="draft-library-label" htmlFor="draft-poem-select">
@@ -844,9 +859,17 @@ export function PoemWorkshop() {
             )}
           </div>
 
-          <div className="topbar-cluster topbar-cluster-status" aria-label="Appearance and save">
+          <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save">
+            <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
+              <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
+              <span className="topbar-saved-label">
+                {m.savedFlash ? "Saved" : m.lastSavedAt ? <SavedAgo ts={m.lastSavedAt} /> : null}
+              </span>
+            </span>
+
             {!isFocusMode ? (
-              <span className="topbar-look-cluster topbar-look-cluster-ghost">
+              <>
+                {/* Fonts */}
                 <button
                   type="button"
                   className={`topbar-ghost-btn ${isAppearanceOpen ? "is-selected" : ""}`}
@@ -856,178 +879,114 @@ export function PoemWorkshop() {
                   aria-label="Fonts and typography"
                   {...hint("Fonts: poem and interface typefaces")}
                 >
-                  {/* Large A + small a = font picker icon */}
-                  <svg
-                    className="topbar-ghost-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden
-                    focusable="false"
-                  >
+                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
                     <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M4 19l5-13 5 13M6 14h6" />
                     <path fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" d="M17 19v-5.5a2.5 2.5 0 0 1 5 0V19M15.5 16h4" />
                   </svg>
                 </button>
+                {/* Background */}
                 <button
                   type="button"
-                  className={`topbar-ghost-btn topbar-ghost-btn-backdrop ${isBackgroundOpen ? "is-selected" : ""}`}
+                  className={`topbar-ghost-btn ${isBackgroundOpen ? "is-selected" : ""}`}
                   onClick={() => setIsBackgroundOpen((v) => !v)}
                   aria-haspopup="dialog"
                   aria-expanded={isBackgroundOpen}
                   aria-label="Page background"
                   {...hint("Background: choose a scene behind the page")}
                 >
-                  {/* Landscape/image icon — clearly "background scene" */}
-                  <svg
-                    className="topbar-ghost-icon"
-                    viewBox="0 0 24 24"
-                    aria-hidden
-                    focusable="false"
-                  >
+                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
                     <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
                     <path fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" d="M3 15l4.5-4.5 3 3 3-3 4.5 4.5" />
                     <circle cx="8" cy="9.5" r="1.25" fill="currentColor" />
                   </svg>
                 </button>
-              </span>
-            ) : null}
-            <span className="topbar-saved topbar-saved-quiet" aria-live="polite">
-              <span className={`save-dot ${m.savedFlash ? "is-on" : ""}`} aria-hidden />
-              <span className="topbar-saved-label">
-                {m.savedFlash ? "Saved" : m.lastSavedAt ? <SavedAgo ts={m.lastSavedAt} /> : null}
-              </span>
-            </span>
-            <span className="topbar-session-bar" aria-label="Session stats">
-              <span className="topbar-session-timer">
-                <SessionTimer startTs={sessionStartRef.current} />
-              </span>
-              {sessionWordGoal ? (
+                {/* Find */}
                 <button
                   type="button"
-                  className="topbar-word-goal"
-                  title={`${m.quickDocStats.totalWords} / ${sessionWordGoal} words — click to change`}
-                  aria-label={`Word goal: ${m.quickDocStats.totalWords} of ${sessionWordGoal} words`}
-                  onClick={() => { setGoalInputVal(String(sessionWordGoal)); setShowGoalInput(true); }}
+                  className="topbar-ghost-btn"
+                  onClick={() => { setFindMode("find"); setIsFindOpen(true); }}
+                  aria-label="Find in poem (⌘F)"
+                  {...hint("Find text in the poem (⌘/Ctrl+F)")}
                 >
-                  <span
-                    className="topbar-word-goal-fill"
-                    style={{ width: `${Math.min(100, Math.round((m.quickDocStats.totalWords / sessionWordGoal) * 100))}%` }}
-                  />
-                  <span className="topbar-word-goal-label">
-                    {m.quickDocStats.totalWords}/{sessionWordGoal}w
-                  </span>
+                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                    <circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" strokeWidth="1.75"/>
+                    <path d="M14.5 14.5L19 19" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round"/>
+                  </svg>
                 </button>
-              ) : showGoalInput ? (
-                <form
-                  className="topbar-goal-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const n = parseInt(goalInputVal, 10);
-                    if (!isNaN(n) && n > 0) { setSessionWordGoal(n); setShowGoalInput(false); }
-                  }}
-                >
-                  <input
-                    className="topbar-goal-input"
-                    type="number"
-                    min="1"
-                    max="9999"
-                    placeholder="e.g. 100"
-                    value={goalInputVal}
-                    onChange={(e) => setGoalInputVal(e.target.value)}
-                    aria-label="Word count goal"
-                    autoFocus
-                    onBlur={() => { if (!goalInputVal) setShowGoalInput(false); }}
-                    onKeyDown={(e) => { if (e.key === "Escape") setShowGoalInput(false); }}
-                  />
-                  <button type="submit" className="topbar-goal-submit" aria-label="Set goal">✓</button>
-                </form>
-              ) : (
-                <button
-                  type="button"
-                  className="topbar-word-goal-set"
-                  onClick={() => { setGoalInputVal(""); setShowGoalInput(true); }}
-                  {...hint("Set a word count goal for this writing session")}
-                  aria-label="Set word count goal"
-                >
-                  + goal
-                </button>
-              )}
-            </span>
-            {isFocusMode ? (
+                {/* Overflow ⋯ */}
+                <div className="topbar-overflow-wrap" ref={overflowMenuRef}>
+                  <button
+                    type="button"
+                    className={`topbar-ghost-btn topbar-overflow-btn ${topbarOverflowOpen ? "is-selected" : ""}`}
+                    aria-label="More options"
+                    aria-expanded={topbarOverflowOpen}
+                    aria-haspopup="menu"
+                    onClick={() => setTopbarOverflowOpen((v) => !v)}
+                    {...hint("More: session timer, word goal, share, shortcuts")}
+                  >
+                    <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                      <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+                    </svg>
+                  </button>
+                  {topbarOverflowOpen && (
+                    <div className="topbar-overflow-menu" role="menu">
+                      {/* Session */}
+                      <div className="topbar-overflow-section">
+                        <span className="topbar-overflow-label">Session</span>
+                        <span className="topbar-overflow-value"><SessionTimer startTs={sessionStartRef.current} /></span>
+                      </div>
+                      {/* Word goal */}
+                      <div className="topbar-overflow-section">
+                        <span className="topbar-overflow-label">Word goal</span>
+                        {sessionWordGoal ? (
+                          <button
+                            type="button"
+                            className="topbar-word-goal topbar-word-goal-menu"
+                            onClick={() => { setGoalInputVal(String(sessionWordGoal)); setShowGoalInput(true); setTopbarOverflowOpen(false); }}
+                          >
+                            <span className="topbar-word-goal-fill" style={{ width: `${Math.min(100, Math.round((m.quickDocStats.totalWords / sessionWordGoal) * 100))}%` }} />
+                            <span className="topbar-word-goal-label">{m.quickDocStats.totalWords}/{sessionWordGoal}w</span>
+                          </button>
+                        ) : showGoalInput ? (
+                          <form className="topbar-goal-form" onSubmit={(e) => { e.preventDefault(); const n = parseInt(goalInputVal, 10); if (!isNaN(n) && n > 0) { setSessionWordGoal(n); setShowGoalInput(false); } }}>
+                            <input className="topbar-goal-input" type="number" min="1" max="9999" placeholder="e.g. 100" value={goalInputVal} onChange={(e) => setGoalInputVal(e.target.value)} aria-label="Word count goal" autoFocus onBlur={() => { if (!goalInputVal) setShowGoalInput(false); }} onKeyDown={(e) => { if (e.key === "Escape") setShowGoalInput(false); }} />
+                            <button type="submit" className="topbar-goal-submit" aria-label="Set goal">✓</button>
+                          </form>
+                        ) : (
+                          <button type="button" className="topbar-overflow-action" onClick={() => { setGoalInputVal(""); setShowGoalInput(true); }}>Set goal</button>
+                        )}
+                      </div>
+                      <hr className="topbar-overflow-divider" />
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsCmdkOpen(true); setTopbarOverflowOpen(false); }}>
+                        <span>⌘ Commands</span>
+                      </button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShareOpen(true); setTopbarOverflowOpen(false); }}>
+                        <span>Share poem</span>
+                      </button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShortcutsOpen(true); setTopbarOverflowOpen(false); }}>
+                        <span>Keyboard shortcuts</span>
+                      </button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsFocusMode(true); setTopbarOverflowOpen(false); }}>
+                        <span>Focus mode</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
               <button
                 type="button"
                 className="small-btn topbar-focus-exit-btn"
                 onClick={() => setIsFocusMode(false)}
                 aria-label="Exit focus mode and show tools"
-                {...hint("Exit focus mode — bring back tools and the side rail")}
               >
                 Show tools
               </button>
-            ) : null}
+            )}
           </div>
         </div>
-
-        {!isFocusMode ? (
-          <nav className="topbar-quick topbar-icon-row" aria-label="Editing actions" data-tour-id="topbar-actions">
-            {/* Commands */}
-            <button
-              type="button"
-              className="topbar-icon-btn"
-              onClick={() => setIsCmdkOpen(true)}
-              aria-label="Command palette (⌘K)"
-              {...hint("Commands — search all features (⌘/Ctrl+K)")}
-            >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
-                <path d="M8 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM2 8a6 6 0 1 1 10.89 3.476l4.817 4.817a1 1 0 0 1-1.414 1.414l-4.816-4.816A6 6 0 0 1 2 8z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"/>
-              </svg>
-              <span className="topbar-icon-label">Search</span>
-            </button>
-            {/* Find */}
-            <button
-              type="button"
-              className="topbar-icon-btn"
-              onClick={() => { setFindMode("find"); setIsFindOpen(true); }}
-              aria-label="Find in poem (⌘F)"
-              {...hint("Find text in the poem (⌘/Ctrl+F)")}
-            >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
-                <path d="M4 5h12M4 10h8M4 15h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="15" cy="15" r="3" stroke="currentColor" strokeWidth="1.6"/>
-                <path d="M17.5 17.5l1.5 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
-              </svg>
-              <span className="topbar-icon-label">Find</span>
-            </button>
-            {/* Share */}
-            <button
-              type="button"
-              className="topbar-icon-btn"
-              onClick={() => setIsShareOpen(true)}
-              aria-label="Share poem"
-              {...hint("Share — generate a link to this poem")}
-            >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
-                <circle cx="15" cy="5" r="2" stroke="currentColor" strokeWidth="1.6"/>
-                <circle cx="5" cy="10" r="2" stroke="currentColor" strokeWidth="1.6"/>
-                <circle cx="15" cy="15" r="2" stroke="currentColor" strokeWidth="1.6"/>
-                <path d="M7 9l6-3M7 11l6 3" stroke="currentColor" strokeWidth="1.4"/>
-              </svg>
-              <span className="topbar-icon-label">Share</span>
-            </button>
-            {/* Shortcuts */}
-            <button
-              type="button"
-              className="topbar-icon-btn"
-              onClick={() => setIsShortcutsOpen(true)}
-              aria-label="Keyboard shortcuts"
-              {...hint("All keyboard shortcuts")}
-            >
-              <svg viewBox="0 0 20 20" fill="none" aria-hidden width="16" height="16">
-                <rect x="2" y="5" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.6"/>
-                <path d="M5 9h1M9 9h1M13 9h1M7 12h6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-              <span className="topbar-icon-label">Keys</span>
-            </button>
-          </nav>
-        ) : null}
       </header>
 
       <FirstVisitHint
@@ -1041,6 +1000,8 @@ export function PoemWorkshop() {
           onKeep={m.keepSamplePoem}
         />
       )}
+
+      <RhymeTooltip sampleActive={m.samplePoemActive} />
 
       {m.persistenceError ? (
         <div
@@ -1858,9 +1819,34 @@ export function PoemWorkshop() {
         className="workshop-grid"
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
+        data-tools-open={mobileToolsExpanded ? "true" : "false"}
         aria-label="Poetry workshop"
       >
+        {/* Tablet scrim — click to close tools drawer */}
+        <div
+          className="tablet-tools-scrim"
+          aria-hidden
+          onClick={() => setMobileToolsExpanded(false)}
+        />
+
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
+          {/* Tablet-only tools drawer toggle */}
+          <button
+            type="button"
+            className="rail-btn tablet-tools-toggle"
+            onClick={() => setMobileToolsExpanded((v) => !v)}
+            aria-label={mobileToolsExpanded ? "Close tools" : "Open tools"}
+            aria-expanded={mobileToolsExpanded}
+          >
+            <RailIcon>
+              <svg viewBox="0 0 24 24" aria-hidden focusable="false">
+                <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" strokeWidth="1.75"/>
+                <path d="M15 3v18" stroke="currentColor" strokeWidth="1.75"/>
+              </svg>
+            </RailIcon>
+            <span className="rail-label">Tools</span>
+          </button>
+
           <button
             type="button"
             className="rail-btn rail-btn-library"

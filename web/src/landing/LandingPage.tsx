@@ -26,7 +26,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
           <path d="M11 18L12 21" stroke="#c5e0c8" strokeWidth="1.5" strokeLinecap="round" fill="none" />
           <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="none" stroke="rgba(30,60,35,0.22)" strokeWidth="0.8" strokeLinejoin="round" />
         </svg>
-        <span className="landing-sticky-name">easywriting-poem</span>
+        <span className="landing-sticky-name">easywriting <span className="landing-brand-badge">poem</span></span>
         <button type="button" className="landing-btn landing-btn-primary landing-sticky-cta" onClick={onEnter}>
           Start writing
         </button>
@@ -40,7 +40,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
               <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" stroke="white" strokeWidth="0.7" strokeLinejoin="round" />
               <path d="M19 3L12 21" stroke="rgba(0,0,0,0.18)" strokeWidth="0.55" strokeLinecap="round" fill="none" />
             </svg>
-            <span className="landing-brand-name">easywriting-poem</span>
+            <span className="landing-brand-name">easywriting <span className="landing-brand-badge">poem</span></span>
           </div>
           <h1 className="landing-headline">
             Type a poem.<br />
@@ -91,92 +91,77 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
         </div>
       </section>
 
-      {/* Comic guide */}
-      <section className="landing-guide" id="how-it-works">
-        <h2 className="landing-section-title">How it works</h2>
-        <div className="landing-comics">
-
-          <div className="landing-comic-panel">
-            <div className="landing-comic-art" aria-hidden>
-              <div className="lc-editor-mock">
-                <div className="lc-line lc-line-1" />
-                <div className="lc-line lc-line-2" />
-                <div className="lc-line lc-line-3" />
-                <div className="lc-cursor" />
+      {/* App preview mockup */}
+      <section className="landing-preview" id="how-it-works" aria-label="App preview">
+        <h2 className="landing-section-title">What it looks like</h2>
+        <div className="lp-shell" aria-hidden>
+          {/* Topbar */}
+          <div className="lp-topbar">
+            <span className="lp-brand">easywriting <span className="lp-brand-badge">poem</span></span>
+            <span className="lp-draft-pill">The Candle</span>
+            <span className="lp-stat">42 words</span>
+            <span className="lp-save">● Saved</span>
+          </div>
+          {/* 3-column grid */}
+          <div className="lp-grid">
+            {/* Rail */}
+            <div className="lp-rail">
+              <div className="lp-rail-btn lp-rail-btn-guide">Guide</div>
+              <div className="lp-rail-btn">Lib</div>
+              <div className="lp-rail-btn">Export</div>
+            </div>
+            {/* Editor */}
+            <div className="lp-editor">
+              <div className="lp-title-field">The Candle</div>
+              <div className="lp-poem-lines">
+                {[
+                  { text: "The candle burns in winter's grip,", badge: "A", syl: 8 },
+                  { text: "and shadows stretch across the floor.", badge: "B", syl: 8 },
+                  { text: "A moth has pressed its paper wing", badge: "A", syl: 8 },
+                  { text: "against the cold and frosted door.", badge: "B", syl: 8 },
+                  { text: "", badge: null, syl: null },
+                  { text: "The candle knows it cannot last —", badge: "C", syl: 8 },
+                  { text: "its wax grows thin, its circle bright.", badge: "D", syl: 8 },
+                ].map((row, i) => (
+                  <div key={i} className="lp-poem-row">
+                    <span className="lp-poem-text">{row.text}</span>
+                    {row.badge && <span className={`lp-rhyme-badge lp-rhyme-${row.badge.toLowerCase()}`}>{row.badge}</span>}
+                    {row.syl != null && <span className="lp-syl">{row.syl}</span>}
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="landing-comic-num">1</div>
-            <div className="landing-comic-content">
-              <h3 className="landing-comic-title">Type your poem</h3>
-              <p className="landing-comic-desc">
-                Write in the big text area. Saves automatically — no account needed.
-              </p>
-            </div>
-          </div>
-
-          <div className="landing-comic-arrow" aria-hidden>→</div>
-
-          <div className="landing-comic-panel">
-            <div className="landing-comic-art" aria-hidden>
-              <div className="lc-bars">
-                <div className="lc-bar lc-bar-green" style={{ width: "80%" }} />
-                <div className="lc-bar lc-bar-yellow" style={{ width: "55%" }} />
-                <div className="lc-bar lc-bar-green" style={{ width: "70%" }} />
-                <div className="lc-bar lc-bar-red" style={{ width: "30%" }} />
+            {/* Tools */}
+            <div className="lp-tools">
+              <div className="lp-tools-tabs">
+                <span className="lp-ttab">Queue</span>
+                <span className="lp-ttab lp-ttab-active">Sound</span>
+                <span className="lp-ttab">Ideas</span>
+              </div>
+              <div className="lp-tools-inner">
+                <div className="lp-tool-heading">Rhyme scheme</div>
+                <div className="lp-rhyme-rows">
+                  {[["A","grip / wing"],["B","floor / door"],["C","last"],["D","bright"]].map(([label, words]) => (
+                    <div key={label} className="lp-rhyme-row">
+                      <span className={`lp-rhyme-badge lp-rhyme-${label.toLowerCase()}`}>{label}</span>
+                      <span className="lp-rhyme-words">{words}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="lp-tool-heading" style={{ marginTop: "0.8rem" }}>Meter</div>
+                <div className="lp-meter-rows">
+                  {[8,8,8,8].map((n,i) => (
+                    <div key={i} className="lp-meter-row">
+                      <span className="lp-meter-bar" style={{ width: `${(n/10)*100}%` }} />
+                      <span className="lp-meter-num">{n}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="landing-comic-num">2</div>
-            <div className="landing-comic-content">
-              <h3 className="landing-comic-title">See live analysis</h3>
-              <p className="landing-comic-desc">
-                Rhyme scheme, meter, syllables — all update as you type.
-              </p>
-            </div>
           </div>
-
-          <div className="landing-comic-arrow" aria-hidden>→</div>
-
-          <div className="landing-comic-panel">
-            <div className="landing-comic-art" aria-hidden>
-              <div className="lc-score-ring">
-                <svg viewBox="0 0 60 60" aria-hidden>
-                  <circle cx="30" cy="30" r="24" fill="none"
-                    stroke="currentColor" strokeOpacity="0.12" strokeWidth="5" />
-                  <circle cx="30" cy="30" r="24" fill="none"
-                    stroke="var(--accent)" strokeWidth="5" strokeLinecap="round"
-                    strokeDasharray="100 151" transform="rotate(-90 30 30)" />
-                </svg>
-                <span>74</span>
-              </div>
-            </div>
-            <div className="landing-comic-num">3</div>
-            <div className="landing-comic-content">
-              <h3 className="landing-comic-title">Get AI feedback</h3>
-              <p className="landing-comic-desc">
-                Scores your poem and highlights the exact words to improve.
-              </p>
-            </div>
-          </div>
-
-          <div className="landing-comic-arrow" aria-hidden>→</div>
-
-          <div className="landing-comic-panel">
-            <div className="landing-comic-art" aria-hidden>
-              <div className="lc-export">
-                <div className="lc-export-icon">↓</div>
-                <div className="lc-export-label">.docx</div>
-              </div>
-            </div>
-            <div className="landing-comic-num">4</div>
-            <div className="landing-comic-content">
-              <h3 className="landing-comic-title">Export &amp; share</h3>
-              <p className="landing-comic-desc">
-                Download as .txt or .docx, or use Reading Mode for a clean view.
-              </p>
-            </div>
-          </div>
-
         </div>
+        <p className="landing-preview-caption">Your poem · your browser · nothing sent to a server</p>
       </section>
 
       {/* What we analyze */}

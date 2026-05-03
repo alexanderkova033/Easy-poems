@@ -96,6 +96,23 @@
   letter-spacing: 0.01em;
   color: var(--muted);
   text-transform: lowercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.landing-brand-badge {
+  font-size: 0.62em;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface, #111));
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  padding: 0.15em 0.5em;
+  border-radius: 5px;
+  line-height: 1.5;
 }
 
 .landing-leaf {
@@ -341,6 +358,291 @@
   font-weight: 700;
   text-align: center;
   color: var(--text);
+}
+
+/* ── App preview mockup ───────────────────────────────────────────────────── */
+
+.landing-preview {
+  width: 100%;
+  max-width: 960px;
+  padding: 3rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.landing-preview-caption {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+/* Shell chrome */
+.lp-shell {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 48px color-mix(in srgb, #000 22%, transparent);
+  background: var(--bg);
+  font-size: 0.76rem;
+  font-family: var(--font-ui);
+}
+
+/* Topbar strip */
+.lp-topbar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  background: color-mix(in srgb, var(--surface) 90%, var(--bg));
+  border-bottom: 1px solid var(--border);
+}
+
+.lp-brand {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.lp-brand-badge {
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+}
+
+.lp-draft-pill {
+  background: color-mix(in srgb, var(--surface) 80%, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.15rem 0.55rem;
+  color: var(--text);
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.lp-stat {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-family: var(--font-metric, monospace);
+}
+
+.lp-save {
+  margin-left: auto;
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* 3-column grid */
+.lp-grid {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1.3fr) minmax(200px, 300px);
+  min-height: 340px;
+}
+
+/* Rail */
+.lp-rail {
+  border-right: 1px solid var(--border);
+  padding: 0.6rem 0.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  background: color-mix(in srgb, var(--surface) 82%, var(--bg));
+}
+
+.lp-rail-btn {
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-align: center;
+  padding: 0.45rem 0.15rem 0.35rem;
+  letter-spacing: 0.03em;
+}
+
+.lp-rail-btn-guide {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  color: var(--accent);
+}
+
+/* Editor */
+.lp-editor {
+  padding: 0.8rem 0.7rem 0.8rem 0.9rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.lp-title-field {
+  font-family: var(--font-poem, serif);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.lp-poem-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.lp-poem-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.45rem;
+  padding: 0.08rem 0;
+}
+
+.lp-poem-text {
+  flex: 1;
+  font-family: var(--font-poem, serif);
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.45;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-rhyme-badge {
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding: 0.08em 0.35em;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.lp-rhyme-a { background: color-mix(in srgb, #4c8eff 28%, var(--bg)); color: color-mix(in srgb, #4c8eff 95%, var(--text)); }
+.lp-rhyme-b { background: color-mix(in srgb, #27ae60 28%, var(--bg)); color: color-mix(in srgb, #27ae60 95%, var(--text)); }
+.lp-rhyme-c { background: color-mix(in srgb, #e67e22 28%, var(--bg)); color: color-mix(in srgb, #e67e22 95%, var(--text)); }
+.lp-rhyme-d { background: color-mix(in srgb, #9b59b6 28%, var(--bg)); color: color-mix(in srgb, #9b59b6 95%, var(--text)); }
+
+.lp-syl {
+  font-size: 0.58rem;
+  font-family: var(--font-metric, monospace);
+  color: var(--muted);
+  min-width: 1rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* Tools panel */
+.lp-tools {
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, var(--surface) 84%, var(--bg));
+}
+
+.lp-tools-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  padding: 0.4rem 0.5rem 0;
+  gap: 0.15rem;
+}
+
+.lp-ttab {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 0.3rem 0.55rem;
+  border-radius: 6px 6px 0 0;
+  color: var(--muted);
+  cursor: default;
+}
+
+.lp-ttab-active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-bottom: none;
+}
+
+.lp-tools-inner {
+  padding: 0.7rem 0.7rem 0.5rem;
+  flex: 1;
+}
+
+.lp-tool-heading {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.lp-rhyme-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lp-rhyme-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lp-rhyme-words {
+  font-size: 0.66rem;
+  color: var(--text);
+}
+
+.lp-meter-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.lp-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lp-meter-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: 0.55;
+  flex-shrink: 0;
+}
+
+.lp-meter-num {
+  font-size: 0.6rem;
+  font-family: var(--font-metric, monospace);
+  color: var(--muted);
+}
+
+/* Hide on very small screens */
+@media (max-width: 580px) {
+  .lp-grid {
+    grid-template-columns: 0 minmax(0, 1fr) 0;
+  }
+  .lp-rail,
+  .lp-tools {
+    display: none;
+  }
 }
 
 /* ── Comic guide ─────────────────────────────────────────────────────────── */
