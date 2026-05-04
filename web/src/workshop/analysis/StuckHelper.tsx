@@ -75,6 +75,11 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
     }
   }, [activeType]); // eslint-disable-line
 
+  // Auto-generate on mount when poem has lines (skip for "line" mode which needs a target)
+  useEffect(() => {
+    if (activeType !== "line") void handleGenerate();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleSelectMode = useCallback((type: SuggestType) => {
     setActiveType(type);
     setResult(null);

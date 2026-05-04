@@ -1,4 +1,55 @@
 /* ---- Backdrop picker (symbols + swatches) ---- */
+
+/* Recently-used strip */
+.bg-picker-recents {
+  margin-bottom: 1rem;
+}
+
+.bg-picker-recents-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.45rem;
+}
+
+.bg-picker-recents-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.bg-picker-recent-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+}
+
+.bg-picker-recent-btn:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+}
+
+.bg-picker-recent-btn.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.bg-picker-recent-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .bg-picker-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(11.5rem, 1fr));

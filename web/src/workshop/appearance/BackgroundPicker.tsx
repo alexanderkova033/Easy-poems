@@ -10,6 +10,26 @@ import { generateBackground } from "./generate-background";
 
 const PRESET_OPTIONS = BACKGROUND_OPTIONS.filter((o) => o.id !== "custom");
 
+const RECENTS_KEY = "easy-poems:recent-backgrounds";
+const MAX_RECENTS = 3;
+
+function loadRecents(): BackgroundId[] {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as BackgroundId[];
+    return Array.isArray(arr) ? arr.slice(0, MAX_RECENTS) : [];
+  } catch { return []; }
+}
+
+function saveRecent(id: BackgroundId) {
+  if (id === "custom") return;
+  try {
+    const prev = loadRecents().filter((x) => x !== id);
+    localStorage.setItem(RECENTS_KEY, JSON.stringify([id, ...prev].slice(0, MAX_RECENTS)));
+  } catch { /* ignore */ }
+}
+
 const EDITABLE_COLORS: { key: keyof CustomBackgroundTheme; label: string }[] = [
   { key: "bg",      label: "Background" },
   { key: "surface", label: "Surface" },
@@ -143,9 +163,44 @@ export function BackgroundPicker(props: {
   }, []);
 
   const isCustomActive = background === "custom" && appearance.customBackground != null;
+  const [recents, setRecents] = useState<BackgroundId[]>(() => loadRecents());
+
+  const handleSelect = useCallback((id: BackgroundId) => {
+    onChange({ ...appearance, background: id });
+    saveRecent(id);
+    setRecents(loadRecents());
+  }, [appearance, onChange]);
+
+  const recentOptions = recents
+    .map((id) => PRESET_OPTIONS.find((o) => o.id === id))
+    .filter(Boolean) as typeof PRESET_OPTIONS;
 
   return (
     <div className="bg-picker" role="radiogroup" aria-label="Page backdrop">
+      {recentOptions.length > 0 && (
+        <div className="bg-picker-recents">
+          <span className="bg-picker-recents-label">Recently used</span>
+          <div className="bg-picker-recents-row">
+            {recentOptions.map((o) => {
+              const selected = o.id === background;
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  className={`bg-picker-recent-btn ${selected ? "is-selected" : ""}`}
+                  onClick={() => handleSelect(o.id)}
+                  title={o.label}
+                >
+                  <span className={`bg-picker-swatch bg-picker-swatch--${o.id}`} aria-hidden />
+                  <span className="bg-picker-recent-label">{o.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       <div className="bg-picker-grid">
         {PRESET_OPTIONS.map((o) => {
           const selected = o.id === background;
@@ -156,7 +211,7 @@ export function BackgroundPicker(props: {
               role="radio"
               aria-checked={selected}
               className={`bg-picker-card ${selected ? "is-selected" : ""}`}
-              onClick={() => onChange({ ...appearance, background: o.id })}
+              onClick={() => handleSelect(o.id)}
             >
               <span className={`bg-picker-swatch bg-picker-swatch--${o.id}`} aria-hidden />
               <span className="bg-picker-glyph" aria-hidden>{o.glyph}</span>

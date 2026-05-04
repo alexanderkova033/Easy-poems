@@ -189,13 +189,18 @@ export function PoemWorkshop() {
     saveRailW(DEFAULT_RAIL_W);
   }, [applyToolsW, applyRailW, saveToolsW, saveRailW]);
 
+  const MIN_EDITOR_W = 160; // minimum editor column width (px)
+  const GAP_PX = Math.round(1.55 * parseFloat(getComputedStyle(document.documentElement).fontSize || "16"));
+
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     const startX = e.clientX;
     const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
     const onMove = (ev: MouseEvent) => {
       const raw = startW - (ev.clientX - startX); // drag left → wider
-      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(Math.round(window.innerWidth * 0.82), raw));
+      const currentRail = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
+      const maxW = window.innerWidth - currentRail - MIN_EDITOR_W - GAP_PX * 2;
+      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
       applyToolsW(next);
     };
     const onUp = () => {
@@ -213,7 +218,9 @@ export function PoemWorkshop() {
     const startW = parseInt(workshopGridRef.current?.style.getPropertyValue("--rail-col") || String(DEFAULT_RAIL_W), 10);
     const onMove = (ev: MouseEvent) => {
       const raw = startW + (ev.clientX - startX); // drag right → wider
-      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(320, raw));
+      const currentTools = parseInt(workshopGridRef.current?.style.getPropertyValue("--tools-col") || String(DEFAULT_TOOLS_W), 10);
+      const maxW = window.innerWidth - currentTools - MIN_EDITOR_W - GAP_PX * 2;
+      const next = raw < SNAP_PX ? 0 : Math.max(0, Math.min(maxW, raw));
       applyRailW(next);
     };
     const onUp = () => {
@@ -1043,20 +1050,16 @@ export function PoemWorkshop() {
                   </button>
                   {topbarOverflowOpen && (
                     <div className="topbar-overflow-menu" role="menu">
-                      {/* Session */}
+                      {/* ── Writing ── */}
+                      <span className="topbar-overflow-group-label">Writing</span>
                       <div className="topbar-overflow-section">
                         <span className="topbar-overflow-label">Session</span>
                         <span className="topbar-overflow-value"><SessionTimer startTs={sessionStartRef.current} /></span>
                       </div>
-                      {/* Word goal */}
                       <div className="topbar-overflow-section">
                         <span className="topbar-overflow-label">Word goal</span>
                         {sessionWordGoal ? (
-                          <button
-                            type="button"
-                            className="topbar-word-goal topbar-word-goal-menu"
-                            onClick={() => { setGoalInputVal(String(sessionWordGoal)); setShowGoalInput(true); setTopbarOverflowOpen(false); }}
-                          >
+                          <button type="button" className="topbar-word-goal topbar-word-goal-menu" onClick={() => { setGoalInputVal(String(sessionWordGoal)); setShowGoalInput(true); setTopbarOverflowOpen(false); }}>
                             <span className="topbar-word-goal-fill" style={{ width: `${Math.min(100, Math.round((m.quickDocStats.totalWords / sessionWordGoal) * 100))}%` }} />
                             <span className="topbar-word-goal-label">{m.quickDocStats.totalWords}/{sessionWordGoal}w</span>
                           </button>
@@ -1070,28 +1073,21 @@ export function PoemWorkshop() {
                         )}
                       </div>
                       <hr className="topbar-overflow-divider" />
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsCmdkOpen(true); setTopbarOverflowOpen(false); }}>
-                        <span>⌘ Commands</span>
-                      </button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShareOpen(true); setTopbarOverflowOpen(false); }}>
-                        <span>Share poem</span>
-                      </button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShortcutsOpen(true); setTopbarOverflowOpen(false); }}>
-                        <span>Keyboard shortcuts</span>
-                      </button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsFocusMode(true); setTopbarOverflowOpen(false); }}>
-                        <span>Focus mode</span>
-                      </button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsReadingMode(true); setTopbarOverflowOpen(false); }}>
-                        <span>Reading view</span>
-                      </button>
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsExportOpen(true); setTopbarOverflowOpen(false); }}>
-                        <span>Export poem</span>
-                      </button>
+                      {/* ── View ── */}
+                      <span className="topbar-overflow-group-label">View</span>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsFocusMode(true); setTopbarOverflowOpen(false); }}>Focus mode</button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsReadingMode(true); setTopbarOverflowOpen(false); }}>Reading view</button>
                       <hr className="topbar-overflow-divider" />
-                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { resetLayout(); setTopbarOverflowOpen(false); }}>
-                        <span>Reset panel layout</span>
-                      </button>
+                      {/* ── Share ── */}
+                      <span className="topbar-overflow-group-label">Share</span>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShareOpen(true); setTopbarOverflowOpen(false); }}>Share poem</button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsExportOpen(true); setTopbarOverflowOpen(false); }}>Export poem</button>
+                      <hr className="topbar-overflow-divider" />
+                      {/* ── App ── */}
+                      <span className="topbar-overflow-group-label">App</span>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsCmdkOpen(true); setTopbarOverflowOpen(false); }}>⌘ Commands</button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { setIsShortcutsOpen(true); setTopbarOverflowOpen(false); }}>Keyboard shortcuts</button>
+                      <button type="button" className="topbar-overflow-item" role="menuitem" onClick={() => { resetLayout(); setTopbarOverflowOpen(false); }}>Reset panel layout</button>
                     </div>
                   )}
                 </div>
@@ -1968,7 +1964,7 @@ export function PoemWorkshop() {
 
       <main
         id="workshop-main"
-        className="workshop-grid"
+        className={`workshop-grid${showRhymeScheme && m.rhymeScheme.some(l => l) ? " has-rhyme-panel" : ""}`}
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
@@ -2042,6 +2038,8 @@ export function PoemWorkshop() {
             </RailIcon>
             <span className="rail-label">Library</span>
           </button>
+
+          <span className="rail-group-divider" aria-hidden />
 
           <button
             type="button"
@@ -2117,6 +2115,8 @@ export function PoemWorkshop() {
             <span className="rail-label">Export</span>
           </button>
 
+          <span className="rail-group-divider" aria-hidden />
+
           <button
             type="button"
             className="rail-btn"
@@ -2170,12 +2170,13 @@ export function PoemWorkshop() {
         >
           <div className="editor-print-hide">
             <div className="editor-stack">
-              {/* Mobile collapsed header — tapping expands inputs */}
+              {/* Mobile collapsed header — tap or long-press to expand */}
               {!metaOpen && (
                 <button
                   type="button"
                   className="editor-meta-collapsed"
                   onClick={() => setMetaOpen(true)}
+                  onContextMenu={(e) => { e.preventDefault(); setMetaOpen(true); document.getElementById("poem-title")?.focus(); }}
                   aria-label="Edit title and form"
                 >
                   <span className="editor-meta-collapsed-title">
@@ -2323,19 +2324,7 @@ export function PoemWorkshop() {
                       </div>
                     </div>
                   </div>
-                  {showRhymeScheme && m.rhymeScheme.some((l) => l) ? (
-                    <div className="editor-rhyme-scheme" aria-label="End-rhyme scheme">
-                      {m.rhymeScheme.map((label, i) =>
-                        label ? (
-                          <span key={i} className="editor-rhyme-row">
-                            <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
-                          </span>
-                        ) : (
-                          <span key={i} className="editor-rhyme-spacer" aria-hidden="true" />
-                        ),
-                      )}
-                    </div>
-                  ) : null}
+                  {/* Rhyme scheme moved to standalone grid column — see rhyme-panel below */}
                 </div>
                 <p id="poem-body-hint" className="field-hint">
                   Browser underlines off—only the workshop wavy mark for unknown
@@ -2374,6 +2363,20 @@ export function PoemWorkshop() {
           </div>
         </section>
 
+        {/* Rhyme scheme — standalone grid column between editor and tools */}
+        {showRhymeScheme && m.rhymeScheme.some((l) => l) ? (
+          <div className="rhyme-panel" aria-label="End-rhyme scheme">
+            {m.rhymeScheme.map((label, i) =>
+              label ? (
+                <span key={i} className="editor-rhyme-row">
+                  <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
+                </span>
+              ) : (
+                <span key={i} className="editor-rhyme-spacer" aria-hidden="true" />
+              ),
+            )}
+          </div>
+        ) : null}
 
         {/* Rail resize gutter */}
         <div
@@ -2403,9 +2406,24 @@ export function PoemWorkshop() {
           <div className="tools-sticky-head">
             <div className="tools-swipe-handle" aria-hidden />
             <div className="tools-head-row tools-head-row-simple">
-              <div>
-                <h2 className="tools-heading">Tools</h2>
-              </div>
+              <h2 className="tools-heading">Tools</h2>
+              <button
+                type="button"
+                className="tools-analyse-btn"
+                onClick={() => {
+                  mobileAnalyzeFnRef.current?.();
+                  requestAnimationFrame(() => {
+                    const panel = toolsPanelRef.current;
+                    if (!panel) return;
+                    const el = panel.querySelector(".ai-analysis-section") as HTMLElement | null;
+                    if (!el) return;
+                    panel.scrollTo({ top: el.offsetTop - 8, behavior: "smooth" });
+                  });
+                }}
+                {...hint("Run AI analysis on this poem")}
+              >
+                ✦ Analyse
+              </button>
             </div>
             <div
               className="tool-bucket-row"
@@ -2478,6 +2496,11 @@ export function PoemWorkshop() {
                       >
                         <Icon />
                         <span className="tool-tab-label">{label}</span>
+                        {id === "issues" && issuesQueueCount > 0 && (
+                          <span className="tool-tab-badge" aria-label={`${issuesQueueCount} issues`}>
+                            {issuesQueueCount > 9 ? "9+" : issuesQueueCount}
+                          </span>
+                        )}
                       </button>
                     ))}
                     {collapsed && (
@@ -2554,12 +2577,45 @@ export function PoemWorkshop() {
             rhymeBreadth={rhymeBreadth}
             onRhymeBreadthChange={setRhymeBreadth}
           />
+
+          {/* AI Analysis — inside the tools panel so it's scrollable on both desktop and mobile */}
+          <div className="tool-ai-section">
+            <AiAnalysis
+              key={m.activePoemId}
+              poemId={m.activePoemId}
+              title={m.title}
+              lines={m.lines}
+              localAnalysis={localAnalysis}
+              goals={m.goals}
+              onJumpToLine={m.goToLine}
+              onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
+              onClearHighlight={() => setIssueHighlight(null)}
+              onAnalysisDone={(issues, score) => {
+                setPersistentIssueHighlights(
+                  issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
+                );
+                m.setLastAiScore(score);
+                requestAnimationFrame(() => {
+                  const panel = toolsPanelRef.current;
+                  if (!panel) return;
+                  const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
+                  if (!resultsEl) return;
+                  const panelRect = panel.getBoundingClientRect();
+                  const elRect = resultsEl.getBoundingClientRect();
+                  panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
+                });
+              }}
+              onApplyLine={m.applyLineRewrite}
+              onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
+            />
+          </div>
         </aside>
       </main>
 
       <MobileActionBar
         isFocusMode={isFocusMode}
         activeTab={mobileTab}
+        wordCount={m.quickDocStats.totalWords}
         onTab={(tab: MobileTab) => {
           if (tab === "library") {
             setIsLibraryOpen(true);
@@ -2573,36 +2629,6 @@ export function PoemWorkshop() {
           setMobileTab("tools");
           m.setToolTab("issues");
         }}
-      />
-
-      <AiAnalysis
-        key={m.activePoemId}
-        poemId={m.activePoemId}
-        title={m.title}
-        lines={m.lines}
-        localAnalysis={localAnalysis}
-        goals={m.goals}
-        onJumpToLine={m.goToLine}
-        onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
-        onClearHighlight={() => setIssueHighlight(null)}
-        onAnalysisDone={(issues, score) => {
-          setPersistentIssueHighlights(
-            issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
-          );
-          m.setLastAiScore(score);
-          // Scroll the tools panel to the results so users don't have to hunt for them
-          requestAnimationFrame(() => {
-            const panel = toolsPanelRef.current;
-            if (!panel) return;
-            const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
-            if (!resultsEl) return;
-            const panelRect = panel.getBoundingClientRect();
-            const elRect = resultsEl.getBoundingClientRect();
-            panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
-          });
-        }}
-        onApplyLine={m.applyLineRewrite}
-        onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
       />
 
       <WorkshopModals

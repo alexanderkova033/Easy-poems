@@ -978,6 +978,17 @@
   margin: 0.3rem 0.35rem;
 }
 
+.topbar-overflow-group-label {
+  display: block;
+  padding: 0.45rem 0.7rem 0.1rem;
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
 .topbar-overflow-section {
   display: flex;
   align-items: center;

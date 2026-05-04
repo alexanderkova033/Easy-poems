@@ -5,14 +5,14 @@ type MobileTab = "write" | "tools" | "library";
 interface MobileActionBarProps {
   isFocusMode: boolean;
   activeTab: MobileTab;
+  wordCount: number;
   onTab: (tab: MobileTab) => void;
-  /** Analyse button inside tools header */
   onAnalyse: () => void;
 }
 
 export type { MobileTab };
 
-export function MobileActionBar({ isFocusMode, activeTab, onTab, onAnalyse }: MobileActionBarProps) {
+export function MobileActionBar({ isFocusMode, activeTab, wordCount, onTab, onAnalyse }: MobileActionBarProps) {
   if (isFocusMode) return null;
 
   return (
@@ -27,7 +27,12 @@ export function MobileActionBar({ isFocusMode, activeTab, onTab, onAnalyse }: Mo
           <path d="M12 20h9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
           <path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
-        <span className="mob-tab-label">Write</span>
+        <span className="mob-tab-label">
+          Write
+          {activeTab === "write" && wordCount > 0 && (
+            <span className="mob-tab-wordcount"> · {wordCount}w</span>
+          )}
+        </span>
       </button>
 
       <button
@@ -55,7 +60,7 @@ export function MobileActionBar({ isFocusMode, activeTab, onTab, onAnalyse }: Mo
         <span className="mob-tab-label">Library</span>
       </button>
 
-      {/* Analyse button — compact, in the tab bar */}
+      {/* Analyse — shown when in Write view */}
       {activeTab === "write" && (
         <button
           type="button"
