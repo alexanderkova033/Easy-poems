@@ -11,7 +11,7 @@ import { callOpenAI } from "./_openai";
 type SuggestType = "idea" | "continue" | "words" | "rhyme" | "spark" | "line";
 
 const PROMPTS: Record<SuggestType, string> = {
-  idea: `Generate 3 distinct poem concepts for a writer starting from scratch. Each concept should include: a specific central image or scene, a mood or emotional undercurrent, and an optional opening line or phrase they could use. Make the concepts concrete and evocative — not generic topics like "love" or "nature", but specific, surprising angles like "the weight of an empty birdcage" or "a lighthouse keeper who has forgotten what ships look like". Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each suggestion is 2-3 sentences. No markdown fences.`,
+  idea: `Generate 3 distinct poem concepts for a writer starting from scratch. Each concept is one plain string: a specific scene or image, the emotional undercurrent, and an optional opening phrase — all woven into 2 sentences. Make concepts concrete and surprising, not generic. Return valid JSON: { "suggestions": ["string1", "string2", "string3"] } where every element is a plain string, not an object. No markdown fences.`,
 
   continue: `The user is writing a poem and is stuck on what comes next. Study the poem's tone, imagery, and direction, then suggest 3 possible next lines or short stanzas that feel natural and continue the poem. Each suggestion should be distinct in approach. Return valid JSON: { "suggestions": ["...", "...", "..."] }. Each suggestion is 1-2 lines of verse. No markdown fences.`,
 
@@ -93,6 +93,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     parsed = JSON.parse(result.content);
   } catch {
     return res.status(502).json({ error: "OpenAI returned invalid JSON." });
+  }
+
+  // Normalize: if suggestions are objects (e.g. {image, mood, opening}), join their values into a string
+  if (
+    parsed != null &&
+    typeof parsed === "object" &&
+    Array.isArray((parsed as Record<string, unknown>).suggestions)
+  ) {
+    const raw = (parsed as Record<string, unknown>).suggestions as unknown[];
+    (parsed as Record<string, unknown>).suggestions = raw.map((s) => {
+      if (typeof s === "string") return s;
+      if (s != null && typeof s === "object") {
+        return Object.values(s as Record<string, unknown>)
+          .map((v) => String(v ?? ""))
+          .filter(Boolean)
+          .join(" — ");
+      }
+      return String(s ?? "");
+    });
   }
 
   return res.status(200).json(parsed);

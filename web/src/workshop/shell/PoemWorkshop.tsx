@@ -1964,7 +1964,7 @@ export function PoemWorkshop() {
 
       <main
         id="workshop-main"
-        className={`workshop-grid${showRhymeScheme && m.rhymeScheme.some(l => l) ? " has-rhyme-panel" : ""}`}
+        className="workshop-grid"
         ref={workshopGridRef}
         data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
         data-tools-open={mobileToolsExpanded ? "true" : "false"}
@@ -2324,7 +2324,19 @@ export function PoemWorkshop() {
                       </div>
                     </div>
                   </div>
-                  {/* Rhyme scheme moved to standalone grid column — see rhyme-panel below */}
+                  {showRhymeScheme && m.rhymeScheme.some((l) => l) ? (
+                    <div className="editor-rhyme-scheme" aria-label="End-rhyme scheme">
+                      {m.rhymeScheme.map((label, i) =>
+                        label ? (
+                          <span key={i} className="editor-rhyme-row">
+                            <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
+                          </span>
+                        ) : (
+                          <span key={i} className="editor-rhyme-spacer" aria-hidden="true" />
+                        ),
+                      )}
+                    </div>
+                  ) : null}
                 </div>
                 <p id="poem-body-hint" className="field-hint">
                   Browser underlines off—only the workshop wavy mark for unknown
@@ -2363,21 +2375,6 @@ export function PoemWorkshop() {
           </div>
         </section>
 
-        {/* Rhyme scheme — standalone grid column between editor and tools */}
-        {showRhymeScheme && m.rhymeScheme.some((l) => l) ? (
-          <div className="rhyme-panel" aria-label="End-rhyme scheme">
-            {m.rhymeScheme.map((label, i) =>
-              label ? (
-                <span key={i} className="editor-rhyme-row">
-                  <span className={`editor-rhyme-label rhyme-label-${label.charAt(0).toLowerCase()}`}>{label}</span>
-                </span>
-              ) : (
-                <span key={i} className="editor-rhyme-spacer" aria-hidden="true" />
-              ),
-            )}
-          </div>
-        ) : null}
-
         {/* Rail resize gutter */}
         <div
           className="rail-resize-gutter"
@@ -2415,9 +2412,11 @@ export function PoemWorkshop() {
                   requestAnimationFrame(() => {
                     const panel = toolsPanelRef.current;
                     if (!panel) return;
-                    const el = panel.querySelector(".ai-analysis-section") as HTMLElement | null;
-                    if (!el) return;
-                    panel.scrollTo({ top: el.offsetTop - 8, behavior: "smooth" });
+                    const wrapper = panel.querySelector(".tool-ai-section-wrapper");
+                    if (wrapper) {
+                      wrapper.classList.add("is-ai-open");
+                      panel.scrollTo({ top: (wrapper as HTMLElement).offsetTop - 8, behavior: "smooth" });
+                    }
                   });
                 }}
                 {...hint("Run AI analysis on this poem")}
@@ -2578,8 +2577,8 @@ export function PoemWorkshop() {
             onRhymeBreadthChange={setRhymeBreadth}
           />
 
-          {/* AI Analysis — inside the tools panel so it's scrollable on both desktop and mobile */}
-          <div className="tool-ai-section">
+          {/* AI Analysis — collapsed by default on mobile, always visible on desktop */}
+          <div className="tool-ai-section tool-ai-section-wrapper">
             <AiAnalysis
               key={m.activePoemId}
               poemId={m.activePoemId}
@@ -2628,6 +2627,14 @@ export function PoemWorkshop() {
           mobileAnalyzeFnRef.current?.();
           setMobileTab("tools");
           m.setToolTab("issues");
+          // Open the AI section on mobile and scroll to it
+          requestAnimationFrame(() => {
+            const wrapper = toolsPanelRef.current?.querySelector(".tool-ai-section-wrapper");
+            if (wrapper) {
+              wrapper.classList.add("is-ai-open");
+              (wrapper as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          });
         }}
       />
 

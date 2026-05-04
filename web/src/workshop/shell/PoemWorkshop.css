@@ -1350,6 +1350,18 @@
   margin-top: 0.5rem;
 }
 
+/* On mobile the AI section is hidden behind the tools panel scroll —
+   the Analyse tab action scrolls to it; hide the heavy content upfront */
+@media (max-width: 899px) {
+  .tool-ai-section-wrapper .ai-analysis-body {
+    display: none;
+  }
+  /* Show it once the section is scrolled into view or forced open */
+  .tool-ai-section-wrapper.is-ai-open .ai-analysis-body {
+    display: block;
+  }
+}
+
 .tool-block:last-child {
   margin-bottom: 0;
 }

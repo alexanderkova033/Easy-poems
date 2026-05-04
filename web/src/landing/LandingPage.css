@@ -926,31 +926,53 @@
 
 /* ── Mobile tweaks ───────────────────────────────────────────────────────── */
 
-@media (max-width: 520px) {
+@media (max-width: 680px) {
+  /* Hero: tight top, smaller headline, hide the demo animation */
   .landing-hero {
-    padding: 3rem 1.1rem 2rem;
+    padding: 2.5rem 1.2rem 1.5rem;
   }
+
+  .landing-hero-inner {
+    gap: 1.1rem;
+  }
+
   .landing-headline {
-    font-size: 1.75rem;
+    font-size: clamp(1.65rem, 8vw, 2.2rem);
+    line-height: 1.18;
   }
+
   .landing-sub {
-    font-size: 1rem;
-    line-height: 1.55;
+    font-size: 0.97rem;
+    line-height: 1.6;
+    max-width: none;
   }
-  .landing-btn {
-    width: 100%;
-    min-height: 3rem;
+
+  /* Hide the typing animation demo on phones — too wide and distracting */
+  .landing-demo {
+    display: none;
   }
+
   .landing-ctas {
     width: 100%;
     flex-direction: column;
   }
+
+  .landing-btn {
+    width: 100%;
+    min-height: 3rem;
+    font-size: 0.95rem;
+  }
+
+  .landing-hero-reassurance {
+    font-size: 0.72rem;
+  }
+
   .landing-guide {
     padding: 2rem 1.1rem 2.5rem;
   }
   .landing-section-title {
-    font-size: 1.25rem;
-    margin-bottom: 1.25rem;
+    font-size: 1.2rem;
+    margin-bottom: 1.1rem;
   }
   .landing-concepts {
     padding: 0 1.1rem 2.5rem;
@@ -962,6 +984,12 @@
     padding: 2rem 1.1rem 4rem;
   }
   .landing-footer-tagline {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
   }
+
+  /* App preview: hide rail and tools on small phones */
+  .lp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lp-rail, .lp-tools { display: none; }
 }
