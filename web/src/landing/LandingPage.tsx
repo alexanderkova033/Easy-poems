@@ -35,7 +35,7 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
       {/* Hero */}
       <section className="landing-hero" ref={heroRef}>
         <div className="landing-hero-inner">
-          <div className="landing-hero-eyebrow">
+          <div className="landing-hero-eyebrow landing-hero-eyebrow-desktop">
             <svg className="landing-hero-feather" viewBox="0 0 24 24" aria-hidden width="22" height="22">
               <path d="M19 3C19 3 20 8 16 13L13 18L12 21L11 18C9.5 14.5 10 9 16 4C17 3.3 18.2 3 19 3Z" fill="#68aa6e" stroke="white" strokeWidth="0.7" strokeLinejoin="round" />
               <path d="M19 3L12 21" stroke="rgba(0,0,0,0.18)" strokeWidth="0.55" strokeLinecap="round" fill="none" />
@@ -84,7 +84,8 @@ export function LandingPage({ onEnter }: { onEnter: () => void }) {
 
           <div className="landing-ctas">
             <button type="button" className="landing-btn landing-btn-primary" onClick={onEnter}>
-              Try it free — no account needed →
+              <span className="landing-cta-full">Try it free — no account needed →</span>
+              <span className="landing-cta-short">Try it free →</span>
             </button>
           </div>
           <p className="landing-hero-reassurance">Free · Saves in your browser · No sign-up · Private</p>

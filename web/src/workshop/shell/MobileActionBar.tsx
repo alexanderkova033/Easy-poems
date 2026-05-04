@@ -60,20 +60,18 @@ export function MobileActionBar({ isFocusMode, activeTab, wordCount, onTab, onAn
         <span className="mob-tab-label">Library</span>
       </button>
 
-      {/* Analyse — shown when in Write view */}
-      {activeTab === "write" && (
-        <button
-          type="button"
-          className="mob-tab mob-tab-analyse"
-          onClick={onAnalyse}
-          aria-label="Analyse poem with AI"
-        >
-          <svg className="mob-tab-icon" viewBox="0 0 24 24" aria-hidden fill="none">
-            <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-          </svg>
-          <span className="mob-tab-label">Analyse</span>
-        </button>
-      )}
+      {/* Analyse — always visible, accent-tinted action tab */}
+      <button
+        type="button"
+        className="mob-tab mob-tab-analyse"
+        onClick={onAnalyse}
+        aria-label="Analyse poem with AI"
+      >
+        <svg className="mob-tab-icon" viewBox="0 0 24 24" aria-hidden fill="none">
+          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+        </svg>
+        <span className="mob-tab-label">Analyse</span>
+      </button>
     </nav>
   );
 }
