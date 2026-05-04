@@ -162,7 +162,8 @@
     top: 0;
     left: 0;
     /* Bottom padding clears the tab bar (3rem) + safe-area */
-    padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+    /* tab bar (~3rem) + safe area + 1.5rem breathing room */
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
     will-change: transform;
     transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
     overflow-y: auto;
