@@ -138,9 +138,19 @@
   }
 
   .cm-editor {
-    font-size: 1rem !important;
-    line-height: 1.75 !important;
+    font-size: 0.92rem !important;
+    line-height: 1.72 !important;
   }
+
+  /* Long lines scroll horizontally within the editor — momentum scroll for feel */
+  .poem-cm-wrap,
+  .cm-scroller {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .poem-cm-wrap::-webkit-scrollbar,
+  .cm-scroller::-webkit-scrollbar { display: none; }
 
   /* ── Tools panel header: minimal on mobile ── */
 
@@ -156,29 +166,14 @@
   .tool-bucket-row {
     gap: 0.3rem;
     padding: 0.45rem 0.65rem 0;
-    /* Smooth collapse when panel is scrolled (Apple-style shrinking header) */
-    overflow: hidden;
-    max-height: 4rem;
-    opacity: 1;
-    transition:
-      max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity    0.2s  ease,
-      padding    0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .tools-panel[data-scrolled="true"] .tool-bucket-row {
-    max-height: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    opacity: 0;
   }
 
   .tool-bucket-tab {
-    min-height: 2.5rem;
-    padding: 0.45rem 0.75rem;
-    font-size: 0.84rem;
-    font-weight: 650;
-    border-radius: 9px;
+    min-height: 2rem;
+    padding: 0.28rem 0.6rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    border-radius: 8px;
     flex: 1;
     text-align: center;
   }
@@ -259,11 +254,12 @@
   }
 
   /* Prevent the tools panel from scrolling sideways on mobile.
-     The global .tools-panel { overflow: auto } overrides WorkshopLayout's
-     overflow-x: hidden so we must re-enforce it here with higher specificity. */
+     Also cancel the desktop max-height so the panel fills the full grid height
+     and the padding-bottom correctly creates scrollable space below the tab bar. */
   .tools-panel {
     overflow-x: hidden !important;
     max-width: 100vw;
+    max-height: none !important;
   }
 
   /* Prevent wide tables/cells from stretching the panel */
@@ -3396,6 +3392,9 @@
     border: none;
     border-radius: 0;
     background: transparent;
+    /* overflow: hidden from the base rule creates a BFC that confuses scroll-height
+       calculation on the sheet body; visible lets the body own all scrolling. */
+    overflow: visible;
   }
 
   .mobile-ai-sheet-body .ai-analysis-body {

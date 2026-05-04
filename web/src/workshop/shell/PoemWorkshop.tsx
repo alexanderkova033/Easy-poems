@@ -384,20 +384,6 @@ export function PoemWorkshop() {
     toolsPanelRef.current?.scrollTo({ top: 0 });
   }, [m.toolTab]);
 
-  // Shrink the tools sticky head when the panel is scrolled down (Apple-style).
-  useEffect(() => {
-    const panel = toolsPanelRef.current;
-    if (!panel || !mobileToolsExpanded) return;
-    const onScroll = () => {
-      panel.dataset.scrolled = panel.scrollTop > 28 ? "true" : "false";
-    };
-    panel.addEventListener("scroll", onScroll, { passive: true });
-    onScroll();
-    return () => {
-      panel.removeEventListener("scroll", onScroll);
-      delete panel.dataset.scrolled;
-    };
-  }, [mobileToolsExpanded]);
 
   // Preserve panel scroll positions when switching between write/tools on mobile.
   const prevMobileTab = useRef(mobileTab);
@@ -431,32 +417,8 @@ export function PoemWorkshop() {
     return () => document.documentElement.removeAttribute("data-backdrop-simplify");
   }, [appearance.backdropPower, isFocusMode]);
 
-  // Mobile swipe: horizontal swipe on workshop grid slides between editor and tools.
-  // Swipe LEFT  → show tools (editor slides out to the left)
-  // Swipe RIGHT → show editor (tools slides out to the right)
-  useEffect(() => {
-    const el = workshopGridRef.current;
-    if (!el) return;
-    let startX = 0;
-    let startY = 0;
-    const onTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0]?.clientX ?? 0;
-      startY = e.touches[0]?.clientY ?? 0;
-    };
-    const onTouchEnd = (e: TouchEvent) => {
-      const dx = (e.changedTouches[0]?.clientX ?? 0) - startX;
-      const dy = (e.changedTouches[0]?.clientY ?? 0) - startY;
-      if (Math.abs(dx) < 36 || Math.abs(dy) > Math.abs(dx) * 0.65) return;
-      // dx < 0 = left swipe → show tools; dx > 0 = right swipe → show editor
-      setMobileToolsExpanded(dx < 0);
-    };
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
-    return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchend", onTouchEnd);
-    };
-  }, []);
+  // Swipe handled exclusively in the JSX onTouchEnd below to avoid the
+  // native-vs-synthetic race condition that caused library to open from write.
 
   const doExportFlash = (msg: string) => {
     setExportFlash(msg);
