@@ -640,6 +640,130 @@
   order: -1;
 }
 
+/* ======================================================
+   Mobile library — bottom sheet
+   ====================================================== */
+
+/* Grip handle pill */
+.library-grip {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  /* Slide up from the bottom instead of centering */
+  .overlay.overlay-center {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .overlay-center .drawer {
+    margin-top: 0;
+  }
+
+  .drawer.library-modal {
+    width: 100%;
+    height: 94vh;
+    max-height: 94vh;
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 40px color-mix(in srgb, #000 22%, transparent);
+    animation: lib-slide-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes lib-slide-up {
+    from { transform: translateY(100%); opacity: 0.6; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+
+  /* Show grip */
+  .library-grip {
+    display: block;
+    width: 2.75rem;
+    height: 4px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--border) 80%, transparent);
+    margin: 0.6rem auto 0;
+    flex-shrink: 0;
+  }
+
+  /* Tighter drawer header */
+  .drawer.library-modal .drawer-head {
+    padding: 0.6rem 1rem 0.55rem;
+  }
+
+  /* Bigger scrollable area */
+  .library-list-scroll {
+    max-height: none;
+    flex: 1 1 auto;
+  }
+
+  /* Cleaner draft cards */
+  .draft-item {
+    padding: 0.65rem 0.85rem;
+    border-radius: 12px;
+  }
+
+  .draft-open-btn {
+    font-size: 1.02rem;
+    font-weight: 600;
+    padding: 0.1rem 0;
+    white-space: normal;       /* allow title to wrap on narrow screens */
+    text-overflow: clip;
+    overflow: visible;
+  }
+
+  /* Simplify action buttons on mobile — smaller, less prominent */
+  .draft-row-dup {
+    display: none;             /* move Dup to overflow; too cluttered on mobile */
+  }
+
+  .draft-item-row .small-btn {
+    min-height: 2.2rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  /* Hide the inline label/tags edit fields — they're accessible on desktop */
+  .draft-item-edit {
+    display: none;
+  }
+
+  /* Wider pin button touch target */
+  .pin-btn {
+    width: 2.4rem;
+    height: 2.4rem;
+    font-size: 1rem;
+  }
+
+  /* Filters: stack vertically so they don't crowd the screen */
+  .library-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .library-filters .library-filter-checkbox {
+    grid-column: 1;
+  }
+
+  /* Larger search input */
+  .library-filter-field input,
+  .library-filter-field select {
+    min-height: 2.75rem;
+    font-size: 1rem;
+  }
+
+  /* Close button: circle style to match AI sheet */
+  .drawer.library-modal .drawer-head .small-btn {
+    border-radius: 50%;
+    width: 2.2rem;
+    height: 2.2rem;
+    min-height: 0;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    font-size: 0.8rem;
+  }
+}
+
 .modal-note {
   margin: 0.75rem 0 0;
   font-size: 0.84rem;

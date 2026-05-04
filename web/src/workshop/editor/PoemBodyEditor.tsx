@@ -269,6 +269,8 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
   const extensions = useMemo(
     () => [
       EditorView.contentAttributes.of({ spellcheck: "true" }),
+      // Wrap long lines visually — logical line structure (Enter = new line) is preserved.
+      EditorView.lineWrapping,
       spellSyncFacet.of(spellFacetValue(props.spellBump, props.spellMode)),
       search({ top: true }),
       highlightSelectionMatches(),

@@ -233,9 +233,11 @@ export function PoemWorkshop() {
   }, [applyRailW, saveRailW]);
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
+  // Fully hide the title bar to maximise writing space
+  const [metaHidden, setMetaHidden] = useState(false);
   // Format toolbar collapsed by default on mobile
   const [mobileToolbarOpen, setMobileToolbarOpen] = useState(false);
-  useEffect(() => { if (!m.title.trim()) setMetaOpen(true); }, [m.title]);
+  useEffect(() => { if (!m.title.trim()) { setMetaOpen(true); setMetaHidden(false); } }, [m.title]);
 
   // Swipe gesture state
   const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -381,6 +383,21 @@ export function PoemWorkshop() {
   useEffect(() => {
     toolsPanelRef.current?.scrollTo({ top: 0 });
   }, [m.toolTab]);
+
+  // Shrink the tools sticky head when the panel is scrolled down (Apple-style).
+  useEffect(() => {
+    const panel = toolsPanelRef.current;
+    if (!panel || !mobileToolsExpanded) return;
+    const onScroll = () => {
+      panel.dataset.scrolled = panel.scrollTop > 28 ? "true" : "false";
+    };
+    panel.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => {
+      panel.removeEventListener("scroll", onScroll);
+      delete panel.dataset.scrolled;
+    };
+  }, [mobileToolsExpanded]);
 
   // Preserve panel scroll positions when switching between write/tools on mobile.
   const prevMobileTab = useRef(mobileTab);
@@ -1286,6 +1303,7 @@ export function PoemWorkshop() {
             aria-modal="true"
             aria-label="Draft library"
           >
+            <div className="library-grip" aria-hidden />
             <div className="drawer-head">
               <h2 className="drawer-title">Library</h2>
               <button
@@ -2038,8 +2056,12 @@ export function PoemWorkshop() {
           const dy = t.clientY - start.y;
           const dt = Date.now() - start.t;
           if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.8 || dt > 450) return;
-          if (dx < 0 && mobileTab === "write") setMobileTab("tools");
-          else if (dx > 0 && mobileTab === "tools") setMobileTab("write");
+          if (dx < 0) {
+            if (mobileTab === "write") setMobileTab("tools");
+            else if (mobileTab === "tools") setIsLibraryOpen(true);
+          } else if (dx > 0) {
+            if (mobileTab === "tools") setMobileTab("write");
+          }
         }}
       >
         <nav className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
@@ -2225,22 +2247,45 @@ export function PoemWorkshop() {
         >
           <div className="editor-print-hide">
             <div className="editor-stack">
-              {/* Mobile collapsed header — tap or long-press to expand */}
-              {!metaOpen && (
+              {/* Mobile collapsed header — tap to expand, × to hide entirely */}
+              {!metaOpen && !metaHidden && (
+                <div className="editor-meta-bar">
+                  <button
+                    type="button"
+                    className="editor-meta-collapsed"
+                    onClick={() => setMetaOpen(true)}
+                    onContextMenu={(e) => { e.preventDefault(); setMetaOpen(true); document.getElementById("poem-title")?.focus(); }}
+                    aria-label="Edit title and form"
+                  >
+                    <span className="editor-meta-collapsed-title">
+                      {m.title.trim() || "Untitled"}
+                    </span>
+                    {m.formNote.trim() && (
+                      <span className="editor-meta-collapsed-form">· {m.formNote.trim()}</span>
+                    )}
+                    <span className="editor-meta-collapsed-chevron" aria-hidden>›</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="editor-meta-hide-btn"
+                    onClick={() => setMetaHidden(true)}
+                    aria-label="Hide title bar for distraction-free writing"
+                  >
+                    <svg viewBox="0 0 24 24" aria-hidden fill="none" width="14" height="14">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+              )}
+              {/* Minimal peek bar shown when title is fully hidden */}
+              {metaHidden && (
                 <button
                   type="button"
-                  className="editor-meta-collapsed"
-                  onClick={() => setMetaOpen(true)}
-                  onContextMenu={(e) => { e.preventDefault(); setMetaOpen(true); document.getElementById("poem-title")?.focus(); }}
-                  aria-label="Edit title and form"
+                  className="editor-meta-peek-btn"
+                  onClick={() => setMetaHidden(false)}
+                  aria-label="Show title bar"
                 >
-                  <span className="editor-meta-collapsed-title">
-                    {m.title.trim() || "Untitled"}
-                  </span>
-                  {m.formNote.trim() && (
-                    <span className="editor-meta-collapsed-form">· {m.formNote.trim()}</span>
-                  )}
-                  <span className="editor-meta-collapsed-chevron" aria-hidden>›</span>
+                  {m.title.trim() || "Untitled"}
                 </button>
               )}
               <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}`} aria-label="Draft metadata">
@@ -2476,12 +2521,21 @@ export function PoemWorkshop() {
                 type="button"
                 className="tools-analyse-btn"
                 onClick={() => {
-                  mobileAnalyzeFnRef.current?.();
-                  // Scroll to the AiAnalysis section below the grid on desktop
-                  requestAnimationFrame(() => {
-                    const el = document.querySelector(".ai-analysis-section") as HTMLElement | null;
-                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  });
+                  if (window.innerWidth <= 899) {
+                    // Mobile: open the analysis sheet (same as the bottom-bar Analyse pill).
+                    if (mobileAiOpen) {
+                      mobileSheetAnalyzeFn.current?.();
+                    } else {
+                      mobileSheetAutoTrigger.current = true;
+                      setMobileAiOpen(true);
+                    }
+                  } else {
+                    mobileAnalyzeFnRef.current?.();
+                    requestAnimationFrame(() => {
+                      const el = document.querySelector(".ai-analysis-section") as HTMLElement | null;
+                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    });
+                  }
                 }}
                 {...hint("Run AI analysis on this poem")}
               >

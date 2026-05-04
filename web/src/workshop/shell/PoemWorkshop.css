@@ -156,6 +156,21 @@
   .tool-bucket-row {
     gap: 0.3rem;
     padding: 0.45rem 0.65rem 0;
+    /* Smooth collapse when panel is scrolled (Apple-style shrinking header) */
+    overflow: hidden;
+    max-height: 4rem;
+    opacity: 1;
+    transition:
+      max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity    0.2s  ease,
+      padding    0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .tools-panel[data-scrolled="true"] .tool-bucket-row {
+    max-height: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    opacity: 0;
   }
 
   .tool-bucket-tab {
@@ -287,20 +302,66 @@
     display: none;
   }
 
+  /* Wrapper for collapsed title + hide button */
+  .editor-meta-bar {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+    margin-bottom: 0.25rem;
+  }
+
+  .editor-meta-hide-btn {
+    flex-shrink: 0;
+    appearance: none;
+    border: none;
+    background: none;
+    padding: 0.55rem 0.4rem;
+    color: var(--muted);
+    cursor: pointer;
+    opacity: 0.55;
+    transition: opacity 0.13s;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .editor-meta-hide-btn:hover { opacity: 1; }
+
+  /* Minimal "peek" strip shown when title is fully hidden */
+  .editor-meta-peek-btn {
+    appearance: none;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 0.2rem 0;
+    opacity: 0.55;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+    margin-bottom: 0.25rem;
+    transition: opacity 0.13s;
+  }
+
+  .editor-meta-peek-btn:hover { opacity: 1; }
+
   .editor-meta-collapsed {
+    flex: 1;
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    width: 100%;
-    padding: 0.55rem 0.75rem 0.55rem 0;
+    min-width: 0;
+    padding: 0.55rem 0.5rem 0.55rem 0;
     border: none;
     background: none;
     cursor: pointer;
     text-align: left;
     font: inherit;
     color: var(--text);
-    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-    margin-bottom: 0.25rem;
   }
 
   .editor-meta-collapsed-title {

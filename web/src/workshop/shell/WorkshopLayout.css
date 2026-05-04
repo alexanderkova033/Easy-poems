@@ -158,53 +158,31 @@
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+    /* Both panels are always position:absolute — no position switching during
+       transitions, so slides are pure GPU transform with zero layout reflow. */
     position: absolute;
     top: 0;
     left: 0;
-    /* Bottom padding clears the tab bar (3rem) + safe-area */
-    /* tab bar (~3rem) + safe area + generous breathing room */
     padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
     will-change: transform;
-    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform 0.34s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     overflow-y: auto;
     overflow-x: hidden;
-    /* Contain vertical overscroll inside the panel — prevents page bounce */
     overscroll-behavior: contain;
-    /* Smooth momentum scrolling on iOS */
     -webkit-overflow-scrolling: touch;
-    /* Isolate paint for each slide panel */
-    contain: paint;
+    isolation: isolate;
   }
 
-  /* Editor is in-flow when active so the grid takes its height */
-  .editor-panel {
-    position: relative;
-    transform: translateX(0);
-  }
+  /* Default positions */
+  .editor-panel { transform: translateX(0); }
+  .tools-panel  { transform: translateX(100%); }
 
-  .tools-panel {
-    transform: translateX(100%);
-  }
+  /* State-driven — only transforms change, never position */
+  .workshop-grid[data-mobile-view="editor"] .editor-panel { transform: translateX(0); }
+  .workshop-grid[data-mobile-view="editor"] .tools-panel  { transform: translateX(100%); }
 
-  /* State-driven: editor view (default) */
-  .workshop-grid[data-mobile-view="editor"] .editor-panel {
-    transform: translateX(0);
-    position: relative;
-  }
-  .workshop-grid[data-mobile-view="editor"] .tools-panel {
-    transform: translateX(100%);
-    position: absolute;
-  }
-
-  /* State-driven: tools view */
-  .workshop-grid[data-mobile-view="tools"] .editor-panel {
-    transform: translateX(-100%);
-    position: absolute;
-  }
-  .workshop-grid[data-mobile-view="tools"] .tools-panel {
-    transform: translateX(0);
-    position: relative;
-  }
+  .workshop-grid[data-mobile-view="tools"] .editor-panel { transform: translateX(-100%); }
+  .workshop-grid[data-mobile-view="tools"] .tools-panel  { transform: translateX(0); }
 
   /* The toggle button becomes a tab switcher in the tools head */
   .mobile-tools-panel-toggle {
