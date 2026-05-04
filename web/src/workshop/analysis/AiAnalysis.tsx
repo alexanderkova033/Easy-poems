@@ -787,9 +787,11 @@ export interface AiAnalysisProps {
   onApplyLine?: (lineStart: number, lineEnd: number, text: string) => void;
   /** Called once with a trigger fn so external UI (e.g. mobile FAB) can start analysis */
   onAnalyzeRef?: (fn: () => void) => void;
+  /** Called whenever the loading state changes — lets parent show a loading indicator */
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine, onAnalyzeRef }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpToLine, onHighlightLines, onClearHighlight, onAnalysisDone, onApplyLine, onAnalyzeRef, onLoadingChange }: AiAnalysisProps) {
   const [model, setModel] = useState(loadStoredModel);
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [mode, setMode] = useState<"fresh" | "compare">("fresh");
@@ -824,6 +826,10 @@ export function AiAnalysis({ title, lines, poemId, localAnalysis, goals, onJumpT
   }, [poemId]);
 
   useEffect(() => () => { abortRef.current?.abort(); }, []);
+
+  useEffect(() => {
+    onLoadingChange?.(status === "loading");
+  }, [status, onLoadingChange]);
 
   const saveModel = useCallback((val: string) => {
     setModel(val);
@@ -1173,6 +1179,13 @@ function AiChat({
               e.preventDefault();
               void handleSend();
             }
+          }}
+          onFocus={() => {
+            // After the keyboard opens and the viewport shrinks, scroll the
+            // input into view so it isn't hidden under the keyboard.
+            setTimeout(() => {
+              inputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            }, 350);
           }}
         />
         <button

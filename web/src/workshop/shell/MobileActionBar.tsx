@@ -6,13 +6,14 @@ interface MobileActionBarProps {
   isFocusMode: boolean;
   activeTab: MobileTab;
   wordCount: number;
+  isAnalyzing: boolean;
   onTab: (tab: MobileTab) => void;
   onAnalyse: () => void;
 }
 
 export type { MobileTab };
 
-export function MobileActionBar({ isFocusMode, activeTab, wordCount, onTab, onAnalyse }: MobileActionBarProps) {
+export function MobileActionBar({ isFocusMode, activeTab, wordCount, isAnalyzing, onTab, onAnalyse }: MobileActionBarProps) {
   if (isFocusMode) return null;
 
   return (
@@ -60,17 +61,26 @@ export function MobileActionBar({ isFocusMode, activeTab, wordCount, onTab, onAn
         <span className="mob-tab-label">Library</span>
       </button>
 
-      {/* Analyse — always visible, accent-tinted action tab */}
+      {/* Analyse — pill action button, not a nav tab */}
       <button
         type="button"
-        className="mob-tab mob-tab-analyse"
-        onClick={onAnalyse}
-        aria-label="Analyse poem with AI"
+        className={`mob-tab mob-tab-analyse${isAnalyzing ? " is-analysing" : ""}`}
+        onClick={() => {
+          navigator.vibrate?.(8);
+          onAnalyse();
+        }}
+        aria-label={isAnalyzing ? "Analysing poem…" : "Analyse poem with AI"}
+        disabled={isAnalyzing}
       >
-        <svg className="mob-tab-icon" viewBox="0 0 24 24" aria-hidden fill="none">
-          <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-        </svg>
-        <span className="mob-tab-label">Analyse</span>
+        {isAnalyzing
+          ? <span className="mob-analyse-spinner" aria-hidden />
+          : (
+            <svg className="mob-tab-icon" viewBox="0 0 24 24" aria-hidden fill="none">
+              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+            </svg>
+          )
+        }
+        <span className="mob-tab-label">{isAnalyzing ? "Analysing…" : "Analyse"}</span>
       </button>
     </nav>
   );

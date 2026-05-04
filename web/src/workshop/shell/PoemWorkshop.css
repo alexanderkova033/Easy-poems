@@ -104,14 +104,23 @@
 
 /* ── Virtual keyboard: hide topbar to reclaim ~50px of writing space ────────── */
 @media (max-width: 899px) {
+  /* Base transition lives here so it fires in both directions (open AND close). */
+  .topbar {
+    max-height: 12rem;
+    overflow: hidden;
+    transition:
+      max-height 0.22s cubic-bezier(0.32, 0.72, 0, 1),
+      padding    0.22s cubic-bezier(0.32, 0.72, 0, 1),
+      opacity    0.18s ease,
+      border-width 0.18s ease;
+  }
+
   html.vp-keyboard-open .topbar {
-    height: 0 !important;
-    min-height: 0 !important;
+    max-height: 0;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     border-width: 0 !important;
-    overflow: hidden;
-    transition: height 0.18s ease, padding 0.18s ease;
+    opacity: 0;
   }
 }
 
@@ -122,7 +131,10 @@
   }
 
   .editor-panel {
-    padding: 0.85rem 0.85rem 1rem;
+    /* Only override side/top padding — let WorkshopLayout set padding-bottom
+       so content clears the fixed tab bar (calc(7rem + safe-area)). */
+    padding-top: 0.85rem;
+    padding-inline: 0.85rem;
   }
 
   .cm-editor {
@@ -300,6 +312,11 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    /* Dotted underline signals that the text is editable */
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: color-mix(in srgb, var(--muted) 45%, transparent);
+    text-underline-offset: 3px;
   }
 
   .editor-meta-collapsed-form {
@@ -324,9 +341,55 @@
   .mobile-toolbar-wrap { display: block !important; animation: none !important; }
 }
 
+/* ── Tools empty state — only shown on mobile when poem has no content ── */
+.tools-empty-hint {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .tools-empty-hint {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.25rem 1rem 1.5rem;
+    margin: 0.5rem 0.65rem;
+    border-radius: 12px;
+    border: 1px dashed color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--accent) 4%, var(--surface));
+    animation: tools-hint-fade 0.35s ease both;
+  }
+
+  @keyframes tools-hint-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .tools-empty-hint-msg {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  .tools-empty-hint-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .tools-empty-hint-list li {
+    font-size: 0.82rem;
+    color: color-mix(in srgb, var(--muted) 80%, var(--text));
+  }
+}
+
 @media (max-width: 520px) {
   .editor-panel {
-    padding: 0.75rem 0.7rem 0.9rem;
+    padding-top: 0.75rem;
+    padding-inline: 0.7rem;
   }
   .tools-panel {
     border-radius: var(--radius-md, 10px);
@@ -3185,19 +3248,20 @@
     left: 0;
     right: 0;
     bottom: 0;
-    max-height: 88vh;
+    max-height: 92vh;
     background: var(--surface);
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
     border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: sheet-slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: sheet-slide-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+    box-shadow: 0 -8px 40px color-mix(in srgb, #000 20%, transparent);
   }
 
   @keyframes sheet-slide-up {
-    from { transform: translateY(100%); opacity: 0; }
+    from { transform: translateY(100%); opacity: 0.6; }
     to   { transform: translateY(0);   opacity: 1; }
   }
 
@@ -3205,11 +3269,21 @@
     .mobile-ai-sheet-panel { animation: none; }
   }
 
+  /* Drag handle pill */
+  .mobile-ai-sheet-grip {
+    width: 2.75rem;
+    height: 4px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--border) 80%, transparent);
+    margin: 0.6rem auto 0;
+    flex-shrink: 0;
+  }
+
   .mobile-ai-sheet-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.1rem 0.75rem;
+    padding: 0.65rem 1.1rem 0.6rem;
     border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
     flex-shrink: 0;
   }
@@ -3222,27 +3296,59 @@
 
   .mobile-ai-sheet-close {
     appearance: none;
-    border: none;
-    background: none;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    background: color-mix(in srgb, var(--surface) 80%, var(--bg));
     color: var(--muted);
-    font-size: 1rem;
+    font-size: 0.9rem;
     cursor: pointer;
-    padding: 0.25rem 0.4rem;
-    border-radius: 6px;
+    padding: 0;
+    border-radius: 50%;
     line-height: 1;
-    min-width: 2.2rem;
-    min-height: 2.2rem;
+    width: 2rem;
+    height: 2rem;
     display: grid;
     place-items: center;
+    transition: background 0.13s, color 0.13s;
+  }
+
+  .mobile-ai-sheet-close:hover {
+    background: color-mix(in srgb, var(--border) 40%, var(--surface));
+    color: var(--text);
   }
 
   .mobile-ai-sheet-body {
     flex: 1;
+    min-height: 0; /* required for overflow-y: auto to work inside a flex column */
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding: 0.25rem 0 calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+    padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 1rem);
   }
+
+  /* Inside the sheet: hide the redundant collapsible AI Analysis toggle — the sheet
+     header already provides context and a close button. */
+  .mobile-ai-sheet-body .ai-analysis-toggle {
+    display: none;
+  }
+
+  .mobile-ai-sheet-body .ai-analysis-section {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .mobile-ai-sheet-body .ai-analysis-body {
+    border-top: none;
+    padding-top: 0.75rem;
+  }
+
+  /* #3 — Results-first: float score + issues above the controls row so returning
+     users see their score immediately instead of scrolling past the settings. */
+  .mobile-ai-sheet-body .ai-results     { order: -3; }
+  .mobile-ai-sheet-body .ai-ghost-results { order: -2; }
+  .mobile-ai-sheet-body .ai-loading     { order: -1; }
+  /* Controls, hints, rerun button, chat remain at default order (0+). */
+  .mobile-ai-sheet-body .ai-rerun-btn  { margin-top: 0.25rem; }
 }
 
 /* mobile-analyse-fab: replaced by Analyse tab in MobileActionBar */

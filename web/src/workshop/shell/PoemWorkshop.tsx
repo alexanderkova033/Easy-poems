@@ -328,13 +328,25 @@ export function PoemWorkshop() {
   const overlayOpenCountPrev = useRef(0);
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
+  const editorPanelRef = useRef<HTMLElement | null>(null);
+  // Saved scroll positions so switching tabs doesn't reset where you were.
+  const editorScrollPos = useRef(0);
+  const toolsScrollPos = useRef(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
+  const [mobileIsAnalyzing, setMobileIsAnalyzing] = useState(false);
+  // Set to true just before opening the sheet so analysis auto-triggers on mount only.
+  const mobileSheetAutoTrigger = useRef(false);
+  const mobileSheetAnalyzeFn = useRef<(() => void) | null>(null);
 
-  // Stable ref callback for the mobile sheet — prevents the AiAnalysis useEffect
-  // from re-running on every parent render (which would cancel its own API call).
+  // Stable ref callback — stores the analyze fn and only auto-triggers once per "Analyse"
+  // tap, not on every handleAnalyze dep change (model/harshness changes).
   const mobileSheetAiRef = useCallback((fn: (() => void) | null) => {
-    fn?.();
+    mobileSheetAnalyzeFn.current = fn;
+    if (mobileSheetAutoTrigger.current && fn) {
+      mobileSheetAutoTrigger.current = false;
+      fn();
+    }
   }, []);
 
   const overlayOpenCount =
@@ -365,10 +377,29 @@ export function PoemWorkshop() {
   }, [overlayOpenCount]);
 
 
-  // Reset tools panel scroll to top when switching tabs so you always start at the top.
+  // Reset tools panel scroll to top when switching tool sub-tabs.
   useEffect(() => {
     toolsPanelRef.current?.scrollTo({ top: 0 });
   }, [m.toolTab]);
+
+  // Preserve panel scroll positions when switching between write/tools on mobile.
+  const prevMobileTab = useRef(mobileTab);
+  useEffect(() => {
+    const prev = prevMobileTab.current;
+    prevMobileTab.current = mobileTab;
+    if (prev === mobileTab) return;
+    // Save departing panel's position immediately.
+    if (prev === "write") editorScrollPos.current = editorPanelRef.current?.scrollTop ?? 0;
+    if (prev === "tools") toolsScrollPos.current = toolsPanelRef.current?.scrollTop ?? 0;
+    // Restore arriving panel's position after the slide transition completes (280ms).
+    const id = setTimeout(() => {
+      if (mobileTab === "write" && editorPanelRef.current)
+        editorPanelRef.current.scrollTop = editorScrollPos.current;
+      if (mobileTab === "tools" && toolsPanelRef.current)
+        toolsPanelRef.current.scrollTop = toolsScrollPos.current;
+    }, 290);
+    return () => clearTimeout(id);
+  }, [mobileTab]);
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-writing-focus-v2", isFocusMode);
@@ -2186,6 +2217,7 @@ export function PoemWorkshop() {
         </nav>
 
         <section
+          ref={editorPanelRef}
           className="editor-panel"
           aria-label="Poem editor"
           id="poem-draft"
@@ -2609,6 +2641,20 @@ export function PoemWorkshop() {
             onRhymeBreadthChange={setRhymeBreadth}
           />
 
+          {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
+          {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (
+            <div className="tools-empty-hint">
+              <p className="tools-empty-hint-msg">
+                Write a few lines first — the tools will light up with rhyme suggestions, syllable counts, cliché flags, and more.
+              </p>
+              <ul className="tools-empty-hint-list" aria-hidden>
+                <li>🔤 Rhyme &amp; sound</li>
+                <li>∿ Meter &amp; syllables</li>
+                <li>✦ AI analysis</li>
+                <li>📚 Word lookup</li>
+              </ul>
+            </div>
+          )}
         </aside>
       </main>
 
@@ -2648,6 +2694,7 @@ export function PoemWorkshop() {
         isFocusMode={isFocusMode}
         activeTab={mobileTab}
         wordCount={m.quickDocStats.totalWords}
+        isAnalyzing={mobileIsAnalyzing}
         onTab={(tab: MobileTab) => {
           if (tab === "library") {
             setIsLibraryOpen(true);
@@ -2657,21 +2704,28 @@ export function PoemWorkshop() {
           }
         }}
         onAnalyse={() => {
-          setMobileAiOpen(true);
+          if (mobileAiOpen) {
+            // Sheet already visible — run analysis directly without remounting.
+            mobileSheetAnalyzeFn.current?.();
+          } else {
+            mobileSheetAutoTrigger.current = true;
+            setMobileAiOpen(true);
+          }
         }}
       />
 
       {/* Mobile AI analysis bottom sheet */}
       {mobileAiOpen && (
         <div className="mobile-ai-sheet" role="dialog" aria-label="AI Analysis">
-          <div className="mobile-ai-sheet-backdrop" onClick={() => setMobileAiOpen(false)} />
+          <div className="mobile-ai-sheet-backdrop" onClick={() => { setMobileAiOpen(false); setMobileIsAnalyzing(false); }} />
           <div className="mobile-ai-sheet-panel">
+            <div className="mobile-ai-sheet-grip" aria-hidden />
             <div className="mobile-ai-sheet-header">
               <span className="mobile-ai-sheet-title">✦ AI Analysis</span>
               <button
                 type="button"
                 className="mobile-ai-sheet-close"
-                onClick={() => setMobileAiOpen(false)}
+                onClick={() => { setMobileAiOpen(false); setMobileIsAnalyzing(false); }}
                 aria-label="Close"
               >
                 ✕
@@ -2696,6 +2750,7 @@ export function PoemWorkshop() {
                 }}
                 onApplyLine={m.applyLineRewrite}
                 onAnalyzeRef={mobileSheetAiRef}
+                onLoadingChange={setMobileIsAnalyzing}
               />
             </div>
           </div>
