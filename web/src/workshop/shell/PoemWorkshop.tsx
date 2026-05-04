@@ -2409,14 +2409,10 @@ export function PoemWorkshop() {
                 className="tools-analyse-btn"
                 onClick={() => {
                   mobileAnalyzeFnRef.current?.();
+                  // Scroll to the AiAnalysis section below the grid on desktop
                   requestAnimationFrame(() => {
-                    const panel = toolsPanelRef.current;
-                    if (!panel) return;
-                    const wrapper = panel.querySelector(".tool-ai-section-wrapper");
-                    if (wrapper) {
-                      wrapper.classList.add("is-ai-open");
-                      panel.scrollTo({ top: (wrapper as HTMLElement).offsetTop - 8, behavior: "smooth" });
-                    }
+                    const el = document.querySelector(".ai-analysis-section") as HTMLElement | null;
+                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
                   });
                 }}
                 {...hint("Run AI analysis on this poem")}
@@ -2577,39 +2573,40 @@ export function PoemWorkshop() {
             onRhymeBreadthChange={setRhymeBreadth}
           />
 
-          {/* AI Analysis — collapsed by default on mobile, always visible on desktop */}
-          <div className="tool-ai-section tool-ai-section-wrapper">
-            <AiAnalysis
-              key={m.activePoemId}
-              poemId={m.activePoemId}
-              title={m.title}
-              lines={m.lines}
-              localAnalysis={localAnalysis}
-              goals={m.goals}
-              onJumpToLine={m.goToLine}
-              onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
-              onClearHighlight={() => setIssueHighlight(null)}
-              onAnalysisDone={(issues, score) => {
-                setPersistentIssueHighlights(
-                  issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
-                );
-                m.setLastAiScore(score);
-                requestAnimationFrame(() => {
-                  const panel = toolsPanelRef.current;
-                  if (!panel) return;
-                  const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
-                  if (!resultsEl) return;
-                  const panelRect = panel.getBoundingClientRect();
-                  const elRect = resultsEl.getBoundingClientRect();
-                  panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
-                });
-              }}
-              onApplyLine={m.applyLineRewrite}
-              onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
-            />
-          </div>
         </aside>
       </main>
+
+      {/* AI Analysis — full-width section below the grid on desktop; hidden on mobile (results flow into the Issues tab) */}
+      <AiAnalysis
+        key={m.activePoemId}
+        poemId={m.activePoemId}
+        title={m.title}
+        lines={m.lines}
+        localAnalysis={localAnalysis}
+        goals={m.goals}
+        onJumpToLine={m.goToLine}
+        onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
+        onClearHighlight={() => setIssueHighlight(null)}
+        onAnalysisDone={(issues, score) => {
+          setPersistentIssueHighlights(
+            issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
+          );
+          m.setLastAiScore(score);
+          // On desktop: scroll tools panel to AI results
+          requestAnimationFrame(() => {
+            const panel = toolsPanelRef.current;
+            if (!panel) return;
+            const resultsEl = panel.querySelector(".ai-results") as HTMLElement | null;
+            if (resultsEl) {
+              const panelRect = panel.getBoundingClientRect();
+              const elRect = resultsEl.getBoundingClientRect();
+              panel.scrollTo({ top: panel.scrollTop + elRect.top - panelRect.top - 16, behavior: "smooth" });
+            }
+          });
+        }}
+        onApplyLine={m.applyLineRewrite}
+        onAnalyzeRef={(fn) => { mobileAnalyzeFnRef.current = fn; }}
+      />
 
       <MobileActionBar
         isFocusMode={isFocusMode}
@@ -2625,16 +2622,9 @@ export function PoemWorkshop() {
         }}
         onAnalyse={() => {
           mobileAnalyzeFnRef.current?.();
+          // On mobile: switch to tools / issues tab — AI results populate the issues list
           setMobileTab("tools");
           m.setToolTab("issues");
-          // Open the AI section on mobile and scroll to it
-          requestAnimationFrame(() => {
-            const wrapper = toolsPanelRef.current?.querySelector(".tool-ai-section-wrapper");
-            if (wrapper) {
-              wrapper.classList.add("is-ai-open");
-              (wrapper as HTMLElement).scrollIntoView({ behavior: "smooth", block: "start" });
-            }
-          });
         }}
       />
 
