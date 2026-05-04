@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   applyAppearance,
@@ -19,7 +19,11 @@ import { TOOL_TABS } from "@/workshop/analysis/ToolTabBar";
 import { ToolsOverviewStrip } from "@/workshop/analysis/ToolsOverviewStrip";
 import { useToolTabListKeyboard } from "@/workshop/analysis/useToolTabListKeyboard";
 import { useWorkshopToolHotkeys } from "@/workshop/analysis/useWorkshopToolHotkeys";
-import { WorkshopToolPanels } from "@/workshop/analysis/WorkshopToolPanels";
+// Lazy-load the full tools panel — it pulls in all tool components (rhyme, syllables,
+// spell, stats, suggest, etc.) which would otherwise inflate the critical-path bundle.
+const WorkshopToolPanels = lazy(() =>
+  import("@/workshop/analysis/WorkshopToolPanels").then((m) => ({ default: m.WorkshopToolPanels }))
+);
 import type { DraftMeta } from "@/workshop/library/library-meta";
 import type { PoemRecord } from "@/workshop/library/local-draft-library";
 import { usePoemWorkshopModel } from "./usePoemWorkshopModel";
@@ -2599,6 +2603,7 @@ export function PoemWorkshop() {
             </nav>
           </div>
 
+          <Suspense fallback={<div className="tools-loading-fallback" aria-hidden />}>
           <WorkshopToolPanels
             toolTab={m.toolTab}
             docStats={m.docStats}
@@ -2656,6 +2661,7 @@ export function PoemWorkshop() {
             rhymeBreadth={rhymeBreadth}
             onRhymeBreadthChange={setRhymeBreadth}
           />
+          </Suspense>
 
           {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
           {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (

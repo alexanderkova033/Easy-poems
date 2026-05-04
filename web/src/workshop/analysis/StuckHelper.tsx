@@ -74,11 +74,7 @@ export function StuckHelper({ title, lines, onInsert, onReplaceLine }: StuckHelp
       setTargetLineNum(nonEmptyLines[nonEmptyLines.length - 1]!.num);
     }
   }, [activeType]); // eslint-disable-line
-
-  // Auto-generate on mount when poem has lines (skip for "line" mode which needs a target)
-  useEffect(() => {
-    if (activeType !== "line") void handleGenerate();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // No auto-generate on mount — user must click Generate explicitly.
 
   const handleSelectMode = useCallback((type: SuggestType) => {
     setActiveType(type);
@@ -273,7 +269,8 @@ function SuggestionCard({
     if (onReplace) {
       onReplace();
     } else if (onInsert) {
-      onInsert(text);
+      // Normalise line endings so multi-line suggestions each become a poem line.
+      onInsert(text.replace(/\r\n/g, "\n").replace(/\r/g, "\n"));
     }
     setApplied(true);
     setTimeout(() => setApplied(false), 1800);

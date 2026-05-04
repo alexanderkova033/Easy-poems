@@ -337,6 +337,9 @@
   font-size: 0.9rem;
   line-height: 1.65;
   color: var(--text);
+  /* Preserve line breaks from multi-line suggestions so each poem line shows
+     separately in the card preview and pastes correctly into the editor. */
+  white-space: pre-wrap;
   white-space: pre-wrap;
   word-break: break-word;
 }

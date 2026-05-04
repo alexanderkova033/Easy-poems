@@ -342,12 +342,12 @@
   align-self: flex-start;
 }
 
-/* Every row — labeled or blank — gets the same height as one editor line so the
-   bar stays in sync regardless of how many rhyming lines there are.
-   --poem-line-height defaults to 1.65 (matches CodeMirror's line-height setting). */
+/* Every row — labeled or blank — gets the same height as one editor line.
+   Must use --poem-font-size (not 1rem) because the CodeMirror theme sizes lines as
+   font-size × line-height. If the user changes the poem font size, both match. */
 .editor-rhyme-row,
 .editor-rhyme-spacer {
-  height: calc(1rem * var(--poem-line-height, 1.65));
+  height: calc(var(--poem-font-size, 1rem) * var(--poem-line-height, 1.65));
   flex-shrink: 0;
 }
 

@@ -52,6 +52,16 @@ export default defineConfig({
           if (id.includes("node_modules/docx")) {
             return "vendor-docx";
           }
+          // All tool-panel components are lazy-loaded at runtime; bundle them
+          // together so they're cached as one unit after first use.
+          if (
+            id.includes("/src/workshop/analysis/") ||
+            id.includes("/src/workshop/voice/") ||
+            id.includes("/src/workshop/reading/") ||
+            id.includes("/src/workshop/sharing/")
+          ) {
+            return "workshop-tools";
+          }
           // Landing page is now lazy-loaded — give it its own chunk so the
           // workshop code (CodeMirror, tools, etc.) doesn't inflate the
           // landing-page download and vice-versa.
