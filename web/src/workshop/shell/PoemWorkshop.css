@@ -184,6 +184,73 @@
   }
   .tool-tab .tool-tab-svg { display: none; }
 
+  /* ── Collapsible format toolbar on mobile ── */
+
+  /* Toggle button — only visible on mobile */
+  .mobile-toolbar-toggle {
+    appearance: none;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: none;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.18rem 0.5rem;
+    cursor: pointer;
+    transition: background 0.13s, color 0.13s, border-color 0.13s;
+    flex-shrink: 0;
+  }
+
+  .mobile-toolbar-toggle.is-open {
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+    background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  }
+
+  /* Toolbar wrapper — hidden by default, slides down when open */
+  .mobile-toolbar-wrap {
+    display: none;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .mobile-toolbar-wrap.is-open {
+    display: block;
+    animation: toolbar-reveal 0.2s ease both;
+  }
+
+  @keyframes toolbar-reveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* body-label-row needs to flex-wrap so the toolbar sits on its own line when open */
+  .body-label-row {
+    flex-wrap: wrap;
+    gap: 0.35rem 0.5rem;
+  }
+
+  /* Prevent the tools panel from scrolling sideways on mobile.
+     The global .tools-panel { overflow: auto } overrides WorkshopLayout's
+     overflow-x: hidden so we must re-enforce it here with higher specificity. */
+  .tools-panel {
+    overflow-x: hidden !important;
+    max-width: 100vw;
+  }
+
+  /* Prevent wide tables/cells from stretching the panel */
+  .tools-panel .table-wrap {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Any direct children of tool panels must fit the container */
+  .tool-tab-panel > * {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
   .small-btn {
     min-height: 2.75rem;
     padding: 0.45rem 0.75rem;
@@ -249,10 +316,12 @@
   }
 }
 
-/* On desktop the collapsed view is never shown */
+/* On desktop: collapsed title never shown, toolbar always shown */
 @media (min-width: 900px) {
   .editor-meta-collapsed { display: none; }
   .editor-meta-grid-hidden { display: grid; }
+  .mobile-toolbar-toggle { display: none; }
+  .mobile-toolbar-wrap { display: block !important; animation: none !important; }
 }
 
 @media (max-width: 520px) {

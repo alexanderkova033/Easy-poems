@@ -233,6 +233,8 @@ export function PoemWorkshop() {
   }, [applyRailW, saveRailW]);
   // Collapsible title area on mobile
   const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
+  // Format toolbar collapsed by default on mobile
+  const [mobileToolbarOpen, setMobileToolbarOpen] = useState(false);
   useEffect(() => { if (!m.title.trim()) setMetaOpen(true); }, [m.title]);
 
   // Swipe gesture state
@@ -2248,7 +2250,20 @@ export function PoemWorkshop() {
                   <label id="poem-body-label" htmlFor="poem-body">
                     Poem
                   </label>
-                  <div data-tour-id="format-toolbar">
+                  {/* Mobile: Aa toggle to show/hide toolbar */}
+                  <button
+                    type="button"
+                    className={`mobile-toolbar-toggle ${mobileToolbarOpen ? "is-open" : ""}`}
+                    onClick={() => setMobileToolbarOpen(v => !v)}
+                    aria-label={mobileToolbarOpen ? "Hide formatting options" : "Show formatting options"}
+                    aria-expanded={mobileToolbarOpen}
+                  >
+                    Aa
+                  </button>
+                  <div
+                    data-tour-id="format-toolbar"
+                    className={`mobile-toolbar-wrap ${mobileToolbarOpen ? "is-open" : ""}`}
+                  >
                   <FormatToolbar
                     editorViewRef={m.editorViewRef}
                     poemSize={appearance.poemSize}
