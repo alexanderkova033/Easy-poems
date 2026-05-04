@@ -413,39 +413,20 @@
 @media (max-width: 899px) {
   /* Horizontal scrollable card strip with fade hint on right edge */
   .sh-card-grid {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
+    /* Vertical two-column grid on mobile */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.45rem;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 2px;
-    margin-bottom: -2px;
-    grid-template-columns: none;
-    /* Right-edge fade to hint at more content */
-    -webkit-mask-image: linear-gradient(to right, black 80%, transparent 100%);
-    mask-image: linear-gradient(to right, black 80%, transparent 100%);
-  }
-  .sh-card-grid::-webkit-scrollbar { display: none; }
-
-  .sh-card {
-    min-width: 7.5rem;
-    max-width: 8.5rem;
-    flex-shrink: 0;
-    scroll-snap-align: start;
   }
 
-  /* Poem idea card stays wider in the strip */
+  /* Poem idea card spans full width */
   .sh-card-idea {
-    min-width: 11rem;
-    max-width: 13rem;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.7rem;
   }
 
-  /* Always show descriptions on mobile cards */
   .sh-card-desc {
     font-size: 0.7rem;
   }

@@ -605,12 +605,43 @@
     height: 2.2rem;
   }
 
+  /* Poem title — centred identity pill in mobile topbar */
+  .topbar-mobile-title {
+    flex: 1 1 0;
+    min-width: 0;
+    text-align: center;
+    appearance: none;
+    border: none;
+    background: none;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 650;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0.2rem 0.35rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.13s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .topbar-mobile-title:active {
+    background: color-mix(in srgb, var(--border) 55%, transparent);
+  }
+
   /* Hide save status — screen space is precious; auto-save is silent */
-  .topbar-saved { display: none; }
+  .topbar-saved { display: none !important; }
 
   /* Hide draft selector from topbar — accessible via Library tab in bottom bar */
   .topbar-draft-inline { display: none; }
   .draft-library-label { display: none; }
+}
+
+/* Title pill is mobile-only */
+.topbar-mobile-title {
+  display: none;
 }
 
 

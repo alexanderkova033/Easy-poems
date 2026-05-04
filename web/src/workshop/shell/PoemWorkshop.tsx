@@ -329,6 +329,12 @@ export function PoemWorkshop() {
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
 
+  // Stable ref callback for the mobile sheet — prevents the AiAnalysis useEffect
+  // from re-running on every parent render (which would cancel its own API call).
+  const mobileSheetAiRef = useCallback((fn: (() => void) | null) => {
+    fn?.();
+  }, []);
+
   const overlayOpenCount =
     Number(isLibraryOpen) +
     Number(isExportOpen) +
@@ -925,6 +931,20 @@ export function PoemWorkshop() {
                 : "Private, local, no account"}
             </p>
           </div>
+
+          {/* Mobile-only poem title — centred between brand icon and actions */}
+          <button
+            type="button"
+            className="topbar-mobile-title"
+            onClick={() => {
+              setMobileTab("write");
+              setMetaOpen(true);
+              requestAnimationFrame(() => document.getElementById("poem-title")?.focus());
+            }}
+            aria-label="Edit poem title"
+          >
+            {m.title.trim() || "Untitled"}
+          </button>
 
           <div
             className="topbar-cluster topbar-cluster-context"
@@ -2660,7 +2680,7 @@ export function PoemWorkshop() {
                   m.setLastAiScore(score);
                 }}
                 onApplyLine={m.applyLineRewrite}
-                onAnalyzeRef={(fn) => { fn?.(); }} // auto-run on mount
+                onAnalyzeRef={mobileSheetAiRef}
               />
             </div>
           </div>
