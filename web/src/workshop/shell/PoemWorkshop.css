@@ -3091,6 +3091,91 @@
 }
 
 /* ---- Mobile floating Analyse FAB ---- */
+/* ── Mobile AI analysis bottom sheet ──────────────────────────────────────── */
+
+.mobile-ai-sheet {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .mobile-ai-sheet {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+  }
+
+  .mobile-ai-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: color-mix(in srgb, #000 45%, transparent);
+  }
+
+  .mobile-ai-sheet-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 88vh;
+    background: var(--surface);
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: sheet-slide-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes sheet-slide-up {
+    from { transform: translateY(100%); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mobile-ai-sheet-panel { animation: none; }
+  }
+
+  .mobile-ai-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.1rem 0.75rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+    flex-shrink: 0;
+  }
+
+  .mobile-ai-sheet-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .mobile-ai-sheet-close {
+    appearance: none;
+    border: none;
+    background: none;
+    color: var(--muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    line-height: 1;
+    min-width: 2.2rem;
+    min-height: 2.2rem;
+    display: grid;
+    place-items: center;
+  }
+
+  .mobile-ai-sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 0.25rem 0 calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  }
+}
+
 /* mobile-analyse-fab: replaced by Analyse tab in MobileActionBar */
 .mobile-analyse-fab {
   display: none !important;

@@ -604,6 +604,13 @@
     width: 2.2rem;
     height: 2.2rem;
   }
+
+  /* Hide save status — screen space is precious; auto-save is silent */
+  .topbar-saved { display: none; }
+
+  /* Hide draft selector from topbar — accessible via Library tab in bottom bar */
+  .topbar-draft-inline { display: none; }
+  .draft-library-label { display: none; }
 }
 
 

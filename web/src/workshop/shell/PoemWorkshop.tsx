@@ -327,6 +327,7 @@ export function PoemWorkshop() {
   const overlayReturnFocusRef = useRef<HTMLElement | null>(null);
   const toolsPanelRef = useRef<HTMLElement | null>(null);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
+  const [mobileAiOpen, setMobileAiOpen] = useState(false);
 
   const overlayOpenCount =
     Number(isLibraryOpen) +
@@ -2621,12 +2622,50 @@ export function PoemWorkshop() {
           }
         }}
         onAnalyse={() => {
-          mobileAnalyzeFnRef.current?.();
-          // On mobile: switch to tools / issues tab — AI results populate the issues list
-          setMobileTab("tools");
-          m.setToolTab("issues");
+          setMobileAiOpen(true);
         }}
       />
+
+      {/* Mobile AI analysis bottom sheet */}
+      {mobileAiOpen && (
+        <div className="mobile-ai-sheet" role="dialog" aria-label="AI Analysis">
+          <div className="mobile-ai-sheet-backdrop" onClick={() => setMobileAiOpen(false)} />
+          <div className="mobile-ai-sheet-panel">
+            <div className="mobile-ai-sheet-header">
+              <span className="mobile-ai-sheet-title">✦ AI Analysis</span>
+              <button
+                type="button"
+                className="mobile-ai-sheet-close"
+                onClick={() => setMobileAiOpen(false)}
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="mobile-ai-sheet-body">
+              <AiAnalysis
+                key={`mobile-ai-${m.activePoemId}`}
+                poemId={m.activePoemId}
+                title={m.title}
+                lines={m.lines}
+                localAnalysis={localAnalysis}
+                goals={m.goals}
+                onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
+                onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
+                onClearHighlight={() => setIssueHighlight(null)}
+                onAnalysisDone={(issues, score) => {
+                  setPersistentIssueHighlights(
+                    issues.map((iss) => [iss.line_start, iss.line_end, iss.severity] as [number, number, string?])
+                  );
+                  m.setLastAiScore(score);
+                }}
+                onApplyLine={m.applyLineRewrite}
+                onAnalyzeRef={(fn) => { fn?.(); }} // auto-run on mount
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <WorkshopModals
         isTemplatesOpen={isTemplatesOpen}
