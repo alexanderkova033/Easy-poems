@@ -52,6 +52,39 @@ export default defineConfig({
           if (id.includes("node_modules/docx")) {
             return "vendor-docx";
           }
+          // Vite's dynamic-import preload helper (a virtual module, so it matches
+          // none of the path rules below). Left unclaimed, Rollup parks it in an
+          // arbitrary chunk — it chose workshop-tools, and since the entry calls
+          // the helper for every one of its lazy imports, the entry was forced to
+          // statically import that whole 255KB chunk to obtain one small function.
+          // Pin it next to the rest of the boot code.
+          if (id.includes("vite/preload-helper")) {
+            return "app-shell";
+          }
+          // Modules main.tsx pulls in synchronously to boot the app shell.
+          //
+          // These MUST be claimed before the workshop-tools rule below. They are
+          // reachable both from the entry and from the analysis code, and when a
+          // shared module has no manual chunk of its own Rollup folds it into the
+          // manual chunk that also uses it. That put appearance/ and hints/ inside
+          // workshop-tools — so the entry chunk ended up statically importing all
+          // 257KB of it just to reach a handful of small bindings, and first paint
+          // waited on the whole download. Measured on a throttled phone: FCP landed
+          // ~90ms after workshop-tools finished, with the landing page's own assets
+          // not even requested until afterwards.
+          //
+          // Listed file-by-file rather than by directory on purpose: a blanket
+          // /src/workshop/appearance/ rule would also swallow BackgroundPicker and
+          // its form fields, which are lazy-loaded and should stay split out.
+          if (
+            id.includes("/src/shared/") ||
+            id.includes("/src/workshop/hints/") ||
+            id.includes("/src/workshop/appearance/appearance.ts") ||
+            id.includes("/src/workshop/appearance/fonts.ts") ||
+            id.includes("/src/workshop/appearance/backgrounds/presets.ts")
+          ) {
+            return "app-shell";
+          }
           // Tool-panel analysis code is part of the initial workshop bundle
           // (the panels render immediately). voice/ stays grouped here too.
           // reading/, sharing/, and appearance/ are lazy-loaded via React.lazy
