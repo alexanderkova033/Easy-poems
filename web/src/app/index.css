@@ -689,6 +689,26 @@ body.tab-hidden *::after {
   }
 }
 
+/* Drop the film-grain overlay on phones.
+
+   mix-blend-mode: overlay on a position:fixed, full-viewport pseudo-element
+   forces the compositor to re-blend the entire screen on every paint — and
+   CodeMirror triggers a paint on each keystroke. At --grain-opacity 0.018–0.032
+   the texture is not resolvable on a ~450dpi phone panel, so this is a pure
+   cost with no visual return there. Desktop keeps it: the effect reads on a
+   large low-dpi display, and those machines have the paint budget.
+
+   Deliberately NOT gated on data-backdrop-power: that setting defaults to "low",
+   which carries only a few rules — the real reductions live behind "very-low",
+   which most users never select. Phones need this whatever the preference says.
+   The remaining theme layers (body::before gradients, body::after zenith glow)
+   are untouched — they carry the theme's character. */
+@media (hover: none) and (pointer: coarse) and (max-width: 899px) {
+  html::before {
+    content: none;
+  }
+}
+
 /* ======================================================
    Light performance preset (data-backdrop-power="very-low")
    ------------------------------------------------------

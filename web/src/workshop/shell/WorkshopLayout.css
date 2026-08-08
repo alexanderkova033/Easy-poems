@@ -757,7 +757,7 @@
     right: 0;
     bottom: calc(3.25rem + env(safe-area-inset-bottom, 0px));
     /* Default closed — slid below viewport */
-    top: 100vh;
+    top: 100dvh;
     overflow: hidden;
     isolation: isolate;
     border-radius: 16px 16px 0 0;
@@ -765,6 +765,11 @@
     transition: top 0.32s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 62;
     will-change: top;
+    /* Isolate the sheet's layout/paint from the editor behind it. Without this,
+       every re-layout inside the sheet (opening a tool, expanding a section)
+       invalidates layout for the whole document — and CodeMirror forces a
+       synchronous layout on each keystroke, so that cost lands on typing. */
+    contain: layout paint style;
   }
 
   /* Live drag — disable transition while finger is down. */
@@ -774,10 +779,15 @@
     transition: none;
   }
 
-  /* Snap states (top of sheet from viewport top). */
-  .workshop-grid[data-mobile-sheet="closed"] .tools-panel { top: 100vh; }
-  .workshop-grid[data-mobile-sheet="half"]   .tools-panel { top: 50vh; }
-  .workshop-grid[data-mobile-sheet="full"]   .tools-panel { top: 8vh; }
+  /* Snap states (top of sheet from viewport top).
+     dvh, not vh: vh resolves against the *large* viewport (URL bar hidden), but the
+     drag handler in useSheetDrag.ts measures with window.innerHeight, which is the
+     *dynamic* viewport. With vh the two disagreed by the height of Chrome's URL bar,
+     so the sheet jumped a few dozen px the moment a drag was released. dvh matches
+     innerHeight, so drag and snap now land on the same pixel. */
+  .workshop-grid[data-mobile-sheet="closed"] .tools-panel { top: 100dvh; }
+  .workshop-grid[data-mobile-sheet="half"]   .tools-panel { top: 50dvh; }
+  .workshop-grid[data-mobile-sheet="full"]   .tools-panel { top: 8dvh; }
 
   /* While dragging, JS sets --sheet-top inline; honor it over snap state. */
   .tools-panel[style*="--sheet-top"] { top: var(--sheet-top) !important; transition: none; }

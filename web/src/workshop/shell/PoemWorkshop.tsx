@@ -80,6 +80,8 @@ import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
 import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
 import { WorkshopBanners } from "./WorkshopBanners";
+import { hasBlockingBanner } from "./workshop-banner-state";
+import { useIsNarrowViewport } from "./hooks/useIsNarrowViewport";
 import { WorkshopTopbarHeader } from "./WorkshopTopbarHeader";
 import { WorkshopLibraryModal } from "./WorkshopLibraryModal";
 import { endingForBreadth, type RhymeBreadth } from "@/workshop/rhyme/scheme";
@@ -99,6 +101,16 @@ import "./PoemWorkshop.meter.css";
 import "./PoemWorkshop.rhyme.css";
 import "./PoemWorkshop.snapshot.css";
 import "@/workshop/vocabulary/WordLookupPopup.css";
+
+/** True on phone-width viewports — the 899px breakpoint the mobile CSS uses.
+ *  Read at call time rather than cached at module load so it stays correct
+ *  after a rotation or a resize. */
+function isNarrowViewport(): boolean {
+  if (typeof window === "undefined") return false;
+  return typeof window.matchMedia === "function"
+    ? window.matchMedia("(max-width: 899px)").matches
+    : window.innerWidth <= 899;
+}
 
 function endWordOfLineRaw(line: string | undefined): string {
   if (!line) return "";
@@ -275,13 +287,28 @@ export function PoemWorkshop() {
     handleRailResizeStart,
     handleToolsRailResizeStart,
   } = usePanelLayout();
-  // Collapsible title area on mobile
-  const [metaOpen, setMetaOpen] = useState(() => !m.title.trim());
+  const isNarrow = useIsNarrowViewport();
+  // Collapsible title area on mobile.
+  //
+  // Start collapsed on phones. Title and Main idea are both optional, but together
+  // they cost ~170px — on a 734px viewport that is a quarter of the screen spent on
+  // fields most drafts never use, pushing the poem itself down to about two visible
+  // lines. Collapsed they become one tappable row, and the editor takes the space.
+  //
+  // Only mobile is affected: at ≥900px `.editor-meta-grid-hidden` is `display: grid`
+  // (PoemWorkshop.css), so the grid stays visible on desktop whatever this holds.
+  const [metaOpen, setMetaOpen] = useState(() => !isNarrowViewport() && !m.title.trim());
   // Fully hide the title bar to maximise writing space
   const [metaHidden, setMetaHidden] = useState(false);
   // Format toolbar collapsed by default on mobile
   const [mobileToolbarOpen, setMobileToolbarOpen] = useState(false);
-  useEffect(() => { if (!m.title.trim()) { setMetaOpen(true); setMetaHidden(false); } }, [m.title]);
+  // Clearing the title re-opens the meta row so there is somewhere to type one —
+  // but not on a phone, where that is exactly what pinned the fields open for every
+  // untitled draft. There the collapsed bar is the affordance instead.
+  useEffect(() => {
+    if (isNarrowViewport()) return;
+    if (!m.title.trim()) { setMetaOpen(true); setMetaHidden(false); }
+  }, [m.title]);
 
   // Swipe gesture state
   const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
@@ -1654,10 +1681,15 @@ export function PoemWorkshop() {
         resetLayout={resetLayout}
       />
 
-      <FirstVisitHint
-        onOpenGuide={() => setIsGuideOpen(true)}
-        onSuggest={() => openToolTab("suggest")}
-      />
+      {/* On a phone the onboarding hint yields to anything more urgent — it stacked
+          with the backup reminder and the two together filled ~40% of the viewport.
+          It is not dismissed, just deferred: it returns once the banner is cleared. */}
+      {!(isNarrow && hasBlockingBanner(m)) && (
+        <FirstVisitHint
+          onOpenGuide={() => setIsGuideOpen(true)}
+          onSuggest={() => openToolTab("suggest")}
+        />
+      )}
 
       {m.samplePoemActive && (
         <SamplePoemBanner
@@ -2114,10 +2146,15 @@ export function PoemWorkshop() {
                     className="editor-meta-collapsed"
                     onClick={() => setMetaOpen(true)}
                     onContextMenu={(e) => { e.preventDefault(); setMetaOpen(true); document.getElementById("poem-title")?.focus(); }}
-                    aria-label="Edit title and form"
+                    aria-label="Edit title and main idea"
                   >
-                    <span className="editor-meta-collapsed-title">
-                      {m.title.trim() || "Untitled"}
+                    {/* Now the default state for an untitled draft on mobile, so the
+                        empty case has to invite a tap rather than just report a fact —
+                        "Untitled" read as a label, not as something you could act on. */}
+                    <span
+                      className={`editor-meta-collapsed-title${m.title.trim() ? "" : " is-placeholder"}`}
+                    >
+                      {m.title.trim() || "Add title · main idea"}
                     </span>
                     {m.formNote.trim() && (
                       <span className="editor-meta-collapsed-form">· {m.formNote.trim()}</span>

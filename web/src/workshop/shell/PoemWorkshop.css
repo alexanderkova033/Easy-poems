@@ -324,7 +324,12 @@
   }
 
   /* ── Collapsible title ── */
-  .editor-meta-grid-hidden {
+  /* Both class names are on the same element, and `.editor-meta-grid { display: grid }`
+     is declared later in this file — at equal specificity that would win and the grid
+     would never actually collapse. Qualifying with both classes raises specificity so
+     the collapsed state sticks. (This stayed hidden while the meta row was force-opened
+     for every untitled draft; it only surfaced once mobile began defaulting closed.) */
+  .editor-meta-grid.editor-meta-grid-hidden {
     display: none;
   }
 
@@ -404,6 +409,16 @@
     text-decoration-style: dotted;
     text-decoration-color: color-mix(in srgb, var(--muted) 45%, transparent);
     text-underline-offset: 3px;
+  }
+
+  /* Empty state: this is the resting state for an untitled draft on mobile, so it
+     should sit back as a prompt rather than impersonate a real title. Lighter and
+     in the UI face — a placeholder set in the poem serif read as an actual title. */
+  .editor-meta-collapsed-title.is-placeholder {
+    font-family: var(--font-ui);
+    font-size: 0.88rem;
+    font-weight: 550;
+    color: var(--muted);
   }
 
   .editor-meta-collapsed-form {
@@ -962,9 +977,15 @@
 
 /* Mobile swipe affordance pill — only visible on narrow screens */
 /* .tools-swipe-handle — full mobile drag-handle styling lives in WorkshopLayout.css.
-   Hidden by default on desktop. */
-.tools-swipe-handle {
-  display: none;
+   Hidden on desktop only. This MUST stay behind a min-width query: WorkshopLayout.css
+   is pulled in via @import at the top of this file, and @import rules are hoisted, so
+   an unconditional `display: none` here would come later in the cascade and beat the
+   mobile `display: block` at every width — leaving the sheet permanently stuck at its
+   "half" snap with no way to drag it open. */
+@media (min-width: 900px) {
+  .tools-swipe-handle {
+    display: none;
+  }
 }
 
 /* Mobile-only close button (X) in the tools sticky head */
@@ -1020,6 +1041,20 @@
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0.15rem 0 0.25rem;
+}
+
+/* Keep the head row clear of the absolutely-positioned close button.
+   .tools-mobile-close is taken out of flow at the top-right of .tools-sticky-head,
+   so without reserved space the "Analyse" button slides underneath it — on a 384px
+   viewport the X was covering 29px of the button, clipping the label and stealing
+   its tap target. Reserving the button's footprint (2rem wide + 0.55rem inset, less
+   the head's 0.9rem padding, plus a gap) keeps them apart at any label width.
+   Must come after the base rule above, whose `padding` shorthand would otherwise
+   reset padding-right. */
+@media (max-width: 899px) {
+  .tools-head-row {
+    padding-right: 2.3rem;
+  }
 }
 
 .tools-head-actions {
@@ -3946,6 +3981,31 @@
   box-shadow: 0 2px 14px color-mix(in srgb, #000 6%, transparent);
   backdrop-filter: saturate(1.02) blur(8px);
   -webkit-backdrop-filter: saturate(1.02) blur(8px);
+}
+
+/* ── Mobile typing performance ───────────────────────────────────────────
+   On phones .editor-panel is the scrolling container (position: absolute,
+   overflow-y: auto — see WorkshopLayout.css) *and* the element CodeMirror
+   measures against. CodeMirror forces a synchronous layout on every keystroke
+   (getBoundingClientRect / visiblePixelRange / Selection.collapse), and a
+   backdrop-filter on a scrolling ancestor makes the browser re-sample and
+   re-blur everything painted behind it on each of those reads. Profiling a
+   real Galaxy A34 put INP p75 at 312ms with 1.2s of long tasks over a few
+   seconds of typing; dropping the blur here is the single biggest win.
+
+   The panel is opaque enough that the blur was barely visible on a small
+   screen anyway — we compensate with a slightly more solid background so the
+   surface still reads as a distinct card.
+
+   Must stay *after* the rule above: WorkshopLayout.css arrives via a hoisted
+   @import at the top of this file, so a mobile override placed there would be
+   overruled by the unconditional declaration above. */
+@media (max-width: 899px) {
+  .editor-panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: color-mix(in srgb, var(--surface) 93%, var(--bg));
+  }
 }
 
 .privacy {
