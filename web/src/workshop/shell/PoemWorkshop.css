@@ -3812,6 +3812,37 @@
   min-height: 0;
 }
 
+/* Let the writing surface take exactly the height the flex column gives it.
+   poemEditorTheme (spell-highlight.ts) sets a 20rem floor, which is right on a
+   desktop page that scrolls, but on a phone the wrapper resolves to well under
+   that — measured 303px against the editor's forced 350px. The editor then
+   overflowed its own wrapper by ~47px and pushed the copy button behind the
+   fixed bottom tab bar. Releasing the floor lets the height:100% that
+   react-codemirror already applies fill the space instead, so every pixel
+   reclaimed above (collapsed meta row, single banner) reaches the poem. */
+@media (max-width: 899px) {
+  .poem-cm-wrap {
+    --poem-editor-min-h: 0px;
+    /* Not 0: the content still has to fill the scroller so tapping below the
+       last line puts the caret in the poem rather than doing nothing. */
+    --poem-content-min-h: 100%;
+
+    /* Tighten the line-number gutter. It measured 40px of a 324px scroller —
+       over 12% of the writing width spent on two digits. Trimming the left inset
+       and the 2ch minimum gives that back to the poem, which also means the
+       auto-shrink in PoemBodyEditor has to scale fewer lines down. */
+    --poem-gutter-pad-l: 0.1rem;
+    --poem-gutter-pad-r: 0.15rem;
+    --poem-gutter-min-w: 1.25ch;
+  }
+
+  /* The content's own side padding is the other half of the same squeeze. */
+  .poem-cm-wrap .cm-content {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+}
+
 /* react-codemirror's own wrapper div (class name derives from theme="none").
    Needs an explicit flex size so percentage/100% heights on .cm-editor below
    it can actually resolve instead of falling back to content-based auto. */

@@ -106,7 +106,12 @@ export const poemSpellExtensions = [spellField, spellPlugin];
 export const poemEditorTheme = EditorView.theme({
   "&": {
     fontSize: "var(--poem-font-size, 1rem)",
-    minHeight: "20rem",
+    // Indirected through a custom property so CSS media queries can retune it —
+    // EditorView.theme generates a plain stylesheet with no breakpoint of its own.
+    // On phones the editor sits in a flex column shorter than 20rem, and a hard
+    // minimum made it overflow its wrapper and shove the copy button underneath
+    // the bottom tab bar. See the mobile override in PoemWorkshop.css.
+    minHeight: "var(--poem-editor-min-h, 20rem)",
     backgroundColor: "transparent",
     color: "color-mix(in srgb, var(--text) 82%, transparent)",
     borderRadius: "8px",
@@ -121,7 +126,9 @@ export const poemEditorTheme = EditorView.theme({
     lineHeight: "var(--poem-line-height, 1.65)",
     letterSpacing: "var(--poem-letter-spacing, 0em)",
     caretColor: "color-mix(in srgb, var(--accent) 70%, var(--text))",
-    minHeight: "20rem",
+    // Keeps a generous click target below the last line. On mobile this becomes
+    // 100% so it fills the (shorter) scroller instead of forcing it to scroll.
+    minHeight: "var(--poem-content-min-h, 20rem)",
     padding: "0.4rem 0.7rem",
   },
   ".cm-gutters": {
@@ -142,8 +149,11 @@ export const poemEditorTheme = EditorView.theme({
       "1.5px solid color-mix(in srgb, var(--accent) 72%, var(--muted))",
   },
   ".cm-lineNumbers .cm-gutterElement": {
-    padding: "0 0.2rem 0 0.3rem",
-    minWidth: "2ch",
+    // Overridable so phones can claw back gutter width for the poem — every pixel
+    // here is a pixel the text does not get, and at 384px that margin is scarce.
+    // See the mobile override in PoemWorkshop.css.
+    padding: "0 var(--poem-gutter-pad-r, 0.2rem) 0 var(--poem-gutter-pad-l, 0.3rem)",
+    minWidth: "var(--poem-gutter-min-w, 2ch)",
   },
   /* Match global ::selection — avoid system / default light fill */
   ".cm-selectionBackground": {

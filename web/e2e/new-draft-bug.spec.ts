@@ -29,26 +29,38 @@ test("clicking New draft clears the editor body", async ({ page }) => {
 });
 
 test("switching back to the previous draft restores its body", async ({ page }) => {
+  // Every wait here is an assertion on the state the next step needs, rather than
+  // a fixed sleep. The previous version slept 300/200/500ms around a debounced
+  // autosave and then took a single innerText() reading with no retry, which
+  // failed roughly one run in four.
   const editor = page.locator(".cm-content");
   await editor.click();
   await page.keyboard.type("first draft content");
-  await page.waitForTimeout(300);
+  await expect(editor).toContainText("first draft content");
 
   await page.locator('button[aria-label="New draft"]').click();
-  await page.waitForTimeout(200);
+  await expect(editor).not.toContainText("first draft content");
 
   await editor.click();
   await page.keyboard.type("second draft content");
-  await page.waitForTimeout(300);
+  await expect(editor).toContainText("second draft content");
 
+  // Pick the draft we are NOT currently on. The option list is sorted by
+  // lastOpenedAt descending (useDraftMeta), so index 0 is the draft just opened —
+  // selecting it is a no-op, because selectPoem early-returns when the id already
+  // matches. Taking index 0 only appeared to work when both drafts happened to
+  // share a lastOpenedAt millisecond and the tie broke the other way, which is
+  // what made this test fail roughly one run in four.
   const draftSelect = page.locator('select[aria-label="Active draft"]');
-  const optionValues = await draftSelect.locator("option").evaluateAll((els) =>
-    (els as HTMLOptionElement[]).map((e) => e.value),
-  );
-  await draftSelect.selectOption(optionValues[0]);
-  await page.waitForTimeout(500);
+  const { value: activeId, options } = await draftSelect.evaluate((el) => ({
+    value: (el as HTMLSelectElement).value,
+    options: [...(el as HTMLSelectElement).options].map((o) => o.value),
+  }));
+  const otherId = options.find((v) => v !== activeId);
+  expect(otherId, "expected a second draft to switch to").toBeTruthy();
+  await draftSelect.selectOption(otherId!);
 
-  const restoredText = await page.locator(".cm-content").innerText();
-  expect(restoredText).toContain("first draft content");
-  expect(restoredText).not.toContain("second draft content");
+  // toContainText retries until the switch has been applied.
+  await expect(editor).toContainText("first draft content");
+  await expect(editor).not.toContainText("second draft content");
 });

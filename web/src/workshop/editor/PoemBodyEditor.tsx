@@ -48,9 +48,16 @@ const lineFontScaleField = StateField.define<DecorationSet>({
   provide: (f) => EditorView.decorations.from(f),
 });
 
+// How long to wait after the last edit before re-measuring. measureAndApply does
+// a dispatch plus a getClientRects sweep over every line, which is far too much to
+// run on each keystroke on a phone. Settling first costs a brief moment where an
+// over-long line is still full size, and buys back the per-keystroke cost.
+const LINE_FONT_SCALE_SETTLE_MS = 180;
+
 const lineFontScalePlugin = ViewPlugin.fromClass(
   class {
     private rafId = 0;
+    private timer: ReturnType<typeof setTimeout> | undefined;
     private lastW = 0;
     private ro: ResizeObserver;
     constructor(view: EditorView) {
@@ -70,6 +77,15 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
     }
     schedule(view: EditorView) {
       cancelAnimationFrame(this.rafId);
+      clearTimeout(this.timer);
+      // Debounce on touch only — desktop has the headroom for per-change rAF and
+      // the immediate feedback is nicer there.
+      if (IS_TOUCH_DEVICE) {
+        this.timer = setTimeout(() => {
+          this.rafId = requestAnimationFrame(() => this.measureAndApply(view));
+        }, LINE_FONT_SCALE_SETTLE_MS);
+        return;
+      }
       this.rafId = requestAnimationFrame(() => this.measureAndApply(view));
     }
     measureAndApply(view: EditorView) {
@@ -124,6 +140,7 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
     }
     destroy() {
       cancelAnimationFrame(this.rafId);
+      clearTimeout(this.timer);
       this.ro.disconnect();
     }
   }
@@ -1200,11 +1217,19 @@ export function PoemBodyEditor(props: PoemBodyEditorProps) {
       EditorState.transactionExtender.of((tr) =>
         tr.annotation(ExternalChange) ? { annotations: Transaction.addToHistory.of(false) } : null
       ),
-      // lineFontScale measures every .cm-line via getClientRects on each doc
-      // change. Skipped on touch — mobile viewports are narrow and wrap anyway,
-      // so the auto-shrink rarely fires, and the measurement cost is the single
-      // biggest source of typing lag on iPad.
-      ...(IS_TOUCH_DEVICE ? [] : [lineFontScaleField, lineFontScalePlugin]),
+      // Shrinks over-long lines to fit the width instead of letting them run off.
+      //
+      // This used to be skipped on touch, on the reasoning that "mobile viewports
+      // are narrow and wrap anyway". They do not wrap: the editor runs without
+      // lineWrapping and .cm-scroller is overflow-x: hidden, so anything past the
+      // right edge was simply clipped with no way to scroll to it. Measured on a
+      // 384px-wide phone: 324px of visible scroller against 4,965px of content.
+      //
+      // It is enabled everywhere now. The measurement cost that motivated the
+      // original exclusion is real, so on touch the sweep is debounced until
+      // typing settles rather than running per keystroke (see schedule()).
+      lineFontScaleField,
+      lineFontScalePlugin,
       EditorView.contentAttributes.of({ spellcheck: "false" }),
       spellSyncFacet.of(props.spellBump),
       search({ top: true }),

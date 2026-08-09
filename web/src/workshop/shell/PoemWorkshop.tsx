@@ -59,6 +59,7 @@ import { AiLineRibbons } from "@/workshop/analysis/AiLineRibbons";
 import type { AnalysisIssue, PoemAnalysis, PoemComparison } from "@/workshop/analysis/ai-analyze";
 import { STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
 import { detectPoemForm, type LocalAnalysisContext } from "@/workshop/analysis/ai-analyze";
+import { buildToolStats, type ToolStatsInput } from "@/workshop/analysis/tool-stats";
 import { FormatToolbar } from "@/workshop/editor/FormatToolbar";
 import { SelectionSuggestPopover } from "@/workshop/editor/SelectionSuggestPopover";
 import { checkShareHash } from "@/workshop/sharing/sharing";
@@ -77,7 +78,6 @@ import { STORAGE_KEY_SHOW_LINE_SYLLABLES, STORAGE_KEY_SHOW_RHYME_SCHEME, STORAGE
 import { usePanelLayout, DEFAULT_TOOLS_W, DEFAULT_RAIL_W, MIN_EDITOR_W } from "./hooks/usePanelLayout";
 import { useSheetDrag } from "./hooks/useSheetDrag";
 import { InlineRhymeHint } from "@/workshop/editor/InlineRhymeHint";
-import { MobileActionBar, type MobileTab } from "./MobileActionBar";
 import { WorkshopModals } from "./WorkshopModals";
 import { WorkshopBanners } from "./WorkshopBanners";
 import { hasBlockingBanner } from "./workshop-banner-state";
@@ -101,6 +101,12 @@ import "./PoemWorkshop.meter.css";
 import "./PoemWorkshop.rhyme.css";
 import "./PoemWorkshop.snapshot.css";
 import "@/workshop/vocabulary/WordLookupPopup.css";
+// MUST stay last. PoemWorkshop.css reaches WorkshopLayout.css through an @import,
+// and @import is hoisted above the importing sheet's own rules — so phone-only
+// layout declared there lost every equal-specificity tie to the 8,700 lines that
+// followed. Importing the mobile block here instead puts it at the end of the
+// cascade, which is what its media query always meant. See WorkshopMobile.css.
+import "./WorkshopMobile.css";
 
 /** True on phone-width viewports — the 899px breakpoint the mobile CSS uses.
  *  Read at call time rather than cached at module load so it stays correct
@@ -261,14 +267,15 @@ export function PoemWorkshop() {
   const [libraryShowArchived, setLibraryShowArchived] = useState(false);
   const librarySearchRef = useRef<HTMLInputElement | null>(null);
   const [libraryActiveIdx, setLibraryActiveIdx] = useState(0);
-  const [mobileTab, setMobileTab] = useState<"write" | "tools" | "library">("write");
-  const mobileToolsExpanded = mobileTab === "tools";
-  // Bottom-sheet snap point on mobile when tools tab is active. Reset to "half" each time it opens.
-  const [mobileSheetSnap, setMobileSheetSnap] = useState<"half" | "full">("half");
-  const setMobileToolsExpanded = (v: boolean) => {
-    if (v) setMobileSheetSnap("half");
-    setMobileTab(v ? "tools" : "write");
-  };
+  // The phone tools sheet is never dismissed — it rests peeking above the bottom
+  // edge and is dragged to whatever height the writer wants (see useSheetDrag), so
+  // there is no open/closed state and no bottom tab bar to switch between.
+  //
+  // Tablets (900–1049px) are a different layout: there the tools are a slide-in
+  // right drawer that genuinely opens and closes, so they keep their own flag.
+  // It used to share the phone's state, which is why removing that broke the
+  // tablet toggle.
+  const [tabletToolsOpen, setTabletToolsOpen] = useState(false);
   const [topbarOverflowOpen, setTopbarOverflowOpen] = useState(false);
   const overflowMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -502,6 +509,18 @@ export function PoemWorkshop() {
       form: detectPoemForm(m.lines, syllablesPerLine),
     };
   }, [m.clicheHits, m.rhymeScheme, m.docStats.lines, m.repeated, m.lines]);
+
+  // Readings from the writing tools, handed to the AI analysis as supporting
+  // evidence. Built on demand (when the poet asks for a read) rather than in a
+  // memo: the Echoes pass is far too much work to run on every keystroke.
+  const toolStatsSource: ToolStatsInput = {
+    lines: m.lines, docStats: m.docStats, meterHints: m.meterHints,
+    repetition: m.repetition, internalRhymes: m.internalRhymes,
+    spellHits: m.spellHits, stressLexicon: m.stressLexicon,
+  };
+  const toolStatsSourceRef = useRef(toolStatsSource);
+  toolStatsSourceRef.current = toolStatsSource;
+  const getToolStats = useCallback(() => buildToolStats(toolStatsSourceRef.current), []);
   const prevActivePoemIdRef = useRef(m.activePoemId);
   useEffect(() => {
     if (m.activePoemId !== prevActivePoemIdRef.current) {
@@ -677,16 +696,14 @@ export function PoemWorkshop() {
   const railPanelRef = useRef<HTMLElement | null>(null);
   const railGutterRef = useRef<HTMLDivElement | null>(null);
 
-  const { handleSheetDragStart, handleSheetDragMove, handleSheetDragEnd } = useSheetDrag({
-    toolsPanelRef,
-    mobileSheetSnap,
-    setMobileSheetSnap,
-    setMobileToolsExpanded,
-  });
+  const {
+    handleSheetDragStart,
+    handleSheetDragMove,
+    handleSheetDragEnd,
+    sheetIsProminent,
+    collapseSheet,
+  } = useSheetDrag({ toolsPanelRef });
   const editorPanelRef = useRef<HTMLElement | null>(null);
-  // Saved scroll positions so switching tabs doesn't reset where you were.
-  const editorScrollPos = useRef(0);
-  const toolsScrollPos = useRef(0);
   const mobileAnalyzeFnRef = useRef<(() => void) | null>(null);
   const aiSwitchTabRef = useRef<((tab: "overview" | "issues" | "chat") => void) | null>(null);
   const cursorLineGetterRef = useRef<(() => number) | null>(null);
@@ -802,7 +819,6 @@ export function PoemWorkshop() {
   const openAiTab = useCallback((tab: "overview" | "issues" | "chat") => {
     if (window.innerWidth <= 899) {
       setMobileAiOpen(true);
-      setMobileTab("write");
       requestAnimationFrame(() => aiSwitchTabRef.current?.(tab));
       return;
     }
@@ -950,24 +966,10 @@ export function PoemWorkshop() {
     }
   }, [activeTool]);
 
-  // Preserve panel scroll positions when switching between write/tools on mobile.
-  const prevMobileTab = useRef(mobileTab);
-  useEffect(() => {
-    const prev = prevMobileTab.current;
-    prevMobileTab.current = mobileTab;
-    if (prev === mobileTab) return;
-    // Save departing panel's position immediately.
-    if (prev === "write") editorScrollPos.current = editorPanelRef.current?.scrollTop ?? 0;
-    if (prev === "tools") toolsScrollPos.current = toolsPanelRef.current?.scrollTop ?? 0;
-    // Restore arriving panel's position after the slide transition completes (280ms).
-    const id = setTimeout(() => {
-      if (mobileTab === "write" && editorPanelRef.current)
-        editorPanelRef.current.scrollTop = editorScrollPos.current;
-      if (mobileTab === "tools" && toolsPanelRef.current)
-        toolsPanelRef.current.scrollTop = toolsScrollPos.current;
-    }, 290);
-    return () => clearTimeout(id);
-  }, [mobileTab]);
+  // (Panel scroll positions used to be saved and restored around the mobile
+  // write/tools tab switch. The sheet is now always on screen and simply resizes,
+  // so neither panel is ever unmounted or slid away and both keep their own
+  // scroll position for free.)
 
   useEffect(() => {
     document.documentElement.toggleAttribute("data-writing-focus-v2", isFocusMode);
@@ -1653,7 +1655,16 @@ export function PoemWorkshop() {
         isFocusMode={isFocusMode}
         setIsFocusMode={setIsFocusMode}
         setIsLibraryOpen={setIsLibraryOpen}
-        setMobileTab={setMobileTab}
+        isAnalysing={mobileIsAnalyzing}
+        onAnalyse={() => {
+          if (mobileAiOpen) {
+            // Sheet already up — re-run without remounting it.
+            mobileSheetAnalyzeFn.current?.();
+          } else {
+            mobileSheetAutoTrigger.current = true;
+            setMobileAiOpen(true);
+          }
+        }}
         setMetaOpen={setMetaOpen}
         showRhymeScheme={showRhymeScheme}
         isStatsOpen={isStatsOpen}
@@ -1894,30 +1905,25 @@ export function PoemWorkshop() {
       )}
 
       {/* Tablet scrim — fixed overlay, NOT a grid item */}
-      {mobileToolsExpanded && (
-        <div
-          className="tablet-tools-scrim"
-          aria-hidden
-          onClick={() => setMobileToolsExpanded(false)}
-        />
+      {tabletToolsOpen && (
+        <div className="tablet-tools-scrim" aria-hidden onClick={() => setTabletToolsOpen(false)} />
       )}
 
-      {/* Mobile bottom-sheet scrim — only visible at full snap */}
-      {mobileToolsExpanded && (
-        <div
-          className={`mobile-sheet-scrim mobile-sheet-scrim-${mobileSheetSnap}`}
-          aria-hidden
-          onClick={() => setMobileSheetSnap("half")}
-        />
-      )}
+      {/* Mobile sheet scrim. Transparent and click-through until the sheet is
+          dragged far enough up to be the thing you're working in; tapping it then
+          drops the sheet back to its peek. */}
+      <div
+        className={`mobile-sheet-scrim${sheetIsProminent ? " mobile-sheet-scrim-strong" : ""}`}
+        aria-hidden
+        onClick={collapseSheet}
+      />
 
       <main
         id="workshop-main"
         className={`workshop-grid ${toolsExpanded ? "" : "tools-rail"} tools-rail-labels ${toolsAnimReady ? "tools-anim" : ""}`}
         ref={workshopGridRef}
-        data-mobile-view={mobileToolsExpanded ? "tools" : "editor"}
-        data-tools-open={mobileToolsExpanded ? "true" : "false"}
-        data-mobile-sheet={mobileToolsExpanded ? mobileSheetSnap : "closed"}
+        data-mobile-view="tools"
+        data-tools-open={tabletToolsOpen ? "true" : "false"}
         aria-label="Poetry workshop"
         onTouchStart={(e) => {
           const t = e.touches[0];
@@ -1934,12 +1940,10 @@ export function PoemWorkshop() {
           const dy = t.clientY - start.y;
           const dt = Date.now() - start.t;
           if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.8 || dt > 450) return;
-          if (dx < 0) {
-            if (mobileTab === "write") setMobileTab("tools");
-            else if (mobileTab === "tools") setIsLibraryOpen(true);
-          } else if (dx > 0) {
-            if (mobileTab === "tools") setMobileTab("write");
-          }
+          // Horizontal swipe used to page between write and tools. The two are now
+          // shown together with a draggable divider, so the only paging left is
+          // left-swipe to the library.
+          if (dx < 0) setIsLibraryOpen(true);
         }}
       >
         <nav ref={railPanelRef} className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
@@ -1947,9 +1951,9 @@ export function PoemWorkshop() {
           <button
             type="button"
             className="rail-btn tablet-tools-toggle"
-            onClick={() => setMobileToolsExpanded(!mobileToolsExpanded)}
-            aria-label={mobileToolsExpanded ? "Close tools" : "Open tools"}
-            aria-expanded={mobileToolsExpanded}
+            onClick={() => setTabletToolsOpen((v) => !v)}
+            aria-label={tabletToolsOpen ? "Close tools" : "Open tools"}
+            aria-expanded={tabletToolsOpen}
           >
             <RailIcon>
               <svg viewBox="0 0 24 24" aria-hidden focusable="false">
@@ -2518,34 +2522,30 @@ export function PoemWorkshop() {
         <div className="tools-panel-cell">
         <aside
           ref={toolsPanelRef}
-          className={`tools-panel ${isFocusMode ? "is-collapsed" : ""} ${!mobileToolsExpanded ? "is-mobile-collapsed" : ""}`}
+          className={`tools-panel ${isFocusMode ? "is-collapsed" : ""}`}
           aria-label="Tools"
           id="writing-tools"
           data-tour-id="tools-panel"
         >
           <div className="tools-scroll-body" ref={toolsScrollBodyRef}>
           <div className="tools-sticky-head">
+            {/* Drag to size the sheet freely; tap toggles between peeking and a
+                working height. Keyboard users get the same via the tap path. */}
             <div
               className="tools-swipe-handle"
-              role="slider"
-              aria-label="Drag to resize tools sheet"
-              aria-valuemin={0}
-              aria-valuemax={2}
-              aria-valuenow={mobileSheetSnap === "full" ? 2 : 1}
+              role="separator"
+              tabIndex={0}
+              aria-label="Drag to resize tools panel"
               onPointerDown={handleSheetDragStart}
               onPointerMove={handleSheetDragMove}
               onPointerUp={handleSheetDragEnd}
               onPointerCancel={handleSheetDragEnd}
-              onClick={() => {
-                if (window.innerWidth > 899) return;
-                setMobileSheetSnap((s) => (s === "half" ? "full" : "half"));
-              }}
             />
             <button
               type="button"
               className="tools-mobile-close"
-              onClick={() => setMobileToolsExpanded(false)}
-              aria-label="Close tools"
+              onClick={collapseSheet}
+              aria-label="Collapse tools panel"
             >
               ✕
             </button>
@@ -2581,8 +2581,8 @@ export function PoemWorkshop() {
 
           {toolAccordion}
 
-          {/* Mobile-only hint when the poem is blank and the user has just opened Tools */}
-          {mobileToolsExpanded && !m.lines.some((l) => l.trim()) && (
+          {/* Hint shown while the poem is still blank and the tools have nothing to say */}
+          {!m.lines.some((l) => l.trim()) && (
             <div className="tools-empty-hint">
               <p className="tools-empty-hint-msg">
                 Write a few lines first — the tools will light up with rhyme suggestions, syllable counts, cliché flags, and more.
@@ -2627,6 +2627,8 @@ export function PoemWorkshop() {
             lines={m.lines}
             mainIdea={mainIdea}
             localAnalysis={localAnalysis}
+            getToolStats={getToolStats}
+            onOpenTool={openToolTab}
             goals={m.goals}
             onJumpToLine={m.goToLine}
             onJumpToWord={m.goToWordStart}
@@ -2657,29 +2659,11 @@ export function PoemWorkshop() {
         </Suspense>
       </main>
 
-      <MobileActionBar
-        isFocusMode={isFocusMode}
-        activeTab={mobileTab}
-        wordCount={m.quickDocStats.totalWords}
-        isAnalyzing={mobileIsAnalyzing}
-        onTab={(tab: MobileTab) => {
-          if (tab === "library") {
-            setIsLibraryOpen(true);
-            setMobileTab("write");
-          } else {
-            setMobileTab(tab);
-          }
-        }}
-        onAnalyse={() => {
-          if (mobileAiOpen) {
-            // Sheet already visible — run analysis directly without remounting.
-            mobileSheetAnalyzeFn.current?.();
-          } else {
-            mobileSheetAutoTrigger.current = true;
-            setMobileAiOpen(true);
-          }
-        }}
-      />
+      {/* The mobile bottom tab bar (Write / Tools / Library / Analyse) is gone.
+          Tools is the peeking sheet itself, Library and Analyse moved up into the
+          topbar, and Write was only ever "not the other three" — so the bar cost
+          ~58px of permanent vertical space to switch between things that are now
+          all reachable without it. */}
 
       {/* Mobile AI analysis bottom sheet */}
       {mobileAiOpen && (
@@ -2707,9 +2691,11 @@ export function PoemWorkshop() {
                   lines={m.lines}
                   mainIdea={mainIdea}
                   localAnalysis={localAnalysis}
+                  getToolStats={getToolStats}
+                  onOpenTool={(tool) => { openToolTab(tool); setMobileAiOpen(false); }}
                   goals={m.goals}
-                  onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); setMobileTab("write"); }}
-                  onJumpToWord={(line, phrase) => { m.goToWordStart(line, phrase); setMobileAiOpen(false); setMobileTab("write"); }}
+                  onJumpToLine={(line) => { m.goToLine(line); setMobileAiOpen(false); }}
+                  onJumpToWord={(line, phrase) => { m.goToWordStart(line, phrase); setMobileAiOpen(false); }}
                   onPeekLine={smartPreviewLine}
                   onHighlightLines={(start, end, sev) => setIssueHighlight([start, end, sev])}
                   onClearHighlight={() => setIssueHighlight(null)}

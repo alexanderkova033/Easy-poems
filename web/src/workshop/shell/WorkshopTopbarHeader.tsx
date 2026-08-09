@@ -10,7 +10,9 @@ type Props = {
   isFocusMode: boolean;
   setIsFocusMode: (v: boolean) => void;
   setIsLibraryOpen: (v: boolean) => void;
-  setMobileTab: (v: "write" | "tools" | "library") => void;
+  /** Runs AI analysis — surfaced as a first-class topbar action on phones. */
+  onAnalyse: () => void;
+  isAnalysing: boolean;
   setMetaOpen: (v: boolean) => void;
   showRhymeScheme: boolean;
   isStatsOpen: boolean;
@@ -44,7 +46,8 @@ export function WorkshopTopbarHeader(props: Props) {
     isFocusMode,
     setIsFocusMode,
     setIsLibraryOpen,
-    setMobileTab,
+    onAnalyse,
+    isAnalysing,
     setMetaOpen,
     showRhymeScheme,
     isStatsOpen,
@@ -199,7 +202,6 @@ export function WorkshopTopbarHeader(props: Props) {
           type="button"
           className="topbar-mobile-title"
           onClick={() => {
-            setMobileTab("write");
             setMetaOpen(true);
             requestAnimationFrame(() => document.getElementById("poem-title")?.focus());
           }}
@@ -241,6 +243,46 @@ export function WorkshopTopbarHeader(props: Props) {
         <div className="topbar-cluster topbar-cluster-status" aria-label="Actions and save" data-tour-id="topbar-actions">
           {!isFocusMode ? (
             <>
+              {/* Phone-only: Analyse and Library, in the slots the stats popover and
+                  the overflow menu occupy on desktop (both hidden here by CSS).
+                  These two were the reason the bottom tab bar existed; promoting
+                  them to the topbar is what let that bar go away entirely. */}
+              <button
+                type="button"
+                className={`topbar-ghost-btn topbar-mobile-action${isAnalysing ? " is-busy" : ""}`}
+                onClick={onAnalyse}
+                disabled={isAnalysing}
+                aria-label="Analyse poem with AI"
+                {...hint("Run AI analysis on this poem")}
+              >
+                {isAnalysing ? (
+                  <span className="topbar-mobile-spinner" aria-hidden />
+                ) : (
+                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                    <path
+                      fill="none" stroke="currentColor" strokeWidth="1.75"
+                      strokeLinecap="round" strokeLinejoin="round"
+                      d="M12 3l1.9 4.8L18.7 9.7l-4.8 1.9L12 16.4l-1.9-4.8L5.3 9.7l4.8-1.9L12 3zM18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"
+                    />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
+                className="topbar-ghost-btn topbar-mobile-action"
+                onClick={() => setIsLibraryOpen(true)}
+                aria-label="Open library"
+                {...hint("Your saved drafts")}
+              >
+                <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                  <path
+                    fill="none" stroke="currentColor" strokeWidth="1.75"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    d="M4 5.5A1.5 1.5 0 015.5 4H9v16H5.5A1.5 1.5 0 014 18.5v-13zM9 4h4.5A1.5 1.5 0 0115 5.5v13a1.5 1.5 0 01-1.5 1.5H9M17 5.2l2.4.6a1.5 1.5 0 011.1 1.8l-3 12.2"
+                  />
+                </svg>
+              </button>
+
               {/* Stats popover */}
               <div className="topbar-stats-wrap" ref={statsPopoverRef}>
                 <button

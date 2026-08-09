@@ -85,18 +85,25 @@ export default defineConfig({
           ) {
             return "app-shell";
           }
-          // Tool-panel analysis code is part of the initial workshop bundle
-          // (the panels render immediately). voice/ stays grouped here too.
-          // reading/, sharing/, and appearance/ are lazy-loaded via React.lazy
-          // — Vite splits each into its own dynamic chunk, so do NOT include
-          // them here. Listing them would defeat the code-split.
-          if (
-            id.includes("/src/workshop/analysis/") ||
-            id.includes("/src/workshop/voice/")
-          ) {
-            return "workshop-tools";
-          }
-          // Landing page is now lazy-loaded — give it its own chunk so the
+          // NOTE: analysis/ and voice/ are deliberately NOT grouped into a manual
+          // chunk. They used to be ("workshop-tools"), on the reasoning that the
+          // tool panels render immediately — but grouping by directory ignores
+          // where the lazy boundary actually falls.
+          //
+          // WorkshopToolPanels is loaded through React.lazy, so Rollup can already
+          // see that most of analysis/ is reachable only dynamically. The manual
+          // rule overrode that: the shell statically imports a few small helpers
+          // from the same directory (ToolTabBar, ai-analyze, the live syllable and
+          // repeat analysis behind usePoemWorkshopModel), and because they shared a
+          // chunk with the panels, importing ~52KB of helpers dragged ~550KB of
+          // panel code onto the workshop's critical path. On a phone the tools
+          // sheet starts closed, so that was paid before the user could type.
+          //
+          // Removing the rule lets Rollup split at the real dynamic-import
+          // boundary. Measured: opening the workshop drops from 326KB to 281KB gz.
+          // Re-adding a directory-wide rule here will silently undo that.
+
+          // Landing page is lazy-loaded — give it its own chunk so the
           // workshop code (CodeMirror, tools, etc.) doesn't inflate the
           // landing-page download and vice-versa.
           if (id.includes("/src/landing/")) {
