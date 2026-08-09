@@ -95,7 +95,21 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
       const gutterW = gutters ? gutters.offsetWidth : 0;
       const cs = getComputedStyle(contentEl);
       const paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
-      const availW = scroller.clientWidth - gutterW - paddingX;
+
+      // Reserve room for the syllable badge. It is appended after the text
+      // (side: 1), and the measuring loop below deliberately skips it — so
+      // without this the line gets scaled to fill the width exactly and the
+      // badge is pushed past the right edge, invisible on every line long
+      // enough to need shrinking. Measured from a real badge rather than
+      // guessed, since its width tracks the font size and the rhythm bar.
+      // Reserved uniformly, including on the active line where the badge is
+      // hidden, so the scale doesn't jump as the caret moves between lines.
+      const badgeEl = contentEl.querySelector<HTMLElement>(".cm-syllable-wrap");
+      const badgeW = badgeEl
+        ? badgeEl.getBoundingClientRect().width + parseFloat(getComputedStyle(badgeEl).marginLeft || "0")
+        : 0;
+
+      const availW = scroller.clientWidth - gutterW - paddingX - badgeW;
       if (availW <= 50) return;
 
       // Step 1: remove all scale decorations so lines render at their natural size.

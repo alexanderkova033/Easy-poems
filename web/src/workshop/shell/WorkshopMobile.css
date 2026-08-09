@@ -314,3 +314,182 @@
     .topbar-mobile-spinner { animation-duration: 2.4s; }
   }
 }
+
+/* ============================================================================
+ * Title row: an explicit way back to collapsed.
+ *
+ * The meta row previously folded away only in the title input's onBlur, and only
+ * when m.title was non-empty — so opening it on an unnamed draft (the default
+ * state on a phone) left no way to shut it again. "Done" is that way.
+ * ========================================================================== */
+@media (max-width: 899px) {
+  .title-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .title-row label {
+    flex: 0 0 100%;
+  }
+
+  .title-row input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .editor-meta-collapse-btn {
+    flex: 0 0 auto;
+    min-height: var(--btn-height-md);
+    padding: 0 0.75rem;
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 650;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .editor-meta-collapse-btn:active {
+    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  }
+}
+
+/* Desktop keeps the always-open meta grid, so the collapse affordance would be
+   a button that does nothing visible. */
+@media (min-width: 900px) {
+  .editor-meta-collapse-btn {
+    display: none;
+  }
+}
+
+/* ============================================================================
+ * Tools sheet: stowed state, keyboard avoidance, header actions
+ * ========================================================================== */
+@media (max-width: 899px) {
+  /* Copy moved into the tools header, where it is always on screen. In the
+     editor it sat under the poem, so reaching it meant scrolling past the whole
+     draft. */
+  .poem-editor-copy-box {
+    display: none;
+  }
+
+  .tools-head-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tools-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2.2rem;
+    padding: 0 0.6rem;
+    border-radius: 99px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.14s, border-color 0.14s;
+  }
+
+  .tools-copy-btn.is-copied {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    color: var(--accent);
+  }
+
+  .tools-copy-icon {
+    width: 0.95rem;
+    height: 0.95rem;
+    flex-shrink: 0;
+  }
+
+  /* The whole header drags, so nothing inside it should start a text selection
+     or hand the gesture to the scroller. Buttons re-enable their own handling. */
+  .tools-panel .tools-sticky-head {
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+  }
+  .tools-panel .tools-sticky-head.is-dragging {
+    cursor: grabbing;
+  }
+  .tools-panel .tools-sticky-head button {
+    touch-action: manipulation;
+  }
+
+  /* Stowed: slide the sheet off the bottom. .tools-stow-tab is what remains. */
+  .tools-panel.is-stowed {
+    top: 100dvh !important;
+  }
+
+  .tools-stow-tab {
+    position: fixed;
+    right: 0.75rem;
+    /* Inset from the very bottom on purpose — clear of the system gesture strip. */
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 63;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2.4rem;
+    padding: 0 0.85rem;
+    border-radius: 99px;
+    border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--surface) 94%, var(--accent));
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 650;
+    box-shadow: 0 4px 16px color-mix(in srgb, #000 30%, transparent);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .tools-stow-tab:active {
+    background: color-mix(in srgb, var(--surface) 84%, var(--accent));
+  }
+
+  .tools-stow-tab-chevron {
+    font-size: 0.9rem;
+    line-height: 1;
+  }
+
+  /* Stowed sheet frees the editor's reserved bottom padding too. */
+  .workshop-grid:has(.tools-panel.is-stowed) .editor-panel {
+    padding-bottom: calc(3.4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ── While the soft keyboard is up, get out of the way entirely ──────────────
+ * The sheet is fixed to the bottom of the layout viewport, which on Android
+ * Chrome shrinks to sit above the keyboard — so the sheet parked itself right on
+ * top of the keyboard and ate the little writing space that was left.
+ *
+ * This is a presentation-only override: the writer's stored sheet position is
+ * untouched, so it returns exactly where they left it once the keyboard closes.
+ * vp-keyboard-open is set by useVirtualKeyboardClass from visualViewport. */
+@media (max-width: 899px) {
+  html.vp-keyboard-open .tools-panel {
+    top: 100dvh !important;
+    transition: top 0.2s ease;
+  }
+
+  html.vp-keyboard-open .tools-stow-tab,
+  html.vp-keyboard-open .mobile-sheet-scrim {
+    display: none;
+  }
+
+  html.vp-keyboard-open .editor-panel {
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}

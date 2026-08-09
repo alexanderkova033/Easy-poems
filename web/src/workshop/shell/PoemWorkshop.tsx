@@ -203,49 +203,11 @@ export function PoemWorkshop() {
 
   useWritingStreakOnMount(m.body);
 
-  const mainIdeaStorageKey = (poemId: string | undefined) =>
-    poemId ? `easy-poems:main-idea:${poemId}` : null;
-  const readMainIdea = (poemId: string | undefined) => {
-    const key = mainIdeaStorageKey(poemId);
-    if (!key) return "";
-    try {
-      const scoped = localStorage.getItem(key);
-      if (scoped != null) return scoped;
-      // One-time migration: if a legacy global value exists and the active
-      // poem has no scoped value yet, claim it for this poem so the user
-      // doesn't lose what they typed before this fix.
-      const legacy = localStorage.getItem("easy-poems:main-idea");
-      if (legacy) {
-        localStorage.setItem(key, legacy);
-        localStorage.removeItem("easy-poems:main-idea");
-        return legacy;
-      }
-    } catch { /* ignore */ }
-    return "";
-  };
-  const [mainIdea, setMainIdea] = useState(() => readMainIdea(m.activePoemId));
-  useEffect(() => {
-    setMainIdea(readMainIdea(m.activePoemId));
-  }, [m.activePoemId]);
-  const saveMainIdea = (v: string) => {
-    setMainIdea(v);
-    const key = mainIdeaStorageKey(m.activePoemId);
-    if (!key) return;
-    try {
-      if (v.trim()) localStorage.setItem(key, v);
-      else localStorage.removeItem(key);
-    } catch { /* ignore */ }
-  };
-  const [mainIdeaOpen, setMainIdeaOpen] = useState(() => {
-    try { return localStorage.getItem("easy-poems:main-idea-open") !== "0"; } catch { return true; }
-  });
-  const toggleMainIdea = () => {
-    setMainIdeaOpen((v) => {
-      const next = !v;
-      try { localStorage.setItem("easy-poems:main-idea-open", next ? "1" : "0"); } catch { /* ignore */ }
-      return next;
-    });
-  };
+  // The "Main idea" field is gone. It was optional, rarely filled, and cost a
+  // label + input in the meta row on every draft; what it fed the analyzer (a
+  // "Main idea: …" writing focus) is now better covered by the tool readings.
+  // Values already in localStorage under easy-poems:main-idea:<poemId> are left
+  // alone rather than deleted — they are the writer's text, not ours to bin.
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [isStyleOpen, setIsStyleOpen] = useState(false);
   const [isBackgroundOpen, setIsBackgroundOpen] = useState(false);
@@ -297,10 +259,9 @@ export function PoemWorkshop() {
   const isNarrow = useIsNarrowViewport();
   // Collapsible title area on mobile.
   //
-  // Start collapsed on phones. Title and Main idea are both optional, but together
-  // they cost ~170px — on a 734px viewport that is a quarter of the screen spent on
-  // fields most drafts never use, pushing the poem itself down to about two visible
-  // lines. Collapsed they become one tappable row, and the editor takes the space.
+  // Start collapsed on phones. The title is optional, and its label + input cost
+  // ~85px that most drafts never use — space the poem wants. Collapsed it is one
+  // tappable row; the "Done" button inside expands back out.
   //
   // Only mobile is affected: at ≥900px `.editor-meta-grid-hidden` is `display: grid`
   // (PoemWorkshop.css), so the grid stays visible on desktop whatever this holds.
@@ -318,7 +279,6 @@ export function PoemWorkshop() {
   }, [m.title]);
 
   // Swipe gesture state
-  const swipeRef = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const [diffSnapshot, setDiffSnapshot] = useState<RevisionSnapshot | null>(null);
   const handleDiffSnapshot = useCallback((snap: RevisionSnapshot) => {
@@ -701,6 +661,8 @@ export function PoemWorkshop() {
     handleSheetDragMove,
     handleSheetDragEnd,
     sheetIsProminent,
+    sheetIsStowed,
+    openSheet,
     collapseSheet,
   } = useSheetDrag({ toolsPanelRef });
   const editorPanelRef = useRef<HTMLElement | null>(null);
@@ -1925,26 +1887,13 @@ export function PoemWorkshop() {
         data-mobile-view="tools"
         data-tools-open={tabletToolsOpen ? "true" : "false"}
         aria-label="Poetry workshop"
-        onTouchStart={(e) => {
-          const t = e.touches[0];
-          if (!t) return;
-          swipeRef.current = { x: t.clientX, y: t.clientY, t: Date.now() };
-        }}
-        onTouchEnd={(e) => {
-          const start = swipeRef.current;
-          swipeRef.current = null;
-          if (!start) return;
-          const t = e.changedTouches[0];
-          if (!t) return;
-          const dx = t.clientX - start.x;
-          const dy = t.clientY - start.y;
-          const dt = Date.now() - start.t;
-          if (Math.abs(dx) < 55 || Math.abs(dy) > Math.abs(dx) * 0.8 || dt > 450) return;
-          // Horizontal swipe used to page between write and tools. The two are now
-          // shown together with a draggable divider, so the only paging left is
-          // left-swipe to the library.
-          if (dx < 0) setIsLibraryOpen(true);
-        }}
+        /* No swipe gesture here. It used to page between the write and tools
+           tabs, and only reached the library from the tools tab — a narrow enough
+           condition that stray swipes rarely matched. With tabs gone that guard
+           went too, leaving "any leftward swipe anywhere in the workshop opens the
+           library", which fired on text selection and on flicks over the poem.
+           Library is a topbar button now, so the gesture bought nothing and is
+           removed rather than re-tuned. */
       >
         <nav ref={railPanelRef} className={`workshop-rail ${isFocusMode ? "is-hidden" : ""}`} aria-label="Workshop shortcuts">
           {/* Tablet-only tools drawer toggle */}
@@ -2150,7 +2099,7 @@ export function PoemWorkshop() {
                     className="editor-meta-collapsed"
                     onClick={() => setMetaOpen(true)}
                     onContextMenu={(e) => { e.preventDefault(); setMetaOpen(true); document.getElementById("poem-title")?.focus(); }}
-                    aria-label="Edit title and main idea"
+                    aria-label="Edit title"
                   >
                     {/* Now the default state for an untitled draft on mobile, so the
                         empty case has to invite a tap rather than just report a fact —
@@ -2158,7 +2107,7 @@ export function PoemWorkshop() {
                     <span
                       className={`editor-meta-collapsed-title${m.title.trim() ? "" : " is-placeholder"}`}
                     >
-                      {m.title.trim() || "Add title · main idea"}
+                      {m.title.trim() || "Add title"}
                     </span>
                     {m.formNote.trim() && (
                       <span className="editor-meta-collapsed-form">· {m.formNote.trim()}</span>
@@ -2196,35 +2145,21 @@ export function PoemWorkshop() {
                     type="text"
                     value={m.title}
                     onChange={(e) => m.setTitle(e.target.value)}
-                    onBlur={() => { if (m.title.trim()) setMetaOpen(false); }}
                     placeholder="Optional"
                     autoComplete="off"
                     spellCheck={false}
                   />
-                </div>
-                <div className={`row title-row${mainIdeaOpen ? "" : " editor-main-idea-hidden"}`}>
-                  <label htmlFor="poem-main-idea">
-                    <button
-                      type="button"
-                      className="editor-main-idea-toggle"
-                      onClick={toggleMainIdea}
-                      aria-expanded={mainIdeaOpen}
-                      aria-label={mainIdeaOpen ? "Collapse main idea field" : "Expand main idea field"}
-                    >
-                      Main idea (optional)
-                      <span className={`editor-main-idea-chevron${mainIdeaOpen ? "" : " is-collapsed"}`} aria-hidden>‹</span>
-                    </button>
-                  </label>
-                  <input
-                    id="poem-main-idea"
-                    type="text"
-                    value={mainIdea}
-                    onChange={(e) => saveMainIdea(e.target.value)}
-                    onBlur={() => { if (m.title.trim()) setMetaOpen(false); }}
-                    placeholder="e.g. the feeling of leaving home for the first time"
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
+                  {/* Collapse back without needing a title. The row used to fold away
+                      only via onBlur, and only once m.title was non-empty — so anyone
+                      who opened it on a draft they hadn't named had no way to shut it. */}
+                  <button
+                    type="button"
+                    className="editor-meta-collapse-btn"
+                    onClick={() => setMetaOpen(false)}
+                    aria-label="Collapse title"
+                  >
+                    Done
+                  </button>
                 </div>
               </div>
               <FindReplaceBar
@@ -2471,27 +2406,6 @@ export function PoemWorkshop() {
             {printPoemText}
           </pre>
 
-          {/* Mobile quick-stats strip — always visible at bottom of editor on narrow screens */}
-          <div className="mobile-editor-stats" aria-label="Quick stats" role="status">
-            <span className="mobile-editor-stat">
-              <span className="mobile-editor-stat-val">{m.quickDocStats.totalWords}</span>
-              <span className="mobile-editor-stat-lbl">words</span>
-            </span>
-            <span className="mobile-editor-stat-divider" aria-hidden>·</span>
-            <span className="mobile-editor-stat">
-              <span className="mobile-editor-stat-val">{m.quickDocStats.totalLines}</span>
-              <span className="mobile-editor-stat-lbl">lines</span>
-            </span>
-            {m.lastAiScore != null && (
-              <>
-                <span className="mobile-editor-stat-divider" aria-hidden>·</span>
-                <span className="mobile-editor-stat">
-                  <span className="mobile-editor-stat-val">✦ {m.lastAiScore}</span>
-                  <span className="mobile-editor-stat-lbl">score</span>
-                </span>
-              </>
-            )}
-          </div>
         </section>
 
         {/* Rail resize gutter */}
@@ -2519,63 +2433,98 @@ export function PoemWorkshop() {
           />
         )}
 
+        {/* Stowed handle. Replaces the old ✕: dragging or flicking the sheet all
+            the way down slides it off and leaves only this. Sits inset from the
+            bottom-right corner rather than spanning the edge, so it is nowhere
+            near Android's back/home gesture strip — the sheet can be got rid of
+            without the gesture that does it also risking leaving the page. */}
+        {sheetIsStowed && (
+          <button
+            type="button"
+            className="tools-stow-tab"
+            onClick={openSheet}
+            aria-label="Show tools"
+          >
+            <span className="tools-stow-tab-chevron" aria-hidden>⌃</span>
+            <span className="tools-stow-tab-label">Tools</span>
+          </button>
+        )}
+
         <div className="tools-panel-cell">
         <aside
           ref={toolsPanelRef}
-          className={`tools-panel ${isFocusMode ? "is-collapsed" : ""}`}
+          className={`tools-panel ${isFocusMode ? "is-collapsed" : ""}${sheetIsStowed ? " is-stowed" : ""}`}
           aria-label="Tools"
           id="writing-tools"
           data-tour-id="tools-panel"
         >
           <div className="tools-scroll-body" ref={toolsScrollBodyRef}>
-          <div className="tools-sticky-head">
-            {/* Drag to size the sheet freely; tap toggles between peeking and a
-                working height. Keyboard users get the same via the tap path. */}
-            <div
-              className="tools-swipe-handle"
-              role="separator"
-              tabIndex={0}
-              aria-label="Drag to resize tools panel"
-              onPointerDown={handleSheetDragStart}
-              onPointerMove={handleSheetDragMove}
-              onPointerUp={handleSheetDragEnd}
-              onPointerCancel={handleSheetDragEnd}
-            />
-            <button
-              type="button"
-              className="tools-mobile-close"
-              onClick={collapseSheet}
-              aria-label="Collapse tools panel"
-            >
-              ✕
-            </button>
+          {/* The WHOLE header is the drag surface, not just the pill. A 28px
+              grabber is a hard target on a phone — dragging the sheet back down
+              was the part that felt fiddliest. handleSheetDragStart ignores
+              gestures that begin on a button so Copy/Analyse still tap normally. */}
+          <div
+            className="tools-sticky-head"
+            onPointerDown={handleSheetDragStart}
+            onPointerMove={handleSheetDragMove}
+            onPointerUp={handleSheetDragEnd}
+            onPointerCancel={handleSheetDragEnd}
+          >
+            <div className="tools-swipe-handle" role="separator" aria-label="Drag to resize tools panel" />
             <div className="tools-head-row tools-head-row-simple">
               <h2 className="tools-heading">Tools</h2>
-              <button
-                type="button"
-                className="tools-analyse-btn"
-                onClick={() => {
-                  if (window.innerWidth <= 899) {
-                    // Mobile: open the analysis sheet (same as the bottom-bar Analyse pill).
-                    if (mobileAiOpen) {
-                      mobileSheetAnalyzeFn.current?.();
+              <div className="tools-head-actions">
+                {/* Copy lives here on phones. In the editor it sat below the poem,
+                    which on a small screen meant scrolling past the whole draft to
+                    reach it; the tools header is always on screen. */}
+                <button
+                  type="button"
+                  className={`tools-copy-btn${m.quickCopyFlash ? " is-copied" : ""}`}
+                  onClick={() => void m.onQuickCopyPlain()}
+                  aria-label="Copy poem body as plain text"
+                  {...hint("Copy poem body as plain text (no title or form)")}
+                >
+                  {m.quickCopyFlash ? (
+                    <span className="tools-copy-label">Copied</span>
+                  ) : (
+                    <>
+                      <svg className="tools-copy-icon" viewBox="0 0 24 24" aria-hidden>
+                        <path
+                          fill="none" stroke="currentColor" strokeWidth="1.75"
+                          strokeLinecap="round" strokeLinejoin="round"
+                          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                      <span className="tools-copy-label">Copy</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="tools-analyse-btn"
+                  onClick={() => {
+                    if (window.innerWidth <= 899) {
+                      // Mobile: open the analysis sheet.
+                      if (mobileAiOpen) {
+                        mobileSheetAnalyzeFn.current?.();
+                      } else {
+                        mobileSheetAutoTrigger.current = true;
+                        setMobileAiOpen(true);
+                      }
                     } else {
-                      mobileSheetAutoTrigger.current = true;
-                      setMobileAiOpen(true);
+                      mobileAnalyzeFnRef.current?.();
+                      requestAnimationFrame(() => {
+                        const el = document.querySelector(".ai-analysis-section") as HTMLElement | null;
+                        el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      });
                     }
-                  } else {
-                    mobileAnalyzeFnRef.current?.();
-                    requestAnimationFrame(() => {
-                      const el = document.querySelector(".ai-analysis-section") as HTMLElement | null;
-                      el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                    });
-                  }
-                }}
-                {...hint("Run AI analysis on this poem")}
-              >
-                <span className="tools-analyse-icon" aria-hidden>✦</span>
-                <span className="tools-analyse-label">Analyse</span>
-              </button>
+                  }}
+                  {...hint("Run AI analysis on this poem")}
+                >
+                  <span className="tools-analyse-icon" aria-hidden>✦</span>
+                  <span className="tools-analyse-label">Analyse</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2624,9 +2573,7 @@ export function PoemWorkshop() {
             key={m.activePoemId}
             poemId={m.activePoemId}
             title={m.title}
-            lines={m.lines}
-            mainIdea={mainIdea}
-            localAnalysis={localAnalysis}
+            lines={m.lines}            localAnalysis={localAnalysis}
             getToolStats={getToolStats}
             onOpenTool={openToolTab}
             goals={m.goals}
@@ -2688,9 +2635,7 @@ export function PoemWorkshop() {
                   key={`mobile-ai-${m.activePoemId}`}
                   poemId={m.activePoemId}
                   title={m.title}
-                  lines={m.lines}
-                  mainIdea={mainIdea}
-                  localAnalysis={localAnalysis}
+                  lines={m.lines}                  localAnalysis={localAnalysis}
                   getToolStats={getToolStats}
                   onOpenTool={(tool) => { openToolTab(tool); setMobileAiOpen(false); }}
                   goals={m.goals}

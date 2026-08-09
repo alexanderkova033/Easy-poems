@@ -988,38 +988,6 @@
   }
 }
 
-/* Mobile-only close button (X) in the tools sticky head */
-.tools-mobile-close {
-  display: none;
-}
-
-@media (max-width: 899px) {
-  .tools-mobile-close {
-    display: grid;
-    place-items: center;
-    position: absolute;
-    top: 0.4rem;
-    right: 0.55rem;
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
-    background: color-mix(in srgb, var(--surface) 88%, var(--bg));
-    color: var(--muted);
-    font-size: 0.95rem;
-    line-height: 1;
-    cursor: pointer;
-    z-index: 3;
-    -webkit-tap-highlight-color: transparent;
-    transition: background 0.13s, color 0.13s, border-color 0.13s;
-  }
-
-  .tools-mobile-close:active {
-    background: color-mix(in srgb, var(--border) 40%, var(--surface));
-    color: var(--text);
-  }
-}
-
 .tools-sticky-head {
   position: sticky;
   top: 0;
@@ -1041,20 +1009,6 @@
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0.15rem 0 0.25rem;
-}
-
-/* Keep the head row clear of the absolutely-positioned close button.
-   .tools-mobile-close is taken out of flow at the top-right of .tools-sticky-head,
-   so without reserved space the "Analyse" button slides underneath it — on a 384px
-   viewport the X was covering 29px of the button, clipping the label and stealing
-   its tap target. Reserving the button's footprint (2rem wide + 0.55rem inset, less
-   the head's 0.9rem padding, plus a gap) keeps them apart at any label width.
-   Must come after the base rule above, whose `padding` shorthand would otherwise
-   reset padding-right. */
-@media (max-width: 899px) {
-  .tools-head-row {
-    padding-right: 2.3rem;
-  }
 }
 
 .tools-head-actions {
@@ -4341,46 +4295,6 @@
   }
 }
 
-/* Main idea collapsed: hide only the input, keep the toggle label visible */
-.editor-main-idea-hidden input {
-  display: none;
-}
-
-/* Toggle button that wraps the "Main idea (optional)" label text */
-.editor-main-idea-toggle {
-  appearance: none;
-  border: none;
-  background: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  font-size: 0.8rem;
-  color: var(--muted);
-  font-weight: 550;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  line-height: inherit;
-}
-
-.editor-main-idea-toggle:hover {
-  color: var(--text);
-}
-
-.editor-main-idea-chevron {
-  font-size: 0.85rem;
-  opacity: 0.6;
-  display: inline-block;
-  transform: rotate(-90deg);
-  transition: transform 0.18s ease;
-  line-height: 1;
-}
-
-.editor-main-idea-chevron.is-collapsed {
-  transform: rotate(90deg);
-}
-
 .editor-stack .editor-meta-grid + .findbar {
   margin-top: 0.35rem;
 }
@@ -7399,48 +7313,6 @@
   line-height: 1;
 }
 
-
-/* ---- Mobile quick-stats strip ---- */
-.mobile-editor-stats {
-  display: none;
-}
-
-@media (max-width: 899px) {
-  .mobile-editor-stats {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.6rem;
-    padding: 0.45rem 1rem;
-    border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
-    background: color-mix(in srgb, var(--surface) 85%, var(--bg));
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-}
-
-.mobile-editor-stat {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.22rem;
-}
-
-.mobile-editor-stat-val {
-  font-variant-numeric: tabular-nums;
-  font-weight: 650;
-  color: var(--text);
-  font-size: 0.85rem;
-}
-
-.mobile-editor-stat-lbl {
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-
-.mobile-editor-stat-divider {
-  color: color-mix(in srgb, var(--muted) 50%, transparent);
-  font-size: 0.8rem;
-}
 
 /* ======================================================
    Hero-style accent frame — applied to outer panels
