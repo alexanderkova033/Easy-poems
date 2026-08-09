@@ -8,6 +8,7 @@ import {
   type PoemComparison,
 } from "@/workshop/analysis/ai-analyze";
 import { computeVoiceFingerprint } from "@/workshop/analysis/voice-fingerprint";
+import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import {
   LS_IGNORED_PREFIX,
   LS_RESOLVED_PREFIX,
@@ -253,7 +254,7 @@ function FormCoach({ form, syllablesPerLine, lines, onPeek }: {
 export function AnalysisResults({
   result, onJump, onJumpToWord, onPeek, onHighlight, onClearHighlight, onApplyLine, poemLines, originalLines, poemTitle,
   poemId, onVisibleIssuesChange, openIssueLineSignal, scoringEnabled, hideIssues,
-  activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis,
+  activeTab, onTabChange, externalTabSignal, scoreHistory, localAnalysis, onOpenTool,
 }: {
   result: PoemAnalysis | PoemComparison;
   previous?: PoemAnalysis | null;
@@ -280,6 +281,8 @@ export function AnalysisResults({
   onTabChange?: (t: AnalysisTab) => void;
   externalTabSignal?: { tab: AnalysisTab; nonce: number } | null;
   localAnalysis?: LocalAnalysisContext;
+  /** Opens a writing tool from the model's tool tip. */
+  onOpenTool?: (tool: ToolTab) => void;
 }) {
   const isCompare = "comparison" in result;
 
@@ -696,10 +699,30 @@ export function AnalysisResults({
             </div>
           )}
 
-          {/* 6. Comparison detail (still useful when toast is dismissed) */}
+          {/* 6. Tool tip — a light nudge toward one of the writing tools, based
+              on what its numbers showed. Deliberately below the read: it's a
+              footnote to the feedback, never the feedback itself. */}
+          {result.tool_tip && (
+            <div className="ai-tool-tip">
+              <span className="ai-tool-tip-label">Try {result.tool_tip.label}</span>
+              <span className="ai-tool-tip-text">{result.tool_tip.tip}</span>
+              {onOpenTool && (
+                <button
+                  type="button"
+                  className="linkish ai-tool-tip-open"
+                  onClick={() => onOpenTool(result.tool_tip!.tool)}
+                  title={`Open the ${result.tool_tip.label} tool`}
+                >
+                  Open →
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* 7. Comparison detail (still useful when toast is dismissed) */}
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
-          {/* 7. CTA — jump to issues. Reflect unresolved count so the number
+          {/* 8. CTA — jump to issues. Reflect unresolved count so the number
               stays in sync with the tab badge. */}
           {!hideIssues && issuesBadge > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"

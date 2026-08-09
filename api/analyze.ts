@@ -12,6 +12,7 @@ import { sendParsedResponse, streamOpenAI, STREAM_META_SEPARATOR } from "./_open
 import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
+import { toolStatsBlock, type ToolStats } from "./_tool-stats";
 
 // Server-side analyze response cache. analyze.ts runs at temperature 0, so the
 // model's output is effectively deterministic on its inputs — caching by an
@@ -19,7 +20,7 @@ import { gibberishGuard } from "./_gibberish";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v39"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v40"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -107,8 +108,15 @@ Pillars MUST diverge — a poem that opens beautifully but fades scores chord hi
 
 These anchors span the FULL scale on purpose — don't hesitate to land below 40 for genuinely thin or clichéd work, or above 85 for work that's sustained and precise throughout. If a poem genuinely excels in one dimension and falls flat in another, let the scores show it — don't smooth them toward each other or toward the middle anchors. Anchors vary in form and register on purpose — style resemblance to one is never a scoring factor.
 
-=== LOCAL ANALYSIS (soft signals) ===
-Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
+=== THE POET'S TOOL READINGS (supporting evidence — never the verdict) ===
+The draft may arrive with measurements taken by the tools built into this app: Lines (per-line syllables/words), Meter (iambic fit), Rhyme (scheme), Echoes (alliteration, assonance, end-stop vs enjambment, caesura), Repeats (words, phrases, anaphora/epistrophe), Spell, and a vocabulary reading. These are machine counts OF a poem, not a reading of it.
+- READ THE POEM FIRST and form your judgement from the page. Then glance at the numbers: they can corroborate what you already heard, or complicate it. They never replace it, and they are never the reason for a score.
+- NO STAT IS A FLAW BY ITSELF. 62% iambic fit is not a weakness. "light" ×4 is not a weakness. A low unique-word ratio is not a weakness. Only what you can hear on the page is — quote that line instead.
+- Best use of a reading: EXPLAINING an effect you already noticed ("the headlong pull comes from 9 of 12 lines running on unstopped").
+- Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
+- At most ONE issue may lean on a tool reading, and only where the page backs it up. Never pad issues[] with statistics.
+- Spelling flags belong to the Spell tool: never an issue, never a scoring input.
+- Then, in tool_tip, LIGHTLY point the poet at ONE tool worth opening next — a suggestion, not an instruction.
 
 === STYLE ===
 Plain, warm, exact — a sharp friend who reads closely. Concise: every line earns its place. Skip scholarly jargon.
@@ -134,10 +142,14 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
       "improvements": ["<a direction to explore, not a rewritten line — ≤14 words>", ...1-2 items]
     }
   ],
-  "personal_feedback": "<2-3 sentences to 'you': name the central thing the poem is doing, then the ONE direction that reaches the next level. No rewrite, no preamble.>"
+  "personal_feedback": "<2-3 sentences to 'you': name the central thing the poem is doing, then the ONE direction that reaches the next level. No rewrite, no preamble.>",
+  "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤20 words: cite the reading, then the one thing to try there. Light, optional-sounding.>"}  // OMIT unless a reading genuinely points somewhere
 }
 
 DISCIPLINE:
+- tool_tip is a footnote, not a finding: cite a reading you were actually given, name one thing to try with it, and stop. It must not restate an issue or a weakness, and it must never carry the poem's main point. If no reading points anywhere useful, OMIT it — an invented errand is worse than none.
+EXAMPLE tool_tip (good): {"tool": "Echoes", "tip": "9 of 12 lines enjamb — Echoes shows where; try end-stopping the last one."}
+EXAMPLE tool_tip (bad — a stat with no use): {"tool": "Meter", "tip": "Your median iambic fit is 62%."}
 - strengths & weaknesses are OVERALL observations about the poem as a whole — patterns, tendencies, how it moves. Do not quote individual lines or pin to specific moments; that belongs in issues[].
 - A strength is a real quality of the poem (its restraint, the consistency of its voice, the way tension builds), NOT a restatement of topic ("important message" → omit).
 - issues: 0-3, diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
@@ -160,6 +172,7 @@ interface LocalAnalysis {
   syllablesPerLine?: number[];
   repeatedWords?: Array<{ word: string; count: number }>;
   form?: string;
+  toolStats?: ToolStats;
 }
 
 interface GoalsContext {
@@ -225,7 +238,8 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
     hints.push(`Author's writing focus for this revision: ${writingFocus.trim()}`);
   }
 
-  return hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
+  const hintBlock = hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
+  return `${hintBlock}${toolStatsBlock(local?.toolStats)}`;
 }
 
 function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {

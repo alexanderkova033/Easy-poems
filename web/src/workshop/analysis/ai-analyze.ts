@@ -4,6 +4,8 @@
  */
 
 import { parseAiErrorAndNotify } from "../ai-cost/aiBudgetBus";
+import type { ToolStats } from "./tool-stats";
+import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 
 export interface AnalysisMeta {
   model: string;
@@ -35,6 +37,16 @@ export interface StrongestLine {
   why: string;
 }
 
+/** A light nudge toward one of the workshop's own tools, based on what its
+ *  numbers showed. Never the basis of the read — a footnote to it. */
+export interface ToolTip {
+  /** Tool tab to open. Only tools the model was told about land here. */
+  tool: ToolTab;
+  /** Display label for that tool, as shown on the tool tab bar. */
+  label: string;
+  tip: string;
+}
+
 export interface PillarScores {
   chord: number;
   craft: number;
@@ -62,6 +74,8 @@ export interface PoemAnalysis {
   /** 2-3 sentences addressed to the writer ("you"), warm/mentor tone. */
   personal_feedback?: string;
   clarifying_question?: string;
+  /** "Now go open this tool" — one optional, low-stakes suggestion. */
+  tool_tip?: ToolTip;
   issues: AnalysisIssue[];
 }
 
@@ -71,6 +85,33 @@ export interface LocalAnalysisContext {
   syllablesPerLine: number[];
   repeatedWords: Array<{ word: string; count: number; lines: number[] }>;
   form: string;
+  /** Readings from the workshop's own tools. Built lazily at analyse time. */
+  toolStats?: ToolStats;
+}
+
+/** Tools the model may point at, keyed by the label it returns. Anything else
+ *  is dropped — a tip that names a tool the app doesn't have is worse than no
+ *  tip at all. Labels match the tool tab bar. */
+const TIP_TOOLS: Record<string, { tool: ToolTab; label: string }> = {
+  lines: { tool: "lines", label: "Lines" },
+  meter: { tool: "meter", label: "Meter" },
+  rhyme: { tool: "rhyme", label: "Rhyme" },
+  echoes: { tool: "echoes", label: "Echoes" },
+  repeats: { tool: "repeat", label: "Repeats" },
+  spell: { tool: "spell", label: "Spell" },
+  plans: { tool: "goals", label: "Plans" },
+  snapshots: { tool: "snapshots", label: "Snapshots" },
+};
+
+function parseToolTip(v: unknown): ToolTip | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const rawTool = typeof o.tool === "string" ? o.tool.trim().toLowerCase() : "";
+  const match = TIP_TOOLS[rawTool];
+  if (!match) return undefined;
+  const tip = typeof o.tip === "string" ? o.tip.trim() : "";
+  if (!tip) return undefined;
+  return { tool: match.tool, label: match.label, tip: tip.slice(0, 200) };
 }
 
 /** Heuristic poem-form detection based on line count and syllable counts. */
@@ -218,6 +259,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
       ? obj.personal_feedback.trim() : undefined,
     clarifying_question: typeof obj.clarifying_question === "string" && obj.clarifying_question.trim()
       ? obj.clarifying_question.trim() : undefined,
+    tool_tip: parseToolTip(obj.tool_tip),
     issues: balanceAndCapIssues(issuesRaw
       .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
       .map((iss, idx) => ({

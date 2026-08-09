@@ -3916,3 +3916,36 @@ button.ai-flagged-cliche:focus-visible {
   margin: 0;
   flex: 1 1 100%;
 }
+
+/* ----- Tool tip: light nudge toward one of the writing tools ----- */
+.ai-tool-tip {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.55rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px dashed color-mix(in srgb, var(--accent, #5fba7d) 40%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent, #5fba7d) 4%, var(--surface));
+  font-size: 0.85rem;
+}
+
+.ai-tool-tip-label {
+  flex: none;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent, #5fba7d);
+}
+
+.ai-tool-tip-text {
+  flex: 1 1 12rem;
+  color: var(--text);
+}
+
+.ai-tool-tip-open {
+  flex: none;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}

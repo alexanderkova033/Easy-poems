@@ -11,13 +11,14 @@ import { callOpenAI, sendParsedResponse } from "./_openai";
 import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
+import { toolStatsBlock, type ToolStats } from "./_tool-stats";
 
 // Server-side compare response cache. Same rationale as analyze.ts: temperature 0
 // makes outputs deterministic on inputs, so identical revisions (same current poem,
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v27"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v28"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -94,8 +95,15 @@ The prior overall_score is an ANCHOR, not a fresh-read target. The new score mov
 - CARRY-OVERS: a weakness present in BOTH drafts was already priced into the prior score — surface it if useful, but it cannot push a pillar BELOW the prior pillar score. Per pillar: if nothing changed for that pillar in the diff, it stays.
 - The comparison{} block and the score MUST agree: more improvements than regressions → net up (a pillar rises); more regressions → net down; neither → score holds within ~3 points. Each comparison item must be pillar-attributable ("sharper closing" → Echo up). Don't ship a contradiction.
 
-=== LOCAL ANALYSIS (soft signals) ===
-Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
+=== THE POET'S TOOL READINGS (supporting evidence — never the verdict) ===
+The draft may arrive with measurements taken by the tools built into this app: Lines (per-line syllables/words), Meter (iambic fit), Rhyme (scheme), Echoes (alliteration, assonance, end-stop vs enjambment, caesura), Repeats (words, phrases, anaphora/epistrophe), Spell, and a vocabulary reading. These are machine counts OF a poem, not a reading of it.
+- READ THE DRAFT AND THE DIFF FIRST and form your judgement from the page. Then glance at the numbers: they can corroborate what you already heard, or complicate it. They never replace it, and they are never the reason for a score movement.
+- NO STAT IS A FLAW BY ITSELF, and no shift in a stat is an improvement or a regression by itself. A rise in iambic fit is not progress unless the poem sounds better for it.
+- Best use of a reading: EXPLAINING an effect you already noticed ("the new ending lands harder because it's the only end-stopped line left").
+- Detected clichés, broken syllable targets, and heavy repetition normally lower a score — UNLESS used on purpose (irony, refrain, deliberate rhythmic break). Penalize accidental failures, not purposeful rule-breaking.
+- At most ONE issue may lean on a tool reading, and only where the page backs it up. Never pad issues[] or comparison{} with statistics.
+- Spelling flags belong to the Spell tool: never an issue, never a scoring input.
+- Then, in tool_tip, LIGHTLY point the poet at ONE tool worth opening for the next revision — a suggestion, not an instruction.
 
 === STYLE ===
 Plain, warm, exact — a sharp friend who reads closely. Concise: every line earns its place. Skip scholarly jargon.
@@ -126,10 +134,13 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
     "regressions": ["<≤6 words — what it cost>", ...0-3 items],
     "unchanged": ["<≤6 words — still strong, or still weak>", ...0-3 items]
   },
-  "personal_feedback": "<2-3 sentences to 'you': name the central thing the current draft is doing, how the revision moved it, then the ONE direction that reaches the next level. No rewrite, no preamble.>"
+  "personal_feedback": "<2-3 sentences to 'you': name the central thing the current draft is doing, how the revision moved it, then the ONE direction that reaches the next level. No rewrite, no preamble.>",
+  "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤20 words: cite the reading, then the one thing to try there next. Light, optional-sounding.>"}  // OMIT unless a reading genuinely points somewhere
 }
 
 DISCIPLINE:
+- tool_tip is a footnote, not a finding: cite a reading you were actually given, name one thing to try with it, and stop. It must not restate an issue, a weakness, or a comparison item, and it must never carry the draft's main point. If no reading points anywhere useful, OMIT it.
+EXAMPLE tool_tip (good): {"tool": "Repeats", "tip": "\\"and I\\" now opens 4 lines — Repeats shows them; keep it or break the pattern once."}
 - strengths & weaknesses must each QUOTE or point at an actual line — never abstract.
 - A strength is a real craft move (a fresh image, a turn, a deliberate echo, controlled syntax), NOT a restated idea or topic ("honest voice", "important message" → omit).
 - issues: 0-3, diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
@@ -144,6 +155,7 @@ interface LocalAnalysis {
   syllablesPerLine?: number[];
   repeatedWords?: Array<{ word: string; count: number }>;
   form?: string;
+  toolStats?: ToolStats;
 }
 
 interface GoalsContext {
@@ -213,7 +225,8 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
     hints.push(`Author's writing focus for this revision: ${writingFocus.trim()}`);
   }
 
-  return hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
+  const hintBlock = hints.length > 0 ? `\n\n--- Local analysis context ---\n${hints.join("\n")}` : "";
+  return `${hintBlock}${toolStatsBlock(local?.toolStats)}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

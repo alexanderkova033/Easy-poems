@@ -9,6 +9,8 @@ import {
   type PoemAnalysis,
   type PoemComparison,
 } from "@/workshop/analysis/ai-analyze";
+import type { ToolStats } from "@/workshop/analysis/tool-stats";
+import type { ToolTab } from "@/workshop/shell/workshop-helpers";
 import type { WorkshopGoals } from "@/workshop/goals/types";
 import { tryLocalStorageSetItem } from "@/shared/platform/browser-storage";
 import { STORAGE_KEY_AI_DRAFT_MODE, STORAGE_KEY_AI_SCORING_ENABLED } from "@/shared/storage-keys";
@@ -48,6 +50,11 @@ export interface AiAnalysisProps {
   mainIdea?: string;
   poemId?: string;
   localAnalysis?: LocalAnalysisContext;
+  /** Readings from the writing tools, built on demand so the sound/meter passes
+   *  stay off the typing path. Called once per analysis request. */
+  getToolStats?: () => ToolStats | undefined;
+  /** Opens one of the writing tools — used by the model's tool tip. */
+  onOpenTool?: (tool: ToolTab) => void;
   goals?: WorkshopGoals;
   onJumpToLine?: (line: number) => void;
   /** Place the editor cursor at the start of a specific word on a line. */
@@ -72,7 +79,7 @@ export interface AiAnalysisProps {
   onSwitchTabRef?: (fn: (tab: "overview" | "issues" | "chat") => void) => void;
 }
 
-export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
+export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getToolStats, onOpenTool, goals, onJumpToLine, onJumpToWord, onPeekLine, onHighlightLines, onClearHighlight, onAnalysisDone, onVisibleIssuesChange, onApplyLine, onAnalyzeRef, onLoadingChange, onOpenIssueAtLineRef, onResultChange, onSwitchTabRef }: AiAnalysisProps) {
   const [harshness, setHarshness] = useState<HarshnessLevel>("editor");
   const [scoringEnabled, setScoringEnabled] = useState<boolean>(loadScoringEnabled);
   const [draftMode, setDraftMode] = useState<boolean>(loadDraftMode);
@@ -208,6 +215,12 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
       return;
     }
 
+    // Tool readings are gathered here, once per request — they travel with the
+    // rest of the local context as supporting evidence for the model's read.
+    const localWithTools: LocalAnalysisContext | undefined = localAnalysis
+      ? { ...localAnalysis, toolStats: getToolStats?.() }
+      : localAnalysis;
+
     try {
       let res: PoemAnalysis | PoemComparison;
       if (canCompare) {
@@ -215,7 +228,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           {
             title, lines, previousLines: savedLines,
             previousScores: { overall_score: savedResult!.overall_score },
-            localAnalysis, goals: goalsPlain, writingFocus,
+            localAnalysis: localWithTools, goals: goalsPlain, writingFocus,
             scoreHistory: scoreHistory.slice(-3),
             previousWeaknesses: savedResult!.weaknesses,
             previousIssues: savedResult!.issues
@@ -232,7 +245,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
           ctrl.signal,
         );
       } else {
-        res = await analyzePoem({ title, lines, localAnalysis, goals: goalsPlain, harshness, writingFocus, onProgress: setStreamedChars }, ctrl.signal);
+        res = await analyzePoem({ title, lines, localAnalysis: localWithTools, goals: goalsPlain, harshness, writingFocus, onProgress: setStreamedChars }, ctrl.signal);
       }
       // A new analysis replaces the prior one — resolution flags keyed to the
       // OLD issue IDs no longer apply (and would silently mark re-flagged
@@ -280,7 +293,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, goals, onAnalysisDone, result, retryAfterSec, draftMode]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, getToolStats, goals, onAnalysisDone, result, retryAfterSec, draftMode]);
 
 
   useEffect(() => {
@@ -527,6 +540,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, goal
               hideIssues={draftMode}
               externalTabSignal={externalTabSignal}
               localAnalysis={localAnalysis}
+              onOpenTool={onOpenTool}
             />
           )}
         </div>
