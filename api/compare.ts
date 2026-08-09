@@ -18,7 +18,7 @@ import { toolStatsBlock, type ToolStats } from "./_tool-stats";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v28"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v29"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -106,48 +106,54 @@ The draft may arrive with measurements taken by the tools built into this app: L
 - Then, in tool_tip, LIGHTLY point the poet at ONE tool worth opening for the next revision — a suggestion, not an instruction.
 
 === STYLE ===
-Plain, warm, exact — a sharp friend who reads closely. Concise: every line earns its place. Skip scholarly jargon.
+Plain, warm, exact — a sharp friend who reads closely. Skip scholarly jargon.
+
+=== LENGTH — a hard budget, not a target ===
+Every field below caps its words. Stay UNDER the cap; a poet reads a short note and acts on it, then loses a long one.
+- Cut hedges ("it seems", "perhaps"), throat-clearing ("What's interesting here is", "In this revision"), and any restatement of what the poem says.
+- One observation per item. If a sentence adds no NEW observation, delete it rather than rephrase it.
+- Fewer, sharper items beat more: one real regression beats three padded ones.
 
 === RESPONSE SHAPE — return ONLY this JSON, fields in this order ===
 Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from what you actually saw.
 {
-  "warm_reaction": "<≤14 words — your honest first feeling on the current draft>",
-  "strengths": ["<quote or point at a specific line/move, then what it does — ≤16 words>", ...1-4 items],
-  "weaknesses": ["<quote the line, then the precise flaw — ≤18 words. DIAGNOSE, no rewrite>", ...0-3 items],
+  "warm_reaction": "<≤7 words — your honest first feeling on the current draft>",
+  "strengths": ["<point at a specific line/move, then what it does — ≤10 words>", ...1-2 items],
+  "weaknesses": ["<the line, then the precise flaw — ≤10 words. DIAGNOSE, no rewrite>", ...0-2 items],
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
   "overall_score": <int 1-100 for the CURRENT draft, MUST equal chord+craft+spark+echo>,
-  "strongest_line": {"line": <int, 1-based>, "why": "<one vivid clause — why this is the best line>"},  // OMIT if no single line clearly stands out
+  "strongest_line": {"line": <int, 1-based>, "why": "<one vivid clause, ≤7 words — why this is the best line>"},  // OMIT if no single line clearly stands out
   "issues": [
     {
       "id": "<short kebab-case>",
       "severity": "high" | "medium" | "low",
       "line_start": <int, 1-based>,
       "line_end": <int, 1-based>,
-      "headline": "<≤6 words>",
+      "headline": "<≤4 words>",
       "problem_words": ["<1-2 lowercase tokens — the actual offending word(s), never stopwords like 'the/and/is'>"],  // OMIT for structural issues
-      "rationale": "<3 short sentences: name the flaw, why it weakens THIS line, the KIND of move that would help. NEVER a finished rewrite.>",
-      "improvements": ["<a direction to explore, not a rewritten line — ≤14 words>", ...1-2 items]
+      "rationale": "<2 sentences, ≤28 words total: the flaw and why it weakens THIS line, then the KIND of move that would help. NEVER a finished rewrite.>",
+      "improvements": ["<a direction to explore, not a rewritten line — ≤7 words>"]  // 1 item
     }
   ],
   "comparison": {
-    "improvements": ["<≤6 words — what the revision improved>", ...0-3 items],
-    "regressions": ["<≤6 words — what it cost>", ...0-3 items],
-    "unchanged": ["<≤6 words — still strong, or still weak>", ...0-3 items]
+    "improvements": ["<≤4 words — what the revision improved>", ...0-2 items],
+    "regressions": ["<≤4 words — what it cost>", ...0-2 items],
+    "unchanged": ["<≤4 words — still strong, or still weak>", ...0-2 items]
   },
-  "personal_feedback": "<2-3 sentences to 'you': name the central thing the current draft is doing, how the revision moved it, then the ONE direction that reaches the next level. No rewrite, no preamble.>",
-  "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤20 words: cite the reading, then the one thing to try there next. Light, optional-sounding.>"}  // OMIT unless a reading genuinely points somewhere
+  "personal_feedback": "<1-2 sentences to 'you', ≤35 words: what the draft is doing, how the revision moved it, then the ONE direction to the next level. No rewrite, no preamble.>",
+  "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤12 words: cite the reading, then the one thing to try next.>"}  // OMIT unless a reading genuinely points somewhere
 }
 
 DISCIPLINE:
 - tool_tip is a footnote, not a finding: cite a reading you were actually given, name one thing to try with it, and stop. It must not restate an issue, a weakness, or a comparison item, and it must never carry the draft's main point. If no reading points anywhere useful, OMIT it.
-EXAMPLE tool_tip (good): {"tool": "Repeats", "tip": "\\"and I\\" now opens 4 lines — Repeats shows them; keep it or break the pattern once."}
+EXAMPLE tool_tip (good): {"tool": "Repeats", "tip": "\\"and I\\" now opens 4 lines — break the pattern once?"}
 - strengths & weaknesses must each QUOTE or point at an actual line — never abstract.
 - A strength is a real craft move (a fresh image, a turn, a deliberate echo, controlled syntax), NOT a restated idea or topic ("honest voice", "important message" → omit).
-- issues: 0-3, diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
+- issues: 0-3, and prefer the FEWEST that matter — two sharp issues beat three padded ones. Diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
 - Title and writing focus are CONTEXT, not scoring inputs.
 
-EXAMPLE rationale (good): "The phrase 'gentle breeze' is the dictionary entry for breeze. It collapses a tactile sensation into received language. A weather verb — needling, slack, brackish — would carry real weight." (Names the flaw, why it weakens THIS line, the kind of move — never writes the finished line.)`;
+EXAMPLE rationale (good, 24 words): "'Gentle breeze' is the dictionary entry for breeze — received language where a sensation should be. A weather verb would carry real weight." (Flaw, why it weakens THIS line, the kind of move — never the finished line.)`;
 
 interface LocalAnalysis {
   cliches?: Array<{ phrase: string; lineNumber: number }>;

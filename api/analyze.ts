@@ -20,7 +20,7 @@ import { toolStatsBlock, type ToolStats } from "./_tool-stats";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v40"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v41"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -119,44 +119,50 @@ The draft may arrive with measurements taken by the tools built into this app: L
 - Then, in tool_tip, LIGHTLY point the poet at ONE tool worth opening next — a suggestion, not an instruction.
 
 === STYLE ===
-Plain, warm, exact — a sharp friend who reads closely. Concise: every line earns its place. Skip scholarly jargon.
+Plain, warm, exact — a sharp friend who reads closely. Skip scholarly jargon.
+
+=== LENGTH — a hard budget, not a target ===
+Every field below caps its words. Stay UNDER the cap; a poet reads a short note and acts on it, then loses a long one.
+- Cut hedges ("it seems", "perhaps", "I think"), throat-clearing ("What's interesting here is", "Overall, this poem"), and any restatement of what the poem says.
+- One observation per item. If a sentence adds no NEW observation, delete it rather than rephrase it.
+- Fewer, sharper items beat more: two real strengths beat three padded ones.
 
 === RESPONSE SHAPE — return ONLY this JSON, fields in this order ===
 Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from what you actually saw.
 {
-  "warm_reaction": "<≤14 words — your honest first feeling on reading it>",
-  "strengths": ["<1-2 sentences: an overall quality of this poem — its tone, the way it moves, what the whole thing achieves. No line quotes; speak about the poem as a whole.>", ...1-3 items],
-  "weaknesses": ["<1-2 sentences: an overall quality that holds the poem back — a pattern, a tendency, something the whole poem doesn't quite do. No line quotes.>", ...0-2 items],
+  "warm_reaction": "<≤7 words — your honest first feeling on reading it>",
+  "strengths": ["<ONE sentence, ≤16 words: an overall quality of this poem — its tone, the way it moves, what it achieves. No line quotes; speak about the poem as a whole.>", ...1-2 items],
+  "weaknesses": ["<ONE sentence, ≤16 words: an overall quality that holds the poem back — a pattern, a tendency. No line quotes.>", ...0-2 items],
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
   "overall_score": <int 1-100, MUST equal chord+craft+spark+echo>,
-  "strongest_line": {"line": <int, 1-based>, "why": "<one vivid clause — why this is the best line>"},  // OMIT if no single line clearly stands out
+  "strongest_line": {"line": <int, 1-based>, "why": "<one vivid clause, ≤7 words — why this is the best line>"},  // OMIT if no single line clearly stands out
   "issues": [
     {
       "id": "<short kebab-case>",
       "severity": "high" | "medium" | "low",
       "line_start": <int, 1-based>,
       "line_end": <int, 1-based>,
-      "headline": "<≤6 words>",
+      "headline": "<≤4 words>",
       "problem_words": ["<1-2 lowercase tokens — the actual offending word(s), never stopwords like 'the/and/is'>"],  // OMIT for structural issues
-      "rationale": "<3 short sentences: name the flaw, why it weakens THIS line, the KIND of move that would help. NEVER a finished rewrite.>",
-      "improvements": ["<a direction to explore, not a rewritten line — ≤14 words>", ...1-2 items]
+      "rationale": "<2 sentences, ≤28 words total: the flaw and why it weakens THIS line, then the KIND of move that would help. NEVER a finished rewrite.>",
+      "improvements": ["<a direction to explore, not a rewritten line — ≤7 words>"]  // 1 item
     }
   ],
-  "personal_feedback": "<2-3 sentences to 'you': name the central thing the poem is doing, then the ONE direction that reaches the next level. No rewrite, no preamble.>",
-  "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤20 words: cite the reading, then the one thing to try there. Light, optional-sounding.>"}  // OMIT unless a reading genuinely points somewhere
+  "personal_feedback": "<1-2 sentences to 'you', ≤35 words: the central thing the poem is doing, then the ONE direction that reaches the next level. No rewrite, no preamble.>",
+  "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤12 words: cite the reading, then the one thing to try there.>"}  // OMIT unless a reading genuinely points somewhere
 }
 
 DISCIPLINE:
 - tool_tip is a footnote, not a finding: cite a reading you were actually given, name one thing to try with it, and stop. It must not restate an issue or a weakness, and it must never carry the poem's main point. If no reading points anywhere useful, OMIT it — an invented errand is worse than none.
-EXAMPLE tool_tip (good): {"tool": "Echoes", "tip": "9 of 12 lines enjamb — Echoes shows where; try end-stopping the last one."}
+EXAMPLE tool_tip (good): {"tool": "Echoes", "tip": "9 of 12 lines enjamb — try end-stopping the last."}
 EXAMPLE tool_tip (bad — a stat with no use): {"tool": "Meter", "tip": "Your median iambic fit is 62%."}
 - strengths & weaknesses are OVERALL observations about the poem as a whole — patterns, tendencies, how it moves. Do not quote individual lines or pin to specific moments; that belongs in issues[].
 - A strength is a real quality of the poem (its restraint, the consistency of its voice, the way tension builds), NOT a restatement of topic ("important message" → omit).
-- issues: 0-3, diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
+- issues: 0-3, and prefer the FEWEST that matter — two sharp issues beat three padded ones. Diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
 - Title and writing focus are CONTEXT, not scoring inputs.
 
-EXAMPLE rationale (good): "The phrase 'gentle breeze' is the dictionary entry for breeze. It collapses a tactile sensation into received language. A weather verb — needling, slack, brackish — would carry real weight." (Names the flaw, why it weakens THIS line, the kind of move — never writes the finished line.)`;
+EXAMPLE rationale (good, 24 words): "'Gentle breeze' is the dictionary entry for breeze — received language where a sensation should be. A weather verb would carry real weight." (Flaw, why it weakens THIS line, the kind of move — never the finished line.)`;
 
 function buildSystemPrompt(harshness?: string): string {
   const personaKey = harshness && harshness in HARSHNESS_PERSONAS ? harshness : "editor";

@@ -6,7 +6,7 @@
  * version, and the original issue rationale and ask the model to judge if
  * the problem is resolved, partially addressed, or still present.
  *
- * Returns JSON: { status: "resolved"|"partial"|"still", note: "<≤22w>" }.
+ * Returns JSON: { status: "resolved"|"partial"|"still", note: "<≤12w>" }.
  */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -18,7 +18,7 @@ const SYSTEM_PROMPT = `You are a poetry editor checking whether a single line-le
 
 Return JSON only (no fences). Keys:
   status: one of "resolved" (issue clearly fixed), "partial" (improved but the underlying weakness still shows), "still" (essentially the same problem), "elsewhere" (the line changed in a way that introduced a NEW problem worth flagging).
-  note: ≤22 words. Plain spoken. One sentence. Focus on the specific change in word choice / rhythm / image — quote a word or two from the new line when possible.
+  note: ≤12 words. Plain spoken. One sentence. Focus on the specific change in word choice / rhythm / image — quote a word or two from the new line when possible.
 
 Be honest but brief. No preamble, no "Great work!" filler. Just the verdict and a concrete reason.`;
 

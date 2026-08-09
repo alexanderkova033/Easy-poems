@@ -249,8 +249,10 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     warm_reaction: typeof obj.warm_reaction === "string" && obj.warm_reaction.trim()
       ? obj.warm_reaction.trim() : undefined,
     summary: typeof obj.summary === "string" ? obj.summary : undefined,
-    strengths: parseStringArray(obj.strengths, 4),
-    weaknesses: parseStringArray(obj.weaknesses, 4),
+    // Caps match the word budgets in the prompts: a model that ignores them
+    // gets trimmed here rather than filling the panel.
+    strengths: parseStringArray(obj.strengths, 2),
+    weaknesses: parseStringArray(obj.weaknesses, 2),
     strongest_line: parseStrongestLine(obj.strongest_line),
     overall_direction: typeof obj.overall_direction === "string" ? obj.overall_direction : undefined,
     overall_feedback: typeof obj.overall_feedback === "string" && obj.overall_feedback.trim()
@@ -280,7 +282,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
         improvements: Array.isArray(iss.improvements)
           ? (iss.improvements as unknown[])
               .filter((s): s is string => typeof s === "string")
-              .slice(0, 3)
+              .slice(0, 1)
           : [],
         rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
       }))),
@@ -302,7 +304,9 @@ function parseComparison(obj: Record<string, unknown>): PoemComparison {
   const base = parseAnalysis(obj);
   const c = (obj.comparison ?? {}) as Record<string, unknown>;
   const toStrArr = (v: unknown) =>
-    Array.isArray(v) ? (v as unknown[]).filter((x): x is string => typeof x === "string") : [];
+    Array.isArray(v)
+      ? (v as unknown[]).filter((x): x is string => typeof x === "string").slice(0, 2)
+      : [];
   return {
     ...base,
     comparison: {
