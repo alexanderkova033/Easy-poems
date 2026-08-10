@@ -231,10 +231,52 @@ function balanceAndCapIssues<T extends { severity?: "high" | "medium" | "low" }>
   return out;
 }
 
-function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
+/** The model occasionally crowns a line it also flagged, which reads as the
+ *  panel contradicting itself. The issue is the actionable half, so it wins and
+ *  the "strongest line" claim goes — better no crown than a contradictory one. */
+function dropStrongestLineIfFlagged(
+  strongest: StrongestLine | undefined,
+  issues: AnalysisIssue[],
+): StrongestLine | undefined {
+  if (!strongest) return undefined;
+  const flagged = issues.some((iss) => {
+    const from = Math.min(iss.line_start, iss.line_end);
+    const to = Math.max(iss.line_start, iss.line_end);
+    return strongest.line >= from && strongest.line <= to;
+  });
+  return flagged ? undefined : strongest;
+}
+
+/** Exported for tests. */
+export function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
   const issuesRaw = Array.isArray(obj.issues) ? obj.issues : [];
   const meta = (obj.meta ?? {}) as Record<string, unknown>;
   const pillars = parsePillarScores(obj.pillar_scores);
+
+  const issues = balanceAndCapIssues(issuesRaw
+    .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
+    .map((iss, idx) => ({
+      id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
+      severity: parseSeverity(iss.severity),
+      confidence: parseConfidence(iss.confidence),
+      line_start: clampScore(iss.line_start),
+      line_end: clampScore(iss.line_end),
+      excerpt: typeof iss.excerpt === "string" ? iss.excerpt : undefined,
+      problem_words: Array.isArray(iss.problem_words)
+        ? (iss.problem_words as unknown[])
+            .filter((s): s is string => typeof s === "string")
+            .slice(0, 3)
+        : undefined,
+      headline: typeof iss.headline === "string" && iss.headline.trim()
+        ? iss.headline.trim() : undefined,
+      rationale: typeof iss.rationale === "string" ? iss.rationale : "",
+      improvements: Array.isArray(iss.improvements)
+        ? (iss.improvements as unknown[])
+            .filter((s): s is string => typeof s === "string")
+            .slice(0, 1)
+        : [],
+      rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
+    })));
 
   return {
     meta: {
@@ -253,7 +295,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     // gets trimmed here rather than filling the panel.
     strengths: parseStringArray(obj.strengths, 2),
     weaknesses: parseStringArray(obj.weaknesses, 2),
-    strongest_line: parseStrongestLine(obj.strongest_line),
+    strongest_line: dropStrongestLineIfFlagged(parseStrongestLine(obj.strongest_line), issues),
     overall_direction: typeof obj.overall_direction === "string" ? obj.overall_direction : undefined,
     overall_feedback: typeof obj.overall_feedback === "string" && obj.overall_feedback.trim()
       ? obj.overall_feedback.trim() : undefined,
@@ -262,30 +304,7 @@ function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     clarifying_question: typeof obj.clarifying_question === "string" && obj.clarifying_question.trim()
       ? obj.clarifying_question.trim() : undefined,
     tool_tip: parseToolTip(obj.tool_tip),
-    issues: balanceAndCapIssues(issuesRaw
-      .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
-      .map((iss, idx) => ({
-        id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
-        severity: parseSeverity(iss.severity),
-        confidence: parseConfidence(iss.confidence),
-        line_start: clampScore(iss.line_start),
-        line_end: clampScore(iss.line_end),
-        excerpt: typeof iss.excerpt === "string" ? iss.excerpt : undefined,
-        problem_words: Array.isArray(iss.problem_words)
-          ? (iss.problem_words as unknown[])
-              .filter((s): s is string => typeof s === "string")
-              .slice(0, 3)
-          : undefined,
-        headline: typeof iss.headline === "string" && iss.headline.trim()
-          ? iss.headline.trim() : undefined,
-        rationale: typeof iss.rationale === "string" ? iss.rationale : "",
-        improvements: Array.isArray(iss.improvements)
-          ? (iss.improvements as unknown[])
-              .filter((s): s is string => typeof s === "string")
-              .slice(0, 1)
-          : [],
-        rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
-      }))),
+    issues,
   };
 }
 

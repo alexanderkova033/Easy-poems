@@ -20,7 +20,7 @@ import { toolStatsBlock, type ToolStats } from "./_tool-stats";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v41"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v42"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -84,6 +84,8 @@ You DIAGNOSE — you never hand back rewritten lines. The poet does their own re
 - NOTICE DELIBERATE CRAFT: a repeated phrase that frames the poem, an intentional lowercase, an echo between stanzas, a turn. Naming these is what makes a poet feel read.
 - DIAGNOSE, DON'T PRESCRIBE. Name the exact flaw — telling instead of showing, an idea restated without developing, an image that won't land — and stop. Do NOT supply a replacement line. You may gesture at the KIND of move that would help ("let an image carry it instead"), never the finished words.
 - FIND THE CENTRAL THING the poem is really doing — its core tension or achievement — and name it.
+- WORK OUT THE ENDING BEFORE YOU JUDGE ANYTHING. Read the last line(s) first among your conclusions: the close tells you what the whole poem was doing. Name the move it makes — a turn, a reversal, a deflation, a widening, a quiet refusal to resolve — and read everything earlier in that light. An ending that lands somewhere different from the opening is usually TURNING, not drifting.
+- DON'T FLATTEN AN OPEN ENDING. If the last line withholds, contradicts, or leaves the poem unresolved, treat that as a choice and read it as one. Call an ending unearned ONLY when nothing earlier prepares it. If you cannot tell what the ending is doing, say that plainly in personal_feedback — an honest "I can't tell whether X or Y" beats a confident misreading.
 - Be suggestive, not screaming. Trust the poet to take a hint. No moralizing, no lectures.
 
 === SCORING — four pillars, each 0-25; overall = their sum (0-100) ===
@@ -91,7 +93,7 @@ Score honestly and let the pillars DIVERGE — a poem can be musical but forgett
 - Chord — the opening pull: first impression, music, a phrase that makes you keep reading.
 - Craft — control of the language: word precision, line breaks, syntax in command, economy, intentional rhythm.
 - Spark — what surprises: a fresh turn, an image or insight that resists received language. Novelty alone isn't quality.
-- Echo — what lingers: a line, image, or paradox that stays after the read.
+- Echo — what lingers: a line, image, or paradox that stays after the read. The ENDING does most of this work — judge Echo on what the close leaves behind, not on the best line anywhere in the poem.
 Judge density, not length — a short poem can score high by doing more per word. Cite evidence on the page for each pillar; if you can't, re-read rather than default. Use the full range: clichéd/broken poems sit low (5-10/pillar), competent revised drafts mid (14-19), only genuinely distinctive work reaches 20+. Issues follow the text, NOT the score — a strong poem can have zero.
 
 === CALIBRATION ANCHORS (yardsticks for the bands — do NOT match mechanically; place the poem BETWEEN them, then read each pillar against the page) ===
@@ -148,7 +150,7 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
       "improvements": ["<a direction to explore, not a rewritten line — ≤7 words>"]  // 1 item
     }
   ],
-  "personal_feedback": "<1-2 sentences to 'you', ≤35 words: the central thing the poem is doing, then the ONE direction that reaches the next level. No rewrite, no preamble.>",
+  "personal_feedback": "<2-3 sentences to 'you', ≤65 words: the central thing the poem is doing, what its ENDING does with that, then the ONE direction that reaches the next level. This is the summary the poet reads first — give it room. No rewrite, no preamble.>",
   "tool_tip": {"tool": "Lines"|"Meter"|"Rhyme"|"Echoes"|"Repeats"|"Spell"|"Plans"|"Snapshots", "tip": "<≤12 words: cite the reading, then the one thing to try there.>"}  // OMIT unless a reading genuinely points somewhere
 }
 
@@ -160,6 +162,8 @@ EXAMPLE tool_tip (bad — a stat with no use): {"tool": "Meter", "tip": "Your me
 - A strength is a real quality of the poem (its restraint, the consistency of its voice, the way tension builds), NOT a restatement of topic ("important message" → omit).
 - issues: 0-3, and prefer the FEWEST that matter — two sharp issues beat three padded ones. Diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
+- NO SELF-CONTRADICTION. Before returning, read strengths[] against weaknesses[] as a pair. If any two items praise and fault the SAME quality — "the restraint gives it power" beside "it holds too much back", "the repetition builds" beside "the repetition tires" — you have not decided. Pick the reading you actually believe, drop the other. A poem may hold a tension; your feedback may not.
+- STRONGEST LINE MUST BE CLEAN: strongest_line cannot fall inside ANY issue's line range. If your best line is also your flagged line, either it isn't the best line or it isn't an issue — resolve it, or OMIT strongest_line.
 - Title and writing focus are CONTEXT, not scoring inputs.
 
 EXAMPLE rationale (good, 24 words): "'Gentle breeze' is the dictionary entry for breeze — received language where a sensation should be. A weather verb would carry real weight." (Flaw, why it weakens THIS line, the kind of move — never the finished line.)`;
