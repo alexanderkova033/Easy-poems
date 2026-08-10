@@ -39,10 +39,16 @@
 
 .landing-sticky-name {
   flex: 1;
+  min-width: 0;
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
+  /* One line, always — the badge wrapping under the wordmark doubles the bar's
+     height and pushes the CTA around */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .landing-sticky-cta {
@@ -1484,10 +1490,32 @@
   .landing-cta-short { display: inline; }
 
   .landing-ctas { width: 100%; }
-  .landing-btn {
+  /* Full width is for the two in-flow page CTAs only. The sticky header's
+     button shares .landing-btn but lives in a flex row next to the brand —
+     width:100% there made it demand the whole bar, so it shoved the brand
+     into two lines and ran off the right edge of the screen. */
+  .landing-ctas .landing-btn,
+  .landing-footer-cta > .landing-btn {
     width: 100%;
+  }
+  .landing-btn {
     min-height: 2.85rem;
     font-size: 1rem;
+  }
+
+  /* Tighter bar so brand + button fit a narrow phone comfortably */
+  .landing-sticky-bar {
+    padding: 0.5rem 0.85rem;
+    gap: 0.5rem;
+  }
+}
+
+/* Below ~380px the wordmark plus badge no longer clears the CTA, and the
+   ellipsis lands mid-badge ("easywriting P…"). Drop the badge instead — the
+   hero above already establishes which easywriting app this is. */
+@media (max-width: 380px) {
+  .landing-sticky-name .landing-brand-badge {
+    display: none;
   }
 
   .landing-guide { padding: 1.75rem 1.1rem 2rem; }

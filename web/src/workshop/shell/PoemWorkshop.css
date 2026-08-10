@@ -7119,10 +7119,15 @@
     left: 0;
     right: 0;
     bottom: 0;
-    /* Always occupy at least 60% of the screen so the body content is visible
-       even when the analysis is idle. max-height caps it on short viewports. */
-    min-height: min(60vh, 400px);
-    max-height: 92vh;
+    /* One fixed height for every state of the sheet, and the body scrolls inside
+       it. It used to be `min-height: min(60vh, 400px); max-height: 92vh` — an
+       auto-height box pinned to the bottom, so its top edge sat wherever the
+       content ended. Opening it to a spinner and then filling it with an analysis
+       grew it from 60% to 92% of the screen, and because the panel is
+       viewport-wide, that one move measured a layout shift of 1.0 all by itself
+       — ten times the entire "good" CLS budget, and it happened on every analysis
+       that took longer than half a second to come back (i.e. all of them). */
+    height: 92%;
     background: var(--surface);
     border-top-left-radius: 20px;
     border-top-right-radius: 20px;
@@ -7192,7 +7197,11 @@
 
   .mobile-ai-sheet-body {
     flex: 1 1 auto;
-    min-height: 320px; /* prevent collapsing to 0 when content is minimal */
+    /* 0, not a floor: the panel above has a fixed height now, so the body always
+       fills it, and a floor taller than the panel's remaining space would push
+       its own scrollable content out through the panel's `overflow: hidden`
+       (a short landscape phone is enough to hit that). */
+    min-height: 0;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
@@ -7236,6 +7245,29 @@
   .mobile-ai-sheet-body .ai-results     { order: -3; }
   .mobile-ai-sheet-body .ai-ghost-results { order: -2; }
   .mobile-ai-sheet-body .ai-loading     { order: -1; }
+
+  /* The read in progress fills the sheet, rather than sitting as a thin strip
+     with the settings under it.
+
+     This is a layout-shift fix as much as a visual one. Results land above the
+     controls (order: -3), so a compact loading strip meant the controls sat in
+     full view and were then shoved a screen and a half down the moment the
+     analysis arrived — seconds after the tap, so it counted against CLS, at
+     ~0.17 on its own. Filling the sheet puts the controls just past the fold
+     while reading, which is where the results leave them too, so nothing
+     visible moves when the read comes back.
+
+     Stays a wrapping row: the pulse, dots, label and progress bar keep their
+     one-line arrangement and the streamed first impression wraps under them
+     (.ai-loading-preview is flex: 1 1 100%), with align-content centring the
+     whole group in the space. */
+  .mobile-ai-sheet-body .ai-loading {
+    flex: 1 0 100%;
+    flex-wrap: wrap;
+    align-content: center;
+    justify-content: center;
+    padding-inline: 1.1rem;
+  }
   /* Controls, hints, rerun button, chat remain at default order (0+). */
   .mobile-ai-sheet-body .ai-rerun-btn  { margin-top: 0.25rem; }
 }

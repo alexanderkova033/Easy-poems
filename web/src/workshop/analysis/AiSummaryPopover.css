@@ -33,6 +33,17 @@
   padding-right: 4.25rem;
 }
 
+/* …and let the row inside actually honour the reserve. A grid item's automatic
+   minimum size is its min-content width, and #poem-title is an <input>, whose
+   min-content width is its 20-character default size (~198px) no matter what
+   flex-shrink says. That floored the single `1fr` track at the row's natural
+   width, so on a phone the row overran the padding and Analyse ended up under
+   the score pill instead of beside it. min-width: 0 lets the track shrink to
+   the space the reserve leaves. */
+.editor-stack:has(.ai-summary-titlebar) .editor-meta-grid > .row {
+  min-width: 0;
+}
+
 .ai-pop-trigger {
   display: inline-flex;
   align-items: center;

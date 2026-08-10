@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 
-/** Never cover more than this much of the screen — the poem stays partly visible. */
-const MIN_TOP_FRACTION = 0.08;
+/** Never cover more than this much of the screen — the poem stays partly visible.
+ *  Raised from 8% once the chrome above the sheet started folding away past
+ *  CHROME_FRACTION: the strip left showing is poem now rather than topbar, so it
+ *  stays meaningful at a quarter of the height it needed before. */
+const MIN_TOP_FRACTION = 0.04;
 /** Fallback peek height (px) if the CSS custom property cannot be read. */
 const FALLBACK_PEEK_PX = 80;
 /** Past this much coverage the sheet is the focus, so the scrim goes solid. */
 const SCRIM_FRACTION = 0.55;
+/** Past this much, the app chrome above the sheet stops earning its keep: the
+ *  topbar and the title row are hidden so the strip still showing above the
+ *  sheet is poem rather than furniture. */
+const CHROME_FRACTION = 0.62;
 /** Within this of the bottom the sheet counts as stowed to the edge tab. */
 const STOWED_SLACK_PX = 8;
 /** px/ms past which a release counts as a flick rather than a slow drag. */
@@ -23,6 +30,19 @@ interface SheetDragState {
   lastT: number;
   velocity: number;
   moved: boolean;
+  /** Travel limits, measured once at pointerdown. Recomputing them per move meant
+   *  two getComputedStyle calls a frame, each forcing a style flush mid-gesture. */
+  min: number;
+  max: number;
+}
+
+/** The sheet's position during a gesture is written straight to the node's
+ *  transform. Going through a custom property instead (--sheet-y, read by a
+ *  `transform: translate3d(0, var(--sheet-y), 0)` rule) invalidates style for the
+ *  whole sheet subtree on every pointermove, because custom properties inherit;
+ *  a plain transform write is a compositor-only change with no style recalc. */
+function paintSheetY(panel: HTMLElement | null, y: number) {
+  if (panel) panel.style.transform = `translate3d(0, ${y}px, 0)`;
 }
 
 interface UseSheetDragOptions {
@@ -103,7 +123,8 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     const target = e.currentTarget;
     try { target.setPointerCapture(e.pointerId); } catch { /* ignore */ }
     const panel = toolsPanelRef.current;
-    const startTop = panel ? panel.getBoundingClientRect().top : bounds().max;
+    const { min, max } = bounds();
+    const startTop = panel ? panel.getBoundingClientRect().top : max;
     dragRef.current = {
       pointerId: e.pointerId,
       startY: e.clientY,
@@ -112,8 +133,13 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
       lastT: e.timeStamp,
       velocity: 0,
       moved: false,
+      min,
+      max,
     };
     target.classList.add("is-dragging");
+    // The panel, not just the drag surface: this is what turns the settle
+    // transition off for the duration of the gesture (see WorkshopMobile.css).
+    panel?.classList.add("is-dragging");
   }, [bounds, toolsPanelRef]);
 
   const handleSheetDragMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
@@ -127,16 +153,15 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     drag.lastY = e.clientY;
     drag.lastT = e.timeStamp;
 
-    const { min, max } = bounds();
-    const next = Math.min(max, Math.max(min, drag.startTop + dy));
+    const next = Math.min(drag.max, Math.max(drag.min, drag.startTop + dy));
     // Written straight to the node during the gesture — routing this through
     // React state would re-render the whole workshop on every pointermove.
-    // --sheet-y drives a transform rather than `top`, so the gesture stays on
-    // the compositor: the sheet's geometry never changes mid-drag, only where
-    // it gets painted. Driving `top` relaid out the sheet on every frame, which
-    // is what made dragging feel heavy.
-    toolsPanelRef.current?.style.setProperty("--sheet-y", `${next}px`);
-  }, [bounds, toolsPanelRef]);
+    // A transform rather than `top`, so the gesture stays on the compositor: the
+    // sheet's geometry never changes mid-drag, only where it gets painted.
+    // Driving `top` relaid out the sheet on every frame, which is what made
+    // dragging feel heavy.
+    paintSheetY(toolsPanelRef.current, next);
+  }, [toolsPanelRef]);
 
   const handleSheetDragEnd = useCallback((e: React.PointerEvent<HTMLElement>) => {
     const drag = dragRef.current;
@@ -144,9 +169,12 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     const target = e.currentTarget;
     try { target.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
     target.classList.remove("is-dragging");
+    // Dropped before the settle position is written, so the sheet animates into
+    // its landing spot instead of jumping there.
+    toolsPanelRef.current?.classList.remove("is-dragging");
     dragRef.current = null;
 
-    const { min, max } = bounds();
+    const { min, max } = drag;
     const openTop = Math.max(min, window.innerHeight * OPEN_TOP_FRACTION);
 
     if (!drag.moved) {
@@ -171,21 +199,21 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
   // on a taller viewport, and writing the clamped value straight to the node avoids
   // a second render just to correct it.
   //
-  // Both variables are written here, and ONLY here. --sheet-y also gets written
-  // during the drag (transform, compositor-only); --sheet-y-settled never does,
-  // because it feeds the scroll body's max-height and must not drag layout into
-  // the gesture.
+  // --sheet-y-settled is written here and ONLY here: it feeds the scroll body's
+  // max-height, so touching it during a gesture would drag layout into every
+  // frame of the drag. The transform is written here too — the same property the
+  // gesture paints, so the settle lands on top of wherever the finger left it.
   useEffect(() => {
     const panel = toolsPanelRef.current;
     if (!panel) return;
     if (sheetTop === null) {
-      panel.style.removeProperty("--sheet-y");
+      panel.style.removeProperty("transform");
       panel.style.removeProperty("--sheet-y-settled");
       return;
     }
     const { min, max } = bounds();
     const clamped = Math.min(max, Math.max(min, sheetTop));
-    panel.style.setProperty("--sheet-y", `${clamped}px`);
+    paintSheetY(panel, clamped);
     panel.style.setProperty("--sheet-y-settled", `${clamped}px`);
   }, [sheetTop, bounds, toolsPanelRef]);
 
@@ -197,6 +225,11 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     handleSheetDragEnd,
     /** True once the sheet covers enough of the screen to warrant a scrim. */
     sheetIsProminent: !stowed && coverage > SCRIM_FRACTION,
+    /** True once the sheet is open far enough that the app chrome above it
+     *  should fold away. Committed positions only — deliberately not updated
+     *  mid-drag, since hiding the topbar relays out the editor and that cost
+     *  does not belong in a gesture. */
+    sheetIsExpanded: !stowed && coverage > CHROME_FRACTION,
     /** True when stowed to the edge tab. */
     sheetIsStowed: stowed,
     /** Bring a stowed sheet back to a working height. */

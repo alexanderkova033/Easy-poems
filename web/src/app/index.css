@@ -531,6 +531,19 @@ html[data-writing-focus-v2] body::after {
   }
 }
 
+/* The landing page runs edge to edge — hero, lower zone and footer are all
+   full-bleed bands. They tried to escape #root's side padding with negative
+   margins, but .landing-root clips its overflow, so the breakout was clipped
+   straight back to the padded box: on phones every band stopped 1.05rem short
+   of each edge and the raw backdrop showed through as strips down both sides.
+   Above 900px the padding is already 0, which is why it only looked broken on
+   mobile. Drop the side padding for this view instead; the landing sections
+   carry their own. */
+html[data-app-view="landing"] #root {
+  padding-left: 0;
+  padding-right: 0;
+}
+
 @media (max-width: 899px) {
   html[data-app-view="workshop"] #root {
     height: 100%;

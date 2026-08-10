@@ -43,21 +43,34 @@
     display: none;
   }
 
-  /* How much of the tools sheet stays visible at its lowest position: the grab
-     handle plus the whole "Tools" row, so the resting state reads as a complete
-     header rather than a sliced one. Tuned against the measured sticky-head
-     height (see the tightened padding below) — if that header changes, this has
-     to change with it or the row gets clipped at rest again. */
+  /* How much of the tools sheet stays visible at its lowest position: the whole
+     header row, so the resting state reads as a complete header rather than a
+     sliced one. Tuned against the measured sticky-head height (see the padding
+     below) — if that header changes, this has to change with it or the row gets
+     clipped at rest again. */
   .workshop-grid {
-    --tools-peek: 4.6rem;
+    --tools-peek: 3.35rem;
   }
 
   /* Trim the sheet header on phones. Every pixel here is paid twice: once in the
      always-visible peek, and again in the editor's bottom padding which is derived
-     from it. */
+     from it.
+
+     The grab pill used to sit on a 28px row of its own above the "Tools" row,
+     which made the header 86px — a fifth of the sheet at its resting height,
+     spent on two lines of furniture. It's absolutely positioned into the header's
+     top padding now, so the pill and the row share the same 56px. */
   .tools-panel .tools-sticky-head {
-    padding-top: 0.3rem;
-    padding-bottom: 0.35rem;
+    padding: 0.55rem 0.75rem 0.4rem;
+  }
+
+  .tools-panel .tools-head-row {
+    padding: 0;
+  }
+
+  .tools-panel .tools-heading {
+    margin: 0;
+    font-size: 0.95rem;
   }
 
   .editor-panel {
@@ -90,8 +103,11 @@
      Translating instead keeps the whole gesture on the compositor: the geometry
      never changes, only where it is painted.
 
-     --sheet-y is the distance slid down from fully-open. 0 = covering the
-     screen, (100dvh - peek) = resting peek. */
+     The translation below is only the resting position, for a sheet that has
+     never been moved. Once it has, useSheetDrag writes the transform inline —
+     both during the gesture and on settle. (It went through a --sheet-y custom
+     property before; those inherit, so writing one per pointermove invalidated
+     style for the entire sheet subtree.) */
   .tools-panel {
     width: 100%;
     box-sizing: border-box;
@@ -100,7 +116,7 @@
     right: 0;
     top: 0;
     height: 100dvh;
-    transform: translate3d(0, var(--sheet-y, calc(100dvh - var(--tools-peek))), 0);
+    transform: translate3d(0, calc(100dvh - var(--tools-peek)), 0);
     overflow: hidden;
     isolation: isolate;
     border-radius: 16px 16px 0 0;
@@ -118,12 +134,11 @@
   /* The body has to stop where the screen does, not where the (full-height)
      panel does, or the last tools sit below the fold with no way to reach them.
 
-     Driven by --sheet-y-settled, NOT --sheet-y. --sheet-y updates on every
-     pointermove; max-height is a layout property, so keying it to that put a
-     full layout back into every frame of the drag and undid the whole point of
-     moving to a transform. --sheet-y-settled is written once, on release, so the
-     gesture stays purely compositor work and the bounds correct themselves when
-     the finger lifts. */
+     Driven by --sheet-y-settled, which useSheetDrag writes once, on release —
+     never during the gesture. max-height is a layout property, so keying it to
+     the live drag position put a full layout back into every frame and undid the
+     whole point of moving to a transform. The bounds correct themselves when the
+     finger lifts. */
   .tools-panel .tools-scroll-body {
     /* Fallback mirrors the transform's own fallback (the resting peek), so the
        very first render — before any drag has written a value — is bounded
@@ -131,33 +146,39 @@
     max-height: calc(100dvh - var(--sheet-y-settled, calc(100dvh - var(--tools-peek))));
   }
 
-  /* Live drag — no transition while the finger is down, or the sheet lags behind. */
-  .tools-panel.is-dragging,
-  .tools-panel:has(.tools-swipe-handle.is-dragging) {
+  /* Live drag — no transition while the finger is down, or the sheet lags behind.
+     useSheetDrag puts .is-dragging on the panel itself for exactly this rule. It
+     used to only land on the drag surface (.tools-sticky-head), which neither of
+     the selectors here matched, so every pointermove was eased over 0.32s and the
+     sheet trailed the finger the whole way — the "laggy" feel. */
+  .tools-panel.is-dragging {
     transition: none;
   }
 
-  /* Drag handle — the sheet's primary control now, so it gets a taller hit target
-     and a more legible pill than a decorative grabber would need. */
+  /* Drag handle. The hit target is the whole header (see handleSheetDragStart),
+     so this is just the pill: it lives in the header's top padding rather than
+     on a row of its own. */
   .tools-swipe-handle {
     display: block;
-    width: 100%;
-    height: 1.6rem;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 0.55rem;
     margin: 0;
-    padding-top: 0.6rem;
+    padding: 0;
     cursor: grab;
     touch-action: none;
     background: none;
-    position: relative;
   }
   .tools-swipe-handle::before {
     content: "";
     position: absolute;
-    top: 0.5rem;
+    top: 0.2rem;
     left: 50%;
     transform: translateX(-50%);
     width: 2.8rem;
-    height: 0.34rem;
+    height: 0.28rem;
     border-radius: 999px;
     background: color-mix(in srgb, var(--muted) 62%, var(--border));
     transition: background 0.18s ease, width 0.18s ease;
@@ -443,6 +464,37 @@
   /* Stowed sheet frees the editor's reserved bottom padding too. */
   .workshop-grid:has(.tools-panel.is-stowed) .editor-panel {
     padding-bottom: calc(3.4rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ── Sheet dragged high: fold the chrome above it ─────────────────────────
+     Once the sheet covers most of the screen, the strip of editor still showing
+     above it was almost entirely furniture — topbar, then the title field and
+     its buttons, and only then any poem. Both fold away past that point (the
+     class comes from sheetIsExpanded, committed positions only) so what's left
+     visible is the draft itself. Everything here reverses when the sheet comes
+     back down; nothing is unreachable, since the sheet is what the writer is
+     looking at while it applies.
+
+     The topbar folds by max-height rather than display:none so it animates, and
+     matches how the virtual-keyboard rule above already hides it. */
+  .poem-workshop.has-sheet-expanded .topbar {
+    max-height: 0;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-width: 0 !important;
+    opacity: 0;
+  }
+
+  .poem-workshop.has-sheet-expanded .editor-meta-grid,
+  .poem-workshop.has-sheet-expanded .body-label-row {
+    display: none;
+  }
+
+  /* The floating score pill is anchored to the editor stack's top-right, which
+     is exactly where the poem now starts — and it is redundant here anyway,
+     since the sheet covering the screen is the analysis. */
+  .poem-workshop.has-sheet-expanded .ai-summary-titlebar {
+    display: none;
   }
 }
 

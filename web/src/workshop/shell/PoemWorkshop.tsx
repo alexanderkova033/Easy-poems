@@ -635,6 +635,7 @@ export function PoemWorkshop() {
     handleSheetDragMove,
     handleSheetDragEnd,
     sheetIsProminent,
+    sheetIsExpanded,
     sheetIsStowed,
     openSheet,
     collapseSheet,
@@ -1564,7 +1565,9 @@ export function PoemWorkshop() {
 
   return (
     <div
-      className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}`}
+      className={`poem-workshop ${isFocusMode ? "is-focus-mode" : ""}${
+        sheetIsExpanded ? " has-sheet-expanded" : ""
+      }`}
       data-tool-tab={activeTool ?? undefined}
     >
       {isFocusMode && (
@@ -1785,7 +1788,13 @@ export function PoemWorkshop() {
                 Close
               </button>
             </div>
-            <BackdropMotionToggle appearance={appearance} onChange={setAppearance} />
+            {/* Motion toggle is desktop-only. Touch devices force every backdrop
+                animation off for battery/jank reasons (see the `(hover: none)`
+                block in index.css), so on a phone the switch controlled nothing
+                that could be seen — a setting that only ever lies. */}
+            {!isNarrow && (
+              <BackdropMotionToggle appearance={appearance} onChange={setAppearance} />
+            )}
             <Suspense fallback={<p className="muted small" style={{ padding: "1rem" }}>Loading…</p>}>
               <BackgroundPicker
                 appearance={appearance}
