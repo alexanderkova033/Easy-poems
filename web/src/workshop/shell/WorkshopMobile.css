@@ -116,9 +116,19 @@
   }
 
   /* The body has to stop where the screen does, not where the (full-height)
-     panel does, or the last tools are unreachable below the fold. */
+     panel does, or the last tools sit below the fold with no way to reach them.
+
+     Driven by --sheet-y-settled, NOT --sheet-y. --sheet-y updates on every
+     pointermove; max-height is a layout property, so keying it to that put a
+     full layout back into every frame of the drag and undid the whole point of
+     moving to a transform. --sheet-y-settled is written once, on release, so the
+     gesture stays purely compositor work and the bounds correct themselves when
+     the finger lifts. */
   .tools-panel .tools-scroll-body {
-    max-height: calc(100dvh - var(--sheet-y, 0px));
+    /* Fallback mirrors the transform's own fallback (the resting peek), so the
+       very first render — before any drag has written a value — is bounded
+       correctly rather than running a full viewport past the bottom. */
+    max-height: calc(100dvh - var(--sheet-y-settled, calc(100dvh - var(--tools-peek))));
   }
 
   /* Live drag — no transition while the finger is down, or the sheet lags behind. */
@@ -553,6 +563,94 @@
    two buttons for one action. */
 @media (min-width: 900px) {
   .tools-copy-btn {
+    display: none;
+  }
+}
+
+/* ============================================================================
+ * Editor header on one line, and a tighter gutter
+ * ========================================================================== */
+@media (max-width: 899px) {
+  /* Title field, Aa and Analyse share a single row. */
+  .title-row .mobile-toolbar-toggle,
+  .title-row .editor-analyse-btn {
+    flex: 0 0 auto;
+  }
+
+  .title-row .mobile-toolbar-toggle {
+    min-height: 2.1rem;
+    padding: 0 0.55rem;
+  }
+
+  .editor-analyse-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-height: 2.1rem;
+    padding: 0 0.6rem;
+    border-radius: 99px;
+    border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+    color: var(--accent);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .editor-analyse-btn:disabled {
+    opacity: 0.55;
+  }
+
+  .editor-analyse-btn:active:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 24%, var(--surface));
+  }
+
+  /* The row is the field plus two fixed-size buttons, so the field takes what is
+     left rather than the buttons being squeezed. */
+  .title-row input#poem-title {
+    flex: 1 1 4rem;
+  }
+
+  /* body-label-row now holds only the format toolbar, so it should take no
+     vertical space at all until Aa reveals it. */
+  .body-label-row {
+    margin: 0;
+    padding: 0;
+  }
+
+  /* The issue dots sat in a 14px column with side padding, for a 6px dot — most
+     of that width was gap. */
+  .cm-issue-gutter {
+    width: 9px;
+    padding: 0;
+  }
+
+  /* Line numbers were shrunk to 0.72em, which is small to read at arm's length
+     on a phone. The column has room for it now that the fold gutter is gone. */
+  .poem-cm-wrap .cm-lineNumbers .cm-gutterElement {
+    font-size: 0.82em;
+  }
+}
+
+
+
+/* Analyse lives on the editor's title row on phones, so the copy in the tools
+   header would be the same action twice on one screen. Desktop keeps the tools
+   one — that is the only Analyse there. */
+@media (max-width: 899px) {
+  .tools-head-row .tools-analyse-btn {
+    display: none;
+  }
+}
+
+/* ...and the reverse on desktop: the editor-row Analyse is a phone affordance,
+   added because the tools panel there is a peeking sheet rather than a column
+   that is always open. Desktop already has one in the tools header. */
+@media (min-width: 900px) {
+  .editor-analyse-btn {
     display: none;
   }
 }

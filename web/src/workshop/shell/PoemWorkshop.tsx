@@ -1591,16 +1591,6 @@ export function PoemWorkshop() {
         isFocusMode={isFocusMode}
         setIsFocusMode={setIsFocusMode}
         setIsLibraryOpen={setIsLibraryOpen}
-        isAnalysing={mobileIsAnalyzing}
-        onAnalyse={() => {
-          if (mobileAiOpen) {
-            // Sheet already up — re-run without remounting it.
-            mobileSheetAnalyzeFn.current?.();
-          } else {
-            mobileSheetAutoTrigger.current = true;
-            setMobileAiOpen(true);
-          }
-        }}
         showRhymeScheme={showRhymeScheme}
         isStatsOpen={isStatsOpen}
         setIsStatsOpen={setIsStatsOpen}
@@ -2071,16 +2061,49 @@ export function PoemWorkshop() {
                   Made small enough that it costs less than the controls did. */}
               <div className="editor-meta-grid" aria-label="Draft metadata">
                 <div className="row title-row">
-                  <label htmlFor="poem-title">Title</label>
+                  {/* Label is visually hidden rather than dropped — the field still
+                      needs a name for screen readers, and the placeholder carries
+                      it for everyone else. */}
+                  <label htmlFor="poem-title" className="sr-only">Title</label>
                   <input
                     id="poem-title"
                     type="text"
                     value={m.title}
                     onChange={(e) => m.setTitle(e.target.value)}
-                    placeholder="Optional"
+                    placeholder="Title"
                     autoComplete="off"
                     spellCheck={false}
                   />
+                  {/* Aa and Analyse share the title's line on phones. They used to
+                      sit on a second row alongside a "Poem" label that named the
+                      obvious — three rows of furniture above the poem, now one. */}
+                  <button
+                    type="button"
+                    className={`mobile-toolbar-toggle ${mobileToolbarOpen ? "is-open" : ""}`}
+                    onClick={() => setMobileToolbarOpen((v) => !v)}
+                    aria-label={mobileToolbarOpen ? "Hide formatting options" : "Show formatting options"}
+                    aria-expanded={mobileToolbarOpen}
+                  >
+                    Aa
+                  </button>
+                  <button
+                    type="button"
+                    className={`editor-analyse-btn${mobileIsAnalyzing ? " is-busy" : ""}`}
+                    onClick={() => {
+                      if (mobileAiOpen) {
+                        mobileSheetAnalyzeFn.current?.();
+                      } else {
+                        mobileSheetAutoTrigger.current = true;
+                        setMobileAiOpen(true);
+                      }
+                    }}
+                    disabled={mobileIsAnalyzing}
+                    aria-label="Analyse poem with AI"
+                    {...hint("Run AI analysis on this poem")}
+                  >
+                    <span aria-hidden>✦</span>
+                    <span className="editor-analyse-label">Analyse</span>
+                  </button>
                 </div>
               </div>
               <FindReplaceBar
@@ -2091,19 +2114,8 @@ export function PoemWorkshop() {
               />
               <div className="row body-row">
                 <div className="body-label-row">
-                  <label id="poem-body-label" htmlFor="poem-body">
-                    Poem
-                  </label>
-                  {/* Mobile: Aa toggle to show/hide toolbar */}
-                  <button
-                    type="button"
-                    className={`mobile-toolbar-toggle ${mobileToolbarOpen ? "is-open" : ""}`}
-                    onClick={() => setMobileToolbarOpen(v => !v)}
-                    aria-label={mobileToolbarOpen ? "Hide formatting options" : "Show formatting options"}
-                    aria-expanded={mobileToolbarOpen}
-                  >
-                    Aa
-                  </button>
+                  {/* The "Poem" label and the Aa toggle moved up to the title row;
+                      what's left here is the format toolbar it reveals. */}
                   <div
                     data-tour-id="format-toolbar"
                     className={`mobile-toolbar-wrap ${mobileToolbarOpen ? "is-open" : ""}`}

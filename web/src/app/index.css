@@ -126,7 +126,16 @@ html {
 /* On mobile, pin the viewport so panels scroll independently instead of the
    page — but only inside the workshop. The landing page is a normal scrolling
    document and must keep default overflow, or its content below the first
-   screen becomes unreachable. */
+   screen becomes unreachable.
+
+   NOTE: this pin is also why mobile browsers never retract their chrome for the
+   workshop — Android Chrome only collapses its bars when the ROOT scroller
+   moves, and here the editor's own overflow does all the scrolling. Undoing it
+   is not a CSS tweak: the editor and every wrapper above it are a flex:1 chain
+   sized to the viewport, and CodeMirror needs that definite height. Making the
+   document scroll means giving the editor a content height all the way down
+   that chain. Attempted and reverted — half-done it leaves the scroller a few
+   dozen px tall with the poem clipped. */
 @media (max-width: 899px) {
   html[data-app-view="workshop"],
   html[data-app-view="workshop"] body {

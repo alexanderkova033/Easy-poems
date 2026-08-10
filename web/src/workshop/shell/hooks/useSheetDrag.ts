@@ -170,15 +170,23 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
   // state-setting effect: a position restored from localStorage may have been saved
   // on a taller viewport, and writing the clamped value straight to the node avoids
   // a second render just to correct it.
+  //
+  // Both variables are written here, and ONLY here. --sheet-y also gets written
+  // during the drag (transform, compositor-only); --sheet-y-settled never does,
+  // because it feeds the scroll body's max-height and must not drag layout into
+  // the gesture.
   useEffect(() => {
     const panel = toolsPanelRef.current;
     if (!panel) return;
     if (sheetTop === null) {
       panel.style.removeProperty("--sheet-y");
+      panel.style.removeProperty("--sheet-y-settled");
       return;
     }
     const { min, max } = bounds();
-    panel.style.setProperty("--sheet-y", `${Math.min(max, Math.max(min, sheetTop))}px`);
+    const clamped = Math.min(max, Math.max(min, sheetTop));
+    panel.style.setProperty("--sheet-y", `${clamped}px`);
+    panel.style.setProperty("--sheet-y-settled", `${clamped}px`);
   }, [sheetTop, bounds, toolsPanelRef]);
 
   const coverage = sheetTop === null ? 0 : 1 - sheetTop / (window.innerHeight || 1);

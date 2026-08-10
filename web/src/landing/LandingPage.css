@@ -286,9 +286,18 @@
   pointer-events: none;
 }
 
+/* One width for the whole opening screen. The demo used to cap at min(72vw,
+   1200px) while this capped at min(94vw, 1800px), so on a desktop the demo sat
+   ~280px narrower than the text above it and the hero was visibly wider than the
+   block inside it. Both read from --landing-hero-w now so they cannot drift. */
+.landing-hero-inner,
+.landing-demo {
+  --landing-hero-w: min(94vw, 1800px);
+}
+
 .landing-hero-inner {
   width: 100%;
-  max-width: min(94vw, 1800px);
+  max-width: var(--landing-hero-w);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -531,7 +540,7 @@
 
 .landing-demo {
   width: 100%;
-  max-width: min(72vw, 1200px);
+  max-width: var(--landing-hero-w);
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
