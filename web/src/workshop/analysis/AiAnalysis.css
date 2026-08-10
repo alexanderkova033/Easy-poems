@@ -3949,3 +3949,20 @@ button.ai-flagged-cliche:focus-visible {
   font-size: 0.8rem;
   white-space: nowrap;
 }
+
+/* First impression, shown while the rest of the read is still streaming.
+   Full-width so it wraps under the bar rather than squeezing the flex row. */
+.ai-loading-preview {
+  flex: 1 1 100%;
+  margin: 0.35rem 0 0;
+  font-size: 0.88rem;
+  font-style: italic;
+  color: var(--text);
+  opacity: 0;
+  animation: ai-loading-preview-in 240ms ease-out forwards;
+}
+
+@keyframes ai-loading-preview-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 0.9; transform: none; }
+}

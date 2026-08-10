@@ -141,6 +141,24 @@ function clampScore(n: unknown): number {
   return Math.max(1, Math.min(100, Math.round(v)));
 }
 
+/** Server-side ceiling on poem length — the fallback when a caller parses a
+ *  response without telling us how long the poem was. Mirrors MAX_LINES in
+ *  api/analyze.ts. */
+const MAX_POEM_LINES = 500;
+
+/** Line anchors are 1-based indices INTO THE POEM, not 0-100 scores, and they
+ *  need their own bounds — clampScore would silently re-pin line 137 to line
+ *  100, and a garbled value to line 50, both of which highlight the wrong line.
+ *  Anything outside the poem points nowhere, so it returns null and the caller
+ *  drops the issue rather than showing it against innocent text. */
+function parseLineAnchor(v: unknown, maxLine: number): number | null {
+  const n = typeof v === "number" ? v : parseInt(String(v), 10);
+  if (!Number.isFinite(n)) return null;
+  const line = Math.round(n);
+  if (line < 1 || line > maxLine) return null;
+  return line;
+}
+
 function clampPillar(n: unknown): number {
   const v = typeof n === "number" ? n : parseInt(String(n), 10);
   if (!Number.isFinite(v)) return 0;
@@ -192,15 +210,15 @@ function parseStringArray(v: unknown, max: number): string[] | undefined {
   return out.length > 0 ? out : undefined;
 }
 
-function parseStrongestLine(v: unknown): StrongestLine | undefined {
+function parseStrongestLine(v: unknown, maxLine: number): StrongestLine | undefined {
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
-  const line = typeof o.line === "number" ? o.line : parseInt(String(o.line), 10);
-  if (!Number.isFinite(line) || line < 1) return undefined;
+  const line = parseLineAnchor(o.line, maxLine);
+  if (line === null) return undefined;
   const excerpt = typeof o.excerpt === "string" ? o.excerpt.trim() : "";
   const why = typeof o.why === "string" ? o.why.trim() : "";
   if (!excerpt && !why) return undefined;
-  return { line: Math.round(line), excerpt, why };
+  return { line, excerpt, why };
 }
 
 /** Cap total issues at MAX_ISSUES and roughly balance high/medium/low buckets.
@@ -247,36 +265,45 @@ function dropStrongestLineIfFlagged(
   return flagged ? undefined : strongest;
 }
 
-/** Exported for tests. */
-export function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
+/** `lineCount` is the length of the poem that was analysed — it bounds every
+ *  line anchor in the response. Exported for tests. */
+export function parseAnalysis(obj: Record<string, unknown>, lineCount?: number): PoemAnalysis {
   const issuesRaw = Array.isArray(obj.issues) ? obj.issues : [];
   const meta = (obj.meta ?? {}) as Record<string, unknown>;
   const pillars = parsePillarScores(obj.pillar_scores);
+  const maxLine = lineCount && lineCount > 0 ? lineCount : MAX_POEM_LINES;
 
   const issues = balanceAndCapIssues(issuesRaw
     .filter((x): x is Record<string, unknown> => x !== null && typeof x === "object")
-    .map((iss, idx) => ({
-      id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
-      severity: parseSeverity(iss.severity),
-      confidence: parseConfidence(iss.confidence),
-      line_start: clampScore(iss.line_start),
-      line_end: clampScore(iss.line_end),
-      excerpt: typeof iss.excerpt === "string" ? iss.excerpt : undefined,
-      problem_words: Array.isArray(iss.problem_words)
-        ? (iss.problem_words as unknown[])
-            .filter((s): s is string => typeof s === "string")
-            .slice(0, 3)
-        : undefined,
-      headline: typeof iss.headline === "string" && iss.headline.trim()
-        ? iss.headline.trim() : undefined,
-      rationale: typeof iss.rationale === "string" ? iss.rationale : "",
-      improvements: Array.isArray(iss.improvements)
-        ? (iss.improvements as unknown[])
-            .filter((s): s is string => typeof s === "string")
-            .slice(0, 1)
-        : [],
-      rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
-    })));
+    .map((iss, idx): AnalysisIssue | null => {
+      const start = parseLineAnchor(iss.line_start, maxLine);
+      if (start === null) return null; // anchored outside the poem — unusable
+      return {
+        id: typeof iss.id === "string" ? iss.id : `issue-${idx + 1}`,
+        severity: parseSeverity(iss.severity),
+        confidence: parseConfidence(iss.confidence),
+        line_start: start,
+        // A range that runs off the end still starts somewhere real: keep the
+        // issue, end it at the last line of the poem.
+        line_end: parseLineAnchor(iss.line_end, maxLine) ?? start,
+        excerpt: typeof iss.excerpt === "string" ? iss.excerpt : undefined,
+        problem_words: Array.isArray(iss.problem_words)
+          ? (iss.problem_words as unknown[])
+              .filter((s): s is string => typeof s === "string")
+              .slice(0, 3)
+          : undefined,
+        headline: typeof iss.headline === "string" && iss.headline.trim()
+          ? iss.headline.trim() : undefined,
+        rationale: typeof iss.rationale === "string" ? iss.rationale : "",
+        improvements: Array.isArray(iss.improvements)
+          ? (iss.improvements as unknown[])
+              .filter((s): s is string => typeof s === "string")
+              .slice(0, 1)
+          : [],
+        rewrite: typeof iss.rewrite === "string" && iss.rewrite.trim() ? iss.rewrite.trim() : undefined,
+      };
+    })
+    .filter((x): x is AnalysisIssue => x !== null));
 
   return {
     meta: {
@@ -295,7 +322,7 @@ export function parseAnalysis(obj: Record<string, unknown>): PoemAnalysis {
     // gets trimmed here rather than filling the panel.
     strengths: parseStringArray(obj.strengths, 2),
     weaknesses: parseStringArray(obj.weaknesses, 2),
-    strongest_line: dropStrongestLineIfFlagged(parseStrongestLine(obj.strongest_line), issues),
+    strongest_line: dropStrongestLineIfFlagged(parseStrongestLine(obj.strongest_line, maxLine), issues),
     overall_direction: typeof obj.overall_direction === "string" ? obj.overall_direction : undefined,
     overall_feedback: typeof obj.overall_feedback === "string" && obj.overall_feedback.trim()
       ? obj.overall_feedback.trim() : undefined,
@@ -319,8 +346,8 @@ export interface PoemComparison extends PoemAnalysis {
   comparison: ComparisonChanges;
 }
 
-function parseComparison(obj: Record<string, unknown>): PoemComparison {
-  const base = parseAnalysis(obj);
+function parseComparison(obj: Record<string, unknown>, lineCount?: number): PoemComparison {
+  const base = parseAnalysis(obj, lineCount);
   const c = (obj.comparison ?? {}) as Record<string, unknown>;
   const toStrArr = (v: unknown) =>
     Array.isArray(v)
@@ -402,6 +429,9 @@ export async function comparePoem(
     previousIssues,
     previousMatchedProfile,
     previousPillarScores,
+    rejectedIssues,
+    onProgress,
+    onPreview,
   }: {
     title: string;
     lines: string[];
@@ -418,6 +448,12 @@ export async function comparePoem(
     previousMatchedProfile?: string;
     /** Prior pillar breakdown so the model can keep continuity per pillar. */
     previousPillarScores?: PillarScores;
+    /** Calls this poet has already thrown away on this poem. */
+    rejectedIssues?: string[];
+    /** Running character count as the re-read streams in. */
+    onProgress?: (charsReceived: number) => void;
+    /** The model's first impression of the revision, as soon as it lands. */
+    onPreview?: (warmReaction: string) => void;
   },
   signal?: AbortSignal,
 ): Promise<PoemComparison> {
@@ -428,7 +464,7 @@ export async function comparePoem(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title, lines, changesText, previousScores, localAnalysis, goals, writingFocus, scoreHistory,
-      previousWeaknesses, previousIssues, previousMatchedProfile, previousPillarScores,
+      previousWeaknesses, previousIssues, previousMatchedProfile, previousPillarScores, rejectedIssues,
     }),
   });
 
@@ -439,8 +475,15 @@ export async function comparePoem(
     throw e;
   }
 
-  const data = (await response.json()) as Record<string, unknown>;
-  return parseComparison(data);
+  const contentType = response.headers.get("content-type") ?? "";
+  // Cache hits come back as plain JSON; fresh reads stream.
+  if (contentType.includes("application/json")) {
+    const data = (await response.json()) as Record<string, unknown>;
+    return parseComparison(data, lines.length);
+  }
+
+  const envelope = await readStreamedEnvelope(response, { onProgress, onPreview });
+  return parseComparison(envelope, lines.length);
 }
 
 export type RecheckStatus = "resolved" | "partial" | "still" | "elsewhere";
@@ -491,63 +534,60 @@ export async function recheckIssue(
 
 export type HarshnessLevel = "casual" | "editor" | "critic";
 
-/** Matches STREAM_META_SEPARATOR in api/_openai.ts. Used to split the streamed
- *  analyze body into <model JSON content> + <meta JSON>. */
+/** Matches STREAM_META_SEPARATOR in api/_openai.ts. Used to split a streamed
+ *  analyze/compare body into <model JSON content> + <meta JSON>. */
 const STREAM_META_SEPARATOR = "\n___META___\n";
 
-export async function analyzePoem(
-  {
-    title,
-    lines,
-    localAnalysis,
-    goals,
-    harshness,
-    writingFocus,
-    onProgress,
-  }: {
-    title: string;
-    lines: string[];
-    localAnalysis?: LocalAnalysisContext;
-    goals?: Record<string, number>;
-    harshness?: HarshnessLevel;
-    writingFocus?: string;
-    /** Optional: called with the running character count as content streams in.
-     *  Lets the UI show real progress instead of an indeterminate spinner. */
-    onProgress?: (charsReceived: number) => void;
-  },
-  signal?: AbortSignal,
-): Promise<PoemAnalysis> {
-  const response = await fetch("/api/analyze", {
-    method: "POST",
-    signal,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus }),
-  });
+/** `warm_reaction` is the FIRST field in both response shapes, so it lands a
+ *  long way ahead of the rest. Pulling it straight out of the partial text —
+ *  rather than waiting for valid JSON — lets the panel say something true
+ *  seconds before the read finishes. The regex only matches once the closing
+ *  quote has arrived, so it never shows half a word. */
+const WARM_REACTION_RE = /"warm_reaction"\s*:\s*"((?:[^"\\]|\\.)*)"/;
 
-  if (!response.ok) {
-    const { message, retryAfterSec } = await parseAiErrorAndNotify(response, "analyze");
-    const e = new Error(message) as Error & { retryAfterSec?: number };
-    if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
-    throw e;
+function extractWarmReaction(body: string): string | null {
+  const m = WARM_REACTION_RE.exec(body);
+  if (!m) return null;
+  try {
+    const text = JSON.parse(`"${m[1]}"`) as string;
+    return text.trim() || null;
+  } catch {
+    return null;
   }
+}
 
-  const contentType = response.headers.get("content-type") ?? "";
-  // Cache hits and other non-streaming responses come back as JSON like before.
-  if (contentType.includes("application/json")) {
-    const data = (await response.json()) as Record<string, unknown>;
-    return parseAnalysis(data);
-  }
+export interface StreamHandlers {
+  /** Running character count of model output — drives the progress bar. */
+  onProgress?: (charsReceived: number) => void;
+  /** Fires once, as soon as the model's first impression is complete. */
+  onPreview?: (warmReaction: string) => void;
+}
 
-  // Streaming path: <model JSON content>${STREAM_META_SEPARATOR}<meta JSON>
+/**
+ * Read a streamed analyse/compare response into the same envelope shape the
+ * non-streaming (cache-hit) path returns, so both feed one parser.
+ */
+async function readStreamedEnvelope(
+  response: Response,
+  handlers?: StreamHandlers,
+): Promise<Record<string, unknown>> {
   let body = "";
   if (response.body) {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let previewSent = false;
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       body += decoder.decode(value, { stream: true });
-      onProgress?.(body.length);
+      handlers?.onProgress?.(body.length);
+      if (!previewSent && handlers?.onPreview) {
+        const reaction = extractWarmReaction(body);
+        if (reaction) {
+          previewSent = true;
+          handlers.onPreview(reaction);
+        }
+      }
     }
   } else {
     body = await response.text();
@@ -575,5 +615,59 @@ export async function analyzePoem(
     model: typeof meta.model === "string" ? meta.model : "gpt-5-mini",
     analyzedAt: typeof meta.analyzedAt === "string" ? meta.analyzedAt : new Date().toISOString(),
   };
-  return parseAnalysis(envelope);
+  return envelope;
+}
+
+export async function analyzePoem(
+  {
+    title,
+    lines,
+    localAnalysis,
+    goals,
+    harshness,
+    writingFocus,
+    rejectedIssues,
+    onProgress,
+    onPreview,
+  }: {
+    title: string;
+    lines: string[];
+    localAnalysis?: LocalAnalysisContext;
+    goals?: Record<string, number>;
+    harshness?: HarshnessLevel;
+    writingFocus?: string;
+    /** Calls this poet has already thrown away on this poem — sent so the read
+     *  doesn't re-litigate taste they've settled. */
+    rejectedIssues?: string[];
+    /** Optional: called with the running character count as content streams in.
+     *  Lets the UI show real progress instead of an indeterminate spinner. */
+    onProgress?: (charsReceived: number) => void;
+    /** Optional: the model's first impression, as soon as it lands. */
+    onPreview?: (warmReaction: string) => void;
+  },
+  signal?: AbortSignal,
+): Promise<PoemAnalysis> {
+  const response = await fetch("/api/analyze", {
+    method: "POST",
+    signal,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, lines, localAnalysis, goals, harshness, writingFocus, rejectedIssues }),
+  });
+
+  if (!response.ok) {
+    const { message, retryAfterSec } = await parseAiErrorAndNotify(response, "analyze");
+    const e = new Error(message) as Error & { retryAfterSec?: number };
+    if (retryAfterSec !== undefined) e.retryAfterSec = retryAfterSec;
+    throw e;
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  // Cache hits and other non-streaming responses come back as JSON like before.
+  if (contentType.includes("application/json")) {
+    const data = (await response.json()) as Record<string, unknown>;
+    return parseAnalysis(data, lines.length);
+  }
+
+  const envelope = await readStreamedEnvelope(response, { onProgress, onPreview });
+  return parseAnalysis(envelope, lines.length);
 }

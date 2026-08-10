@@ -13,6 +13,7 @@ import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
 import { toolStatsBlock, type ToolStats } from "./_tool-stats";
+import { parseRejectedIssues, rejectedIssuesBlock } from "./_rejected-issues";
 
 // Server-side analyze response cache. analyze.ts runs at temperature 0, so the
 // model's output is effectively deterministic on its inputs — caching by an
@@ -20,7 +21,7 @@ import { toolStatsBlock, type ToolStats } from "./_tool-stats";
 // Cross-user/cross-device: covers cleared localStorage, incognito, and any
 // second user typing the same lines.
 const ANALYZE_CACHE_MS = 24 * 60 * 60 * 1000;
-const ANALYZE_CACHE_VERSION = "v42"; // bump when prompt structure changes
+const ANALYZE_CACHE_VERSION = "v43"; // bump when prompt structure changes
 
 // FUTURE: re-add "thinking mode" (medium reasoning effort, longer timeout, no
 // retries) as an opt-in for deep reads. Removed for cost/latency reasons.
@@ -46,6 +47,7 @@ function analyzeCacheKey(inputs: {
   goals: unknown;
   harshness: string | undefined;
   writingFocus: string | undefined;
+  rejectedIssues: string[];
 }): string {
   const hash = createHash("sha256")
     .update(stableStringify(inputs))
@@ -142,6 +144,7 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
     {
       "id": "<short kebab-case>",
       "severity": "high" | "medium" | "low",
+      "confidence": "high" | "medium" | "low",  // how sure you are this is a REAL problem, not how bad it is. A taste call another good reader could reject is "low" — the app folds those away quietly.
       "line_start": <int, 1-based>,
       "line_end": <int, 1-based>,
       "headline": "<≤4 words>",
@@ -164,6 +167,8 @@ EXAMPLE tool_tip (bad — a stat with no use): {"tool": "Meter", "tip": "Your me
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
 - NO SELF-CONTRADICTION. Before returning, read strengths[] against weaknesses[] as a pair. If any two items praise and fault the SAME quality — "the restraint gives it power" beside "it holds too much back", "the repetition builds" beside "the repetition tires" — you have not decided. Pick the reading you actually believe, drop the other. A poem may hold a tension; your feedback may not.
 - STRONGEST LINE MUST BE CLEAN: strongest_line cannot fall inside ANY issue's line range. If your best line is also your flagged line, either it isn't the best line or it isn't an issue — resolve it, or OMIT strongest_line.
+- CONFIDENCE IS HONESTY, NOT HEDGING: mark an issue "low" when a different good reader could reasonably disagree, "high" when the page leaves no room. Don't mark everything high to sound sure, and don't mark everything low to sound humble.
+- REJECTED CALLS: if the poet's rejected list is present, treat those readings as SETTLED — they saw it and said no. Do not re-raise one under a new headline. Raise it again ONLY if the lines now make it true in a way it wasn't before, and then say what changed.
 - Title and writing focus are CONTEXT, not scoring inputs.
 
 EXAMPLE rationale (good, 24 words): "'Gentle breeze' is the dictionary entry for breeze — received language where a sensation should be. A weather verb would carry real weight." (Flaw, why it weakens THIS line, the kind of move — never the finished line.)`;
@@ -252,24 +257,22 @@ function buildContextHints(lines: string[], local?: LocalAnalysis, goals?: Goals
   return `${hintBlock}${toolStatsBlock(local?.toolStats)}`;
 }
 
-function buildPrompt(title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext, writingFocus?: string): string {
+function buildPrompt(
+  title: string, lines: string[], local?: LocalAnalysis, goals?: GoalsContext,
+  writingFocus?: string, rejected: string[] = [],
+): string {
   const titlePart = title.trim() ? `Title: ${title.trim()}\n\n` : "";
   const numbered = lines.map((l, i) => `${i + 1}: ${l}`).join("\n");
-  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}`;
+  const rejectedBlock = rejectedIssuesBlock(
+    rejected,
+    "--- Already rejected by this poet (settled — see REJECTED CALLS) ---",
+  );
+  return `${titlePart}${numbered}${buildContextHints(lines, local, goals, writingFocus)}${rejectedBlock}`;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  if (!(await checkRateLimit(req.headers["x-forwarded-for"]))) {
-    const retryAfterSec = await getRateLimitRetrySec(req.headers["x-forwarded-for"]);
-    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
-    return res.status(429).json({
-      error: "Too many requests — please wait a moment before analyzing again.",
-      retryAfterSec,
-    });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
@@ -285,6 +288,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     goals?: unknown;
     harshness?: unknown;
     writingFocus?: unknown;
+    rejectedIssues?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -298,6 +302,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const harshness = typeof body.harshness === "string" ? body.harshness : undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
+  const rejectedIssues = parseRejectedIssues(body.rejectedIssues);
 
   const MAX_LINES = 500;
   if (lines.length > MAX_LINES) {
@@ -310,13 +315,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: `Poem too long (max ${MAX_TOTAL_CHARS} characters).` });
   }
 
-  // Server-side cache check — done BEFORE precheckSpend so cache hits don't
-  // burn the per-IP cooldown. analyze runs at temperature 0, so identical
+  // Rate limit and cache lookup are independent KV reads, so they go together
+  // rather than one after the other — that's a whole round trip off the front of
+  // every analyse. Both still resolve before anything is spent, and the rate
+  // limit still consumes a slot on a cache hit exactly as it did when it ran
+  // first. Body validation above is pure, so a bad request never touches KV.
+  //
+  // The cache check stays BEFORE precheckSpend so cache hits don't burn the
+  // per-IP cooldown. analyze is deterministic on its inputs, so identical
   // inputs return the same answer the model would generate.
   const cacheKey = analyzeCacheKey({
-    title, lines, model, localAnalysis: local, goals, harshness, writingFocus,
+    title, lines, model, localAnalysis: local, goals, harshness, writingFocus, rejectedIssues,
   });
-  const cachedRaw = await kvGetString(cacheKey);
+  const [rateOk, cachedRaw] = await Promise.all([
+    checkRateLimit(req.headers["x-forwarded-for"]),
+    kvGetString(cacheKey),
+  ]);
+
+  if (!rateOk) {
+    const retryAfterSec = await getRateLimitRetrySec(req.headers["x-forwarded-for"]);
+    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
+    return res.status(429).json({
+      error: "Too many requests — please wait a moment before analyzing again.",
+      retryAfterSec,
+    });
+  }
+
   if (cachedRaw) {
     try {
       const cached = JSON.parse(cachedRaw) as CachedAnalyzeEntry;
@@ -364,7 +388,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       model,
       messages: [
         { role: "system", content: buildSystemPrompt(harshness) },
-        { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus) },
+        { role: "user", content: buildPrompt(title, lines, local, goals, writingFocus, rejectedIssues) },
       ],
       max_tokens: 4000,
       // Medium reasoning kept intentionally — scoring quality depends on it.
@@ -392,7 +416,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return;
   }
 
-  await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
+  await recordSpend(spend.ip, result.model, result.usage, "analyze");
   // Store the raw OpenAI content + resolved model so future identical inputs
   // can skip the call. Best-effort; failure here must not break the response.
   void kvSetStringPx(

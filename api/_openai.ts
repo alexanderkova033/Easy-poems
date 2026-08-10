@@ -14,7 +14,44 @@ export interface OpenAIMessage {
 export interface OpenAIUsage {
   promptTokens: number;
   completionTokens: number;
+  /** Subset of promptTokens that OpenAI served from its automatic prompt cache.
+   *  Billed at a fraction of the fresh-input rate — the static rubric in
+   *  analyze/compare is designed to land here on nearly every call, so counting
+   *  these at full price (as we used to) badly overstates spend. */
+  cachedPromptTokens: number;
+  /** Subset of completionTokens burned on reasoning the user never sees. Billed
+   *  at the OUTPUT rate, which makes this the single largest line item. Recorded
+   *  so it can be watched rather than guessed at. */
+  reasoningTokens: number;
 }
+
+/** Shape of the `usage` block OpenAI returns; every field optional because the
+ *  details objects are absent on older models and on error paths. */
+interface RawUsage {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  prompt_tokens_details?: { cached_tokens?: number };
+  completion_tokens_details?: { reasoning_tokens?: number };
+}
+
+function readUsage(u: RawUsage | undefined): OpenAIUsage {
+  const promptTokens = u?.prompt_tokens ?? 0;
+  return {
+    promptTokens,
+    completionTokens: u?.completion_tokens ?? 0,
+    // Clamp: cached can never exceed the prompt it came from.
+    cachedPromptTokens: Math.min(u?.prompt_tokens_details?.cached_tokens ?? 0, promptTokens),
+    reasoningTokens: u?.completion_tokens_details?.reasoning_tokens ?? 0,
+  };
+}
+
+/** Usage for a call that never reached OpenAI. */
+export const EMPTY_USAGE: OpenAIUsage = {
+  promptTokens: 0,
+  completionTokens: 0,
+  cachedPromptTokens: 0,
+  reasoningTokens: 0,
+};
 
 export interface OpenAICallResult {
   ok: true;
@@ -151,7 +188,7 @@ export async function callOpenAI(
   const data = (await upstream.json()) as {
     choices?: { message?: { content?: string } }[];
     model?: string;
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
+    usage?: RawUsage;
   };
 
   const content = data.choices?.[0]?.message?.content ?? "";
@@ -170,10 +207,7 @@ export async function callOpenAI(
     ok: true,
     content,
     model: data.model ?? opts.model,
-    usage: {
-      promptTokens:     data.usage?.prompt_tokens     ?? 0,
-      completionTokens: data.usage?.completion_tokens ?? 0,
-    },
+    usage: readUsage(data.usage),
   };
 }
 
@@ -256,7 +290,7 @@ export async function streamOpenAI(
 
   let content = "";
   let resolvedModel = opts.model;
-  let usage: OpenAIUsage = { promptTokens: 0, completionTokens: 0 };
+  let usage: OpenAIUsage = { ...EMPTY_USAGE };
 
   const reader = upstream.body.getReader();
   const decoder = new TextDecoder();
@@ -281,7 +315,7 @@ export async function streamOpenAI(
           const evt = JSON.parse(data) as {
             choices?: { delta?: { content?: string } }[];
             model?: string;
-            usage?: { prompt_tokens?: number; completion_tokens?: number };
+            usage?: RawUsage;
           };
           const delta = evt.choices?.[0]?.delta?.content;
           if (delta) {
@@ -289,12 +323,7 @@ export async function streamOpenAI(
             onChunk(delta);
           }
           if (evt.model) resolvedModel = evt.model;
-          if (evt.usage) {
-            usage = {
-              promptTokens: evt.usage.prompt_tokens ?? 0,
-              completionTokens: evt.usage.completion_tokens ?? 0,
-            };
-          }
+          if (evt.usage) usage = readUsage(evt.usage);
         } catch {
           /* skip unparseable SSE frame */
         }

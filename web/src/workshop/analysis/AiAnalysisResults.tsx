@@ -13,6 +13,7 @@ import {
   LS_IGNORED_PREFIX,
   LS_RESOLVED_PREFIX,
   loadIdSet,
+  recordRejectedIssue,
   saveIdSet,
 } from "./ai-analysis-storage";
 import {
@@ -413,6 +414,15 @@ export function AnalysisResults({
     setIgnoredIds((prev) => { const s = new Set(prev); s.add(id); return s; });
     setOpenIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
     setResolvedIds((prev) => { const s = new Set(prev); s.delete(id); return s; });
+    // Remember the call itself, not just its id — ids die with this analysis,
+    // and the next read needs to know the poet already said no to this.
+    const iss = result.issues.find((i) => i.id === id);
+    if (iss?.headline) {
+      const range = iss.line_start === iss.line_end
+        ? `L${iss.line_start}`
+        : `L${iss.line_start}–${iss.line_end}`;
+      recordRejectedIssue(poemId, `${range}: ${iss.headline}`);
+    }
   };
 
   const flaggedEntries = useMemo<FlaggedEntry[]>(() => {
@@ -699,30 +709,10 @@ export function AnalysisResults({
             </div>
           )}
 
-          {/* 6. Tool tip — a light nudge toward one of the writing tools, based
-              on what its numbers showed. Deliberately below the read: it's a
-              footnote to the feedback, never the feedback itself. */}
-          {result.tool_tip && (
-            <div className="ai-tool-tip">
-              <span className="ai-tool-tip-label">Try {result.tool_tip.label}</span>
-              <span className="ai-tool-tip-text">{result.tool_tip.tip}</span>
-              {onOpenTool && (
-                <button
-                  type="button"
-                  className="linkish ai-tool-tip-open"
-                  onClick={() => onOpenTool(result.tool_tip!.tool)}
-                  title={`Open the ${result.tool_tip.label} tool`}
-                >
-                  Open →
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* 7. Comparison detail (still useful when toast is dismissed) */}
+          {/* 6. Comparison detail (still useful when toast is dismissed) */}
           {isCompare && <ComparisonPanel cmp={(result as PoemComparison).comparison} />}
 
-          {/* 8. CTA — jump to issues. Reflect unresolved count so the number
+          {/* 7. CTA — jump to issues. Reflect unresolved count so the number
               stays in sync with the tab badge. */}
           {!hideIssues && issuesBadge > 0 && (
             <button type="button" className="small-btn ai-jump-to-issues-btn"
@@ -851,6 +841,27 @@ export function AnalysisResults({
                 </div>
               )}
             </>
+          )}
+
+          {/* Tool tip — last thing in the queue, after the work. A light nudge
+              toward one of the writing tools based on what its numbers showed;
+              it lives here rather than in the overview so the read stays a read
+              and the "go do something" lands where the poet is already acting. */}
+          {result.tool_tip && (
+            <div className="ai-tool-tip">
+              <span className="ai-tool-tip-label">Try {result.tool_tip.label}</span>
+              <span className="ai-tool-tip-text">{result.tool_tip.tip}</span>
+              {onOpenTool && (
+                <button
+                  type="button"
+                  className="linkish ai-tool-tip-open"
+                  onClick={() => onOpenTool(result.tool_tip!.tool)}
+                  title={`Open the ${result.tool_tip.label} tool`}
+                >
+                  Open →
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -33,10 +33,14 @@ function phaseLabel(mode: "fresh" | "compare", elapsedMs: number, streaming: boo
 export function AiLoadingIndicator({
   mode,
   streamedChars,
+  preview,
 }: {
   mode: "fresh" | "compare";
   /** Characters of model output received so far (0 until tokens start streaming). */
   streamedChars: number;
+  /** The model's first impression, shown the moment it streams in — real
+   *  feedback on screen well before the rest of the read is done. */
+  preview?: string;
 }) {
   const [elapsedMs, setElapsedMs] = useState(0);
   const startRef = useRef<number | null>(null);
@@ -69,6 +73,7 @@ export function AiLoadingIndicator({
       <span className="ai-loading-bar" aria-hidden>
         <span className="ai-loading-bar-fill" style={{ width: `${pct.toFixed(1)}%` }} />
       </span>
+      {preview && <p className="ai-loading-preview">&ldquo;{preview}&rdquo;</p>}
     </div>
   );
 }

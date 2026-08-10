@@ -13,8 +13,22 @@
 
 import { kvGetNumber, kvIncrBy, kvIsRemote, kvSetPxIfAbsent } from "./_kv";
 
-const PER_IP_MONTHLY_CAP_CENTS = 500;
-const GLOBAL_DAILY_CAP_CENTS = 500;
+/**
+ * SPEND IS TRACKED IN TENTHS OF A CENT.
+ *
+ * Whole cents were too coarse to bill honestly. A single analyse costs roughly
+ * $0.003, and the old `Math.max(1, ceil(cents))` floor charged every one of them
+ * a full cent — so the caps below bit at about a third of the money they name.
+ * At tenths, the smallest possible charge (0.1c) is under a typical call, and a
+ * cap that says $5.00 means $5.00 of real spend.
+ */
+const TENTHS_PER_CENT = 10;
+const TENTHS_PER_DOLLAR = 100 * TENTHS_PER_CENT;
+
+/** $5.00 per IP per calendar month. */
+const PER_IP_MONTHLY_CAP_TENTHS = 5 * TENTHS_PER_DOLLAR;
+/** $5.00 across all users per UTC day — the kill switch on the whole app. */
+const GLOBAL_DAILY_CAP_TENTHS = 5 * TENTHS_PER_DOLLAR;
 
 const DEFAULT_COOLDOWN_MS = 5_000;
 // Cooldown is a soft anti-spam backstop. Cache hits skip this gate entirely
@@ -27,11 +41,14 @@ const ANALYZE_COOLDOWN_FALLBACK_MS = 120_000;
 
 interface ModelPrice {
   inCentsPerMTok: number;
+  /** Prompt tokens served from OpenAI's automatic cache — a tenth of the fresh
+   *  input rate. The static rubric hits this on nearly every analyse. */
+  cachedInCentsPerMTok: number;
   outCentsPerMTok: number;
 }
 const MODEL_PRICING: Record<string, ModelPrice> = {
-  "gpt-5-nano": { inCentsPerMTok: 5, outCentsPerMTok: 40 },
-  "gpt-5-mini": { inCentsPerMTok: 25, outCentsPerMTok: 200 },
+  "gpt-5-nano": { inCentsPerMTok: 5, cachedInCentsPerMTok: 0.5, outCentsPerMTok: 40 },
+  "gpt-5-mini": { inCentsPerMTok: 25, cachedInCentsPerMTok: 2.5, outCentsPerMTok: 200 },
 };
 const FALLBACK_PRICE: ModelPrice = MODEL_PRICING["gpt-5-mini"]!;
 
@@ -43,16 +60,31 @@ function priceFor(model: string): ModelPrice {
   return FALLBACK_PRICE;
 }
 
-export function estimateCostCents(
-  model: string,
-  promptTokens: number,
-  completionTokens: number,
-): number {
+/** What a call actually consumed. `cachedPromptTokens` is a SUBSET of
+ *  `promptTokens` (OpenAI reports it that way), so it is netted off rather than
+ *  added. `reasoningTokens` is already inside `completionTokens` — carried here
+ *  only so it can be logged. */
+export interface SpendUsage {
+  promptTokens: number;
+  completionTokens: number;
+  cachedPromptTokens?: number;
+  reasoningTokens?: number;
+}
+
+/** Cost in tenths of a cent, rounded up, minimum 1 (0.1c). */
+export function estimateCostTenths(model: string, usage: SpendUsage): number {
   const p = priceFor(model);
+  const cached = Math.min(Math.max(usage.cachedPromptTokens ?? 0, 0), usage.promptTokens);
+  const fresh = usage.promptTokens - cached;
   const cents =
-    (promptTokens * p.inCentsPerMTok) / 1_000_000 +
-    (completionTokens * p.outCentsPerMTok) / 1_000_000;
-  return Math.ceil(cents * 100) / 100;
+    (fresh * p.inCentsPerMTok) / 1_000_000 +
+    (cached * p.cachedInCentsPerMTok) / 1_000_000 +
+    (usage.completionTokens * p.outCentsPerMTok) / 1_000_000;
+  return Math.max(1, Math.ceil(cents * TENTHS_PER_CENT));
+}
+
+export function tenthsToUsd(tenths: number): string {
+  return `$${(tenths / TENTHS_PER_DOLLAR).toFixed(4)}`;
 }
 
 function normalizeIp(rawIp: string | string[] | undefined): string {
@@ -68,12 +100,15 @@ function dayKey(d = new Date()): string {
   return `${monthKey(d)}-${String(d.getUTCDate()).padStart(2, "0")}`;
 }
 
+// The `t` segment marks counters denominated in TENTHS of a cent. It is a
+// deliberate key break from the old whole-cent buckets: reusing those keys would
+// read a $2.00 balance as $0.20 and hand every current user a 10x refund.
 function globalDayKvKey(day: string): string {
-  return `spend:global:${day}`;
+  return `spend:t:global:${day}`;
 }
 
 function ipMonthKvKey(ip: string, month: string): string {
-  return `spend:ip:${ip}:${month}`;
+  return `spend:t:ip:${ip}:${month}`;
 }
 
 function cooldownKvKey(ip: string, endpoint: string): string {
@@ -129,8 +164,8 @@ export async function precheckSpend(
     // below — it's the last line of defense against a runaway bill from any
     // source, so it must never be skippable by an absent/unparseable IP.
     const day = dayKey();
-    const globalCents = await kvGetNumber(globalDayKvKey(day));
-    if (globalCents >= GLOBAL_DAILY_CAP_CENTS) {
+    const globalTenths = await kvGetNumber(globalDayKvKey(day));
+    if (globalTenths >= GLOBAL_DAILY_CAP_TENTHS) {
       return block(
         503,
         "global-daily-cap",
@@ -151,8 +186,8 @@ export async function precheckSpend(
     }
 
     const month = monthKey();
-    const ipCents = await kvGetNumber(ipMonthKvKey(ip, month));
-    if (ipCents >= PER_IP_MONTHLY_CAP_CENTS) {
+    const ipTenths = await kvGetNumber(ipMonthKvKey(ip, month));
+    if (ipTenths >= PER_IP_MONTHLY_CAP_TENTHS) {
       return block(
         402,
         "user-monthly-cap",
@@ -211,17 +246,27 @@ export function cooldownFor(endpoint: string, model?: string): number {
 export async function recordSpend(
   ip: string,
   model: string,
-  promptTokens: number,
-  completionTokens: number,
-): Promise<{ ipCents: number; globalCents: number; cost: number }> {
-  const cost = estimateCostCents(model, promptTokens, completionTokens);
-  const costWhole = Math.max(1, Math.ceil(cost));
+  usage: SpendUsage,
+  endpoint = "?",
+): Promise<{ ipTenths: number; globalTenths: number; costTenths: number }> {
+  const costTenths = estimateCostTenths(model, usage);
+
+  // One line per paid call: where the money went, and how much of the prompt
+  // the cache absorbed. Without this the two biggest levers — reasoning tokens
+  // and cache hit rate — are invisible.
+  const cached = usage.cachedPromptTokens ?? 0;
+  const cacheHitPct = usage.promptTokens > 0
+    ? Math.round((cached / usage.promptTokens) * 100)
+    : 0;
+  console.log(
+    `[spend] ${endpoint} ${model} ${tenthsToUsd(costTenths)} — in ${usage.promptTokens} (${cacheHitPct}% cached), out ${usage.completionTokens} (reasoning ${usage.reasoningTokens ?? 0})`,
+  );
 
   try {
     const day = dayKey();
     const newGlobal = await kvIncrBy(
       globalDayKvKey(day),
-      costWhole,
+      costTenths,
       secondsUntilNextUtcMidnight() * 1000,
     );
 
@@ -230,20 +275,20 @@ export async function recordSpend(
       const month = monthKey();
       newIp = await kvIncrBy(
         ipMonthKvKey(ip, month),
-        costWhole,
+        costTenths,
         secondsUntilNextUtcMonth() * 1000,
       );
     }
-    return { ipCents: newIp, globalCents: newGlobal, cost };
+    return { ipTenths: newIp, globalTenths: newGlobal, costTenths };
   } catch {
-    return { ipCents: 0, globalCents: 0, cost };
+    return { ipTenths: 0, globalTenths: 0, costTenths };
   }
 }
 
 export function getCaps() {
   return {
-    perIpMonthlyCapCents: PER_IP_MONTHLY_CAP_CENTS,
-    globalDailyCapCents: GLOBAL_DAILY_CAP_CENTS,
+    perIpMonthlyCapUsd: PER_IP_MONTHLY_CAP_TENTHS / TENTHS_PER_DOLLAR,
+    globalDailyCapUsd: GLOBAL_DAILY_CAP_TENTHS / TENTHS_PER_DOLLAR,
   };
 }
 

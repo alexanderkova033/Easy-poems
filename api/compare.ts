@@ -7,18 +7,19 @@
 import { createHash } from "crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { checkRateLimit, getRateLimitRetrySec } from "./_rate-limit";
-import { callOpenAI, sendParsedResponse } from "./_openai";
+import { sendParsedResponse, streamOpenAI, STREAM_META_SEPARATOR } from "./_openai";
 import { kvGetString, kvSetStringPx } from "./_kv";
 import { cooldownFor, precheckSpend, recordSpend } from "./_usage-cap";
 import { gibberishGuard } from "./_gibberish";
 import { toolStatsBlock, type ToolStats } from "./_tool-stats";
+import { parseRejectedIssues, rejectedIssuesBlock } from "./_rejected-issues";
 
 // Server-side compare response cache. Same rationale as analyze.ts: temperature 0
 // makes outputs deterministic on inputs, so identical revisions (same current poem,
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v30"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v31"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -44,6 +45,7 @@ function compareCacheKey(inputs: {
   writingFocus: string | undefined;
   previousMatchedProfile: string | null;
   previousPillarScores: { chord: number; craft: number; spark: number; echo: number } | null;
+  rejectedIssues: string[];
 }): string {
   const hash = createHash("sha256")
     .update(stableStringify(inputs))
@@ -129,6 +131,7 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
     {
       "id": "<short kebab-case>",
       "severity": "high" | "medium" | "low",
+      "confidence": "high" | "medium" | "low",  // how sure you are this is a REAL problem, not how bad it is. A taste call another good reader could reject is "low" — the app folds those away quietly.
       "line_start": <int, 1-based>,
       "line_end": <int, 1-based>,
       "headline": "<≤4 words>",
@@ -155,6 +158,8 @@ EXAMPLE tool_tip (good): {"tool": "Repeats", "tip": "\\"and I\\" now opens 4 lin
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
 - NO SELF-CONTRADICTION. Before returning, read strengths[] against weaknesses[] — and both against comparison{} — as a set. If any two items praise and fault the SAME quality ("the restraint gives it power" beside "it holds too much back"), you have not decided. Pick the reading you actually believe, drop the other. A poem may hold a tension; your feedback may not.
 - STRONGEST LINE MUST BE CLEAN: strongest_line cannot fall inside ANY issue's line range. If your best line is also your flagged line, either it isn't the best line or it isn't an issue — resolve it, or OMIT strongest_line.
+- CONFIDENCE IS HONESTY, NOT HEDGING: mark an issue "low" when a different good reader could reasonably disagree, "high" when the page leaves no room. Don't mark everything high to sound sure, and don't mark everything low to sound humble.
+- REJECTED CALLS: if the poet's rejected list is present, treat those readings as SETTLED — they saw it and said no. Do not re-raise one under a new headline. Raise it again ONLY if the revision made it true in a way it wasn't before, and then say what changed.
 - Title and writing focus are CONTEXT, not scoring inputs.
 
 EXAMPLE rationale (good, 24 words): "'Gentle breeze' is the dictionary entry for breeze — received language where a sensation should be. A weather verb would carry real weight." (Flaw, why it weakens THIS line, the kind of move — never the finished line.)`;
@@ -244,15 +249,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
-  if (!(await checkRateLimit(req.headers["x-forwarded-for"]))) {
-    const retryAfterSec = await getRateLimitRetrySec(req.headers["x-forwarded-for"]);
-    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
-    return res.status(429).json({
-      error: "Too many requests — please wait a moment before analyzing again.",
-      retryAfterSec,
-    });
-  }
-
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(500).json({ error: "Server is not configured with an OpenAI API key." });
@@ -271,6 +267,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     previousIssues?: unknown;
     previousMatchedProfile?: unknown;
     previousPillarScores?: unknown;
+    rejectedIssues?: unknown;
   };
 
   if (!Array.isArray(body.lines) || body.lines.length === 0) {
@@ -297,6 +294,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const local = (body.localAnalysis && typeof body.localAnalysis === "object" ? body.localAnalysis : undefined) as LocalAnalysis | undefined;
   const goals = (body.goals && typeof body.goals === "object" ? body.goals : undefined) as GoalsContext | undefined;
   const writingFocus = typeof body.writingFocus === "string" ? body.writingFocus.slice(0, 500) : undefined;
+  const rejectedIssues = parseRejectedIssues(body.rejectedIssues);
 
   const previousWeaknesses = Array.isArray(body.previousWeaknesses)
     ? (body.previousWeaknesses as unknown[])
@@ -340,15 +338,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return { chord, craft, spark, echo };
   })();
 
-  // Cache check — done BEFORE precheckSpend and OpenAI so cache hits don't
-  // burn the per-IP cooldown. compare runs at temperature 0, so identical
-  // inputs return the same answer the model would generate.
+  // Rate limit and cache lookup are independent KV reads — issued together to
+  // take a round trip off the front of every refine. Same ordering guarantees
+  // as analyze: both resolve before any spend, and the cache check stays BEFORE
+  // precheckSpend so cache hits don't burn the per-IP cooldown. compare is
+  // deterministic on its inputs.
   const cacheKey = compareCacheKey({
     title, lines, changesText, previousScores: prevScores, previousWeaknesses,
     previousIssues, model, localAnalysis: local, goals, writingFocus,
-    previousMatchedProfile, previousPillarScores,
+    previousMatchedProfile, previousPillarScores, rejectedIssues,
   });
-  const cachedRaw = await kvGetString(cacheKey);
+  const [rateOk, cachedRaw] = await Promise.all([
+    checkRateLimit(req.headers["x-forwarded-for"]),
+    kvGetString(cacheKey),
+  ]);
+
+  if (!rateOk) {
+    const retryAfterSec = await getRateLimitRetrySec(req.headers["x-forwarded-for"]);
+    if (retryAfterSec > 0) res.setHeader("Retry-After", String(retryAfterSec));
+    return res.status(429).json({
+      error: "Too many requests — please wait a moment before analyzing again.",
+      retryAfterSec,
+    });
+  }
+
   if (cachedRaw) {
     try {
       const cached = JSON.parse(cachedRaw) as CachedCompareEntry;
@@ -424,9 +437,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? `\n\n=== Comparison context (pillar_scores follow the RE-SCORING RULES in the system prompt — anchored to the prior read, moved by new evidence in the diff) ===${priorAnchor}${prevFlagged}`
     : "";
 
-  const userMessage = `${titlePart}=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n=== CHANGES from previous draft (line numbers refer to the CURRENT draft above) ===\n${changesText}${comparisonContext}`;
+  // The poet's own rejections sit last, right before the model answers — this
+  // is their judgement, not a measurement, and it outranks the context above it.
+  const rejectedBlock = rejectedIssuesBlock(
+    rejectedIssues,
+    "=== Already rejected by this poet (settled — see REJECTED CALLS) ===",
+  );
 
-  const result = await callOpenAI(
+  const userMessage = `${titlePart}=== CURRENT VERSION ===\n${numbered(lines)}${contextBlock}\n\n=== CHANGES from previous draft (line numbers refer to the CURRENT draft above) ===\n${changesText}${comparisonContext}${rejectedBlock}`;
+
+  // Streaming path, same shape as analyze: bytes flow out as OpenAI emits them
+  // rather than making the poet watch a spinner for the whole call. Refine is
+  // the slower of the two endpoints, so it needs this more.
+  // Body: <model JSON content>${STREAM_META_SEPARATOR}<meta JSON>
+  let headersSent = false;
+  const result = await streamOpenAI(
     apiKey,
     {
       model,
@@ -435,21 +460,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         { role: "user", content: userMessage },
       ],
       max_tokens: 5000,
-      temperature: 0,
       // Medium reasoning kept intentionally — scoring quality depends on it.
       // Keep the token ceiling generous: max_completion_tokens caps reasoning +
       // output combined, so a low ceiling truncates long poems mid-JSON.
       reasoningEffort: "medium",
       timeoutMs: 90_000,
-      // Medium reasoning is slow; a stuck call rarely turns fast on retry, and
-      // 2 retries × 90s = a 4.5-minute user wait. Single retry only.
-      retries: 1,
     },
     res,
+    (delta) => {
+      if (!headersSent) {
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("Cache-Control", "no-cache, no-transform");
+        res.setHeader("X-Accel-Buffering", "no");
+        res.status(200);
+        headersSent = true;
+      }
+      res.write(delta);
+    },
   );
-  if (!result) return;
+  if (!result) {
+    // Pre-stream errors already wrote a JSON error to res. Mid-stream failures
+    // returned null after headers — close the connection so the client throws.
+    if (headersSent) res.end();
+    return;
+  }
 
-  await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
+  await recordSpend(spend.ip, result.model, result.usage, "compare");
   // Store raw OpenAI content + resolved model so future identical inputs skip
   // the call. Best-effort; failure here must not break the response.
   void kvSetStringPx(
@@ -457,5 +493,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     JSON.stringify({ content: result.content, model: result.model } satisfies CachedCompareEntry),
     COMPARE_CACHE_MS,
   ).catch(() => {});
-  sendParsedResponse(res, result.content, result.model);
+
+  res.write(STREAM_META_SEPARATOR + JSON.stringify({
+    model: result.model,
+    analyzedAt: new Date().toISOString(),
+  }));
+  res.end();
 }

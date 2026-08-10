@@ -41,6 +41,44 @@ describe("parseAnalysis — strongest line vs issues", () => {
     expect(res.strongest_line).toBeUndefined();
   });
 
+  it("drops an issue anchored past the end of the poem", () => {
+    // 12-line poem, issue claims line 137 — the old clamp re-pinned it to 100
+    // and highlighted innocent text.
+    const res = parseAnalysis({
+      ...BASE,
+      issues: [
+        { id: "real", severity: "high", line_start: 2, line_end: 2, rationale: "x" },
+        { id: "ghost", severity: "high", line_start: 137, line_end: 137, rationale: "x" },
+      ],
+    }, 12);
+    expect(res.issues.map((i) => i.id)).toEqual(["real"]);
+  });
+
+  it("drops an issue whose line number is unusable rather than pinning it to 50", () => {
+    const res = parseAnalysis({
+      ...BASE,
+      issues: [{ id: "junk", severity: "high", line_start: "somewhere", rationale: "x" }],
+    }, 12);
+    expect(res.issues).toHaveLength(0);
+  });
+
+  it("keeps an issue whose range overruns the poem, ending it at the last line", () => {
+    const res = parseAnalysis({
+      ...BASE,
+      issues: [{ id: "a", severity: "medium", line_start: 10, line_end: 99, rationale: "x" }],
+    }, 12);
+    expect(res.issues[0]).toMatchObject({ line_start: 10, line_end: 10 });
+  });
+
+  it("drops a strongest line that points past the poem", () => {
+    const res = parseAnalysis({
+      ...BASE,
+      strongest_line: { line: 40, excerpt: "", why: "nice" },
+      issues: [],
+    }, 12);
+    expect(res.strongest_line).toBeUndefined();
+  });
+
   it("only checks issues that survived the cap", () => {
     // Four low-severity issues: the cap keeps three, and the one covering line 4
     // is the last in order, so it is dropped — the crown survives with it.

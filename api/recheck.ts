@@ -108,6 +108,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   );
   if (!result) return;
 
-  await recordSpend(spend.ip, result.model, result.usage.promptTokens, result.usage.completionTokens);
+  await recordSpend(spend.ip, result.model, result.usage, "recheck");
   sendParsedResponse(res, result.content, result.model);
 }

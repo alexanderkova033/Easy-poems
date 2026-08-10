@@ -25,6 +25,8 @@ import {
   loadLastAnalyzedLines,
   saveLastAnalyzedLines,
   loadIgnoredIssueIds,
+  loadRejectedIssues,
+  LS_REJECTED_PREFIX,
 } from "./ai-analysis-storage";
 import {
   LS_CHAT_PREFIX,
@@ -104,6 +106,9 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
   const [isUnconfigured, setIsUnconfigured] = useState(false);
   /** Chars of model output streamed so far this run — drives the loading bar. */
   const [streamedChars, setStreamedChars] = useState(0);
+  /** The model's first impression, surfaced mid-stream so the wait shows
+   *  something true instead of only a bar. */
+  const [streamPreview, setStreamPreview] = useState("");
   const [isOpen, setIsOpen] = useState(true);
   const [scoreHistory, setScoreHistory] = useState<number[]>(() => loadScoreHistory(poemId));
   const abortRef = useRef<AbortController | null>(null);
@@ -193,6 +198,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
     setErrorMsg("");
     setIsUnconfigured(false);
     setStreamedChars(0);
+    setStreamPreview("");
 
     const goalsPlain = goals
       ? Object.fromEntries(Object.entries(goals).filter(([, v]) => v != null)) as Record<string, number>
@@ -221,6 +227,10 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
       ? { ...localAnalysis, toolStats: getToolStats?.() }
       : localAnalysis;
 
+    // Calls this poet has already thrown away on this poem. Read fresh from
+    // storage each run so a rejection made seconds ago counts.
+    const rejectedIssues = loadRejectedIssues(poemId);
+
     try {
       let res: PoemAnalysis | PoemComparison;
       if (canCompare) {
@@ -241,11 +251,14 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
               })),
             previousMatchedProfile: savedResult!.matched_profile,
             previousPillarScores: savedResult!.pillar_scores,
+            rejectedIssues,
+            onProgress: setStreamedChars,
+            onPreview: setStreamPreview,
           },
           ctrl.signal,
         );
       } else {
-        res = await analyzePoem({ title, lines, localAnalysis: localWithTools, goals: goalsPlain, harshness, writingFocus, onProgress: setStreamedChars }, ctrl.signal);
+        res = await analyzePoem({ title, lines, localAnalysis: localWithTools, goals: goalsPlain, harshness, writingFocus, rejectedIssues, onProgress: setStreamedChars, onPreview: setStreamPreview }, ctrl.signal);
       }
       // A new analysis replaces the prior one — resolution flags keyed to the
       // OLD issue IDs no longer apply (and would silently mark re-flagged
@@ -312,6 +325,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
         localStorage.removeItem(LS_LAST_HASH_PREFIX + poemId);
         localStorage.removeItem(LS_CHAT_PREFIX + poemId);
         localStorage.removeItem(LS_SNAPSHOTS_PREFIX + poemId);
+        // Starting over means the model gets to raise the old calls again.
+        localStorage.removeItem(LS_REJECTED_PREFIX + poemId);
       } catch { /* ignore */ }
     }
     setResult(null);
@@ -481,7 +496,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
 
           {status === "loading" && (
             <>
-              <AiLoadingIndicator mode={effectiveMode} streamedChars={streamedChars} />
+              <AiLoadingIndicator mode={effectiveMode} streamedChars={streamedChars} preview={streamPreview} />
               {result && (
                 <div className="ai-ghost-results" aria-hidden>
                   <AnalysisResults
