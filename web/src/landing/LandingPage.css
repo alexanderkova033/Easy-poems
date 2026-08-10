@@ -247,7 +247,19 @@
 /* ── Hero ─────────────────────────────────────────────────────────────────── */
 
 .landing-hero {
-  width: 100%;
+  /* Full-bleed, matching .landing-lower and .landing-bg.
+     #root carries side padding meant for the workshop app. Every other band on
+     this page escapes it with the negative-margin trick below; the hero did not,
+     so it rendered inset while everything under it ran edge to edge — on a 384px
+     phone that was a 347px hero against 384px sections, with the difference
+     showing as bare strips down either side of the first screen.
+     Its own padding below is what positions the content, so widening the band
+     doesn't move the headline. */
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  align-self: stretch;
   display: flex;
   justify-content: center;
   padding: clamp(2rem, 4vw, 4.5rem) clamp(1rem, 3vw, 3rem) clamp(2rem, 4vw, 4.5rem);

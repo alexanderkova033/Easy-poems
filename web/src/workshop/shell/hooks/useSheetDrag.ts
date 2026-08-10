@@ -131,7 +131,11 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     const next = Math.min(max, Math.max(min, drag.startTop + dy));
     // Written straight to the node during the gesture — routing this through
     // React state would re-render the whole workshop on every pointermove.
-    toolsPanelRef.current?.style.setProperty("--sheet-top", `${next}px`);
+    // --sheet-y drives a transform rather than `top`, so the gesture stays on
+    // the compositor: the sheet's geometry never changes mid-drag, only where
+    // it gets painted. Driving `top` relaid out the sheet on every frame, which
+    // is what made dragging feel heavy.
+    toolsPanelRef.current?.style.setProperty("--sheet-y", `${next}px`);
   }, [bounds, toolsPanelRef]);
 
   const handleSheetDragEnd = useCallback((e: React.PointerEvent<HTMLElement>) => {
@@ -170,11 +174,11 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     const panel = toolsPanelRef.current;
     if (!panel) return;
     if (sheetTop === null) {
-      panel.style.removeProperty("--sheet-top");
+      panel.style.removeProperty("--sheet-y");
       return;
     }
     const { min, max } = bounds();
-    panel.style.setProperty("--sheet-top", `${Math.min(max, Math.max(min, sheetTop))}px`);
+    panel.style.setProperty("--sheet-y", `${Math.min(max, Math.max(min, sheetTop))}px`);
   }, [sheetTop, bounds, toolsPanelRef]);
 
   const coverage = sheetTop === null ? 0 : 1 - sheetTop / (window.innerHeight || 1);

@@ -13,7 +13,6 @@ type Props = {
   /** Runs AI analysis — surfaced as a first-class topbar action on phones. */
   onAnalyse: () => void;
   isAnalysing: boolean;
-  setMetaOpen: (v: boolean) => void;
   showRhymeScheme: boolean;
   isStatsOpen: boolean;
   setIsStatsOpen: Dispatch<SetStateAction<boolean>>;
@@ -48,7 +47,6 @@ export function WorkshopTopbarHeader(props: Props) {
     setIsLibraryOpen,
     onAnalyse,
     isAnalysing,
-    setMetaOpen,
     showRhymeScheme,
     isStatsOpen,
     setIsStatsOpen,
@@ -201,10 +199,7 @@ export function WorkshopTopbarHeader(props: Props) {
         <button
           type="button"
           className="topbar-mobile-title"
-          onClick={() => {
-            setMetaOpen(true);
-            requestAnimationFrame(() => document.getElementById("poem-title")?.focus());
-          }}
+          onClick={() => document.getElementById("poem-title")?.focus()}
           aria-label="Edit poem title"
         >
           {m.title.trim() || "Untitled"}

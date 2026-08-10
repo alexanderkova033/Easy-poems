@@ -108,16 +108,6 @@ import "@/workshop/vocabulary/WordLookupPopup.css";
 // cascade, which is what its media query always meant. See WorkshopMobile.css.
 import "./WorkshopMobile.css";
 
-/** True on phone-width viewports — the 899px breakpoint the mobile CSS uses.
- *  Read at call time rather than cached at module load so it stays correct
- *  after a rotation or a resize. */
-function isNarrowViewport(): boolean {
-  if (typeof window === "undefined") return false;
-  return typeof window.matchMedia === "function"
-    ? window.matchMedia("(max-width: 899px)").matches
-    : window.innerWidth <= 899;
-}
-
 function endWordOfLineRaw(line: string | undefined): string {
   if (!line) return "";
   const m = line.match(/[A-Za-z'’]+(?=[^A-Za-z'’]*$)/);
@@ -257,26 +247,10 @@ export function PoemWorkshop() {
     handleToolsRailResizeStart,
   } = usePanelLayout();
   const isNarrow = useIsNarrowViewport();
-  // Collapsible title area on mobile.
-  //
-  // Start collapsed on phones. The title is optional, and its label + input cost
-  // ~85px that most drafts never use — space the poem wants. Collapsed it is one
-  // tappable row; the "Done" button inside expands back out.
-  //
-  // Only mobile is affected: at ≥900px `.editor-meta-grid-hidden` is `display: grid`
-  // (PoemWorkshop.css), so the grid stays visible on desktop whatever this holds.
-  const [metaOpen, setMetaOpen] = useState(() => !isNarrowViewport() && !m.title.trim());
-  // Fully hide the title bar to maximise writing space
-  const [metaHidden, setMetaHidden] = useState(false);
+  // The title row has no open/collapsed/hidden states any more — it is simply a
+  // small field that is always there. See the meta grid in the editor below.
   // Format toolbar collapsed by default on mobile
   const [mobileToolbarOpen, setMobileToolbarOpen] = useState(false);
-  // Clearing the title re-opens the meta row so there is somewhere to type one —
-  // but not on a phone, where that is exactly what pinned the fields open for every
-  // untitled draft. There the collapsed bar is the affordance instead.
-  useEffect(() => {
-    if (isNarrowViewport()) return;
-    if (!m.title.trim()) { setMetaOpen(true); setMetaHidden(false); }
-  }, [m.title]);
 
   // Swipe gesture state
 
@@ -1627,7 +1601,6 @@ export function PoemWorkshop() {
             setMobileAiOpen(true);
           }
         }}
-        setMetaOpen={setMetaOpen}
         showRhymeScheme={showRhymeScheme}
         isStatsOpen={isStatsOpen}
         setIsStatsOpen={setIsStatsOpen}
@@ -2091,53 +2064,12 @@ export function PoemWorkshop() {
                   />
                 </div>
               )}
-              {/* Mobile collapsed header — tap to expand, × to hide entirely */}
-              {!metaOpen && !metaHidden && (
-                <div className="editor-meta-bar">
-                  <button
-                    type="button"
-                    className="editor-meta-collapsed"
-                    onClick={() => setMetaOpen(true)}
-                    onContextMenu={(e) => { e.preventDefault(); setMetaOpen(true); document.getElementById("poem-title")?.focus(); }}
-                    aria-label="Edit title"
-                  >
-                    {/* Now the default state for an untitled draft on mobile, so the
-                        empty case has to invite a tap rather than just report a fact —
-                        "Untitled" read as a label, not as something you could act on. */}
-                    <span
-                      className={`editor-meta-collapsed-title${m.title.trim() ? "" : " is-placeholder"}`}
-                    >
-                      {m.title.trim() || "Add title"}
-                    </span>
-                    {m.formNote.trim() && (
-                      <span className="editor-meta-collapsed-form">· {m.formNote.trim()}</span>
-                    )}
-                    <span className="editor-meta-collapsed-chevron" aria-hidden>›</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="editor-meta-hide-btn"
-                    onClick={() => setMetaHidden(true)}
-                    aria-label="Hide title bar for distraction-free writing"
-                  >
-                    <svg viewBox="0 0 24 24" aria-hidden fill="none" width="14" height="14">
-                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"/>
-                    </svg>
-                  </button>
-                </div>
-              )}
-              {/* Minimal peek bar shown when title is fully hidden */}
-              {metaHidden && (
-                <button
-                  type="button"
-                  className="editor-meta-peek-btn"
-                  onClick={() => setMetaHidden(false)}
-                  aria-label="Show title bar"
-                >
-                  {m.title.trim() || "Untitled"}
-                </button>
-              )}
-              <div className={`editor-meta-grid${metaOpen ? "" : " editor-meta-grid-hidden"}`} aria-label="Draft metadata">
+              {/* The title is one small always-present field. It used to have three
+                  states — collapsed bar, expanded grid, fully hidden with a peek
+                  button — plus the toggles between them, which was a lot of
+                  machinery and screen furniture for an optional one-line input.
+                  Made small enough that it costs less than the controls did. */}
+              <div className="editor-meta-grid" aria-label="Draft metadata">
                 <div className="row title-row">
                   <label htmlFor="poem-title">Title</label>
                   <input
@@ -2149,17 +2081,6 @@ export function PoemWorkshop() {
                     autoComplete="off"
                     spellCheck={false}
                   />
-                  {/* Collapse back without needing a title. The row used to fold away
-                      only via onBlur, and only once m.title was non-empty — so anyone
-                      who opened it on a draft they hadn't named had no way to shut it. */}
-                  <button
-                    type="button"
-                    className="editor-meta-collapse-btn"
-                    onClick={() => setMetaOpen(false)}
-                    aria-label="Collapse title"
-                  >
-                    Done
-                  </button>
                 </div>
               </div>
               <FindReplaceBar

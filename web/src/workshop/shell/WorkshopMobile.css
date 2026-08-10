@@ -76,32 +76,49 @@
     isolation: isolate;
   }
 
-  /* Tools as a bottom sheet that is never fully dismissed — it rests peeking above
-     the bottom edge and is dragged to whatever height the writer wants. Its top
-     offset comes from --sheet-top, which useSheetDrag writes and persists; the
-     value below is only the fallback for the first ever render. The inner
-     .tools-scroll-body is the only scroll container — outer overflow is hidden to
-     avoid iOS double-scroll confusion. */
+  /* Tools as a bottom sheet that is never fully dismissed — it rests peeking
+     above the bottom edge and is dragged to whatever height the writer wants.
+     .tools-scroll-body is the only scroll container; outer overflow is hidden to
+     avoid iOS double-scroll confusion.
+
+     The sheet is a full-height panel that is slid down out of the way, NOT a
+     panel whose top edge moves.
+
+     It used to be positioned with `top: var(--sheet-top)`, updated on every
+     pointermove. `top` is a layout property, so each frame of a drag relaid out
+     the sheet and everything in it — that is what made dragging feel heavy.
+     Translating instead keeps the whole gesture on the compositor: the geometry
+     never changes, only where it is painted.
+
+     --sheet-y is the distance slid down from fully-open. 0 = covering the
+     screen, (100dvh - peek) = resting peek. */
   .tools-panel {
     width: 100%;
     box-sizing: border-box;
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
-    top: var(--sheet-top, calc(100dvh - var(--tools-peek)));
+    top: 0;
+    height: 100dvh;
+    transform: translate3d(0, var(--sheet-y, calc(100dvh - var(--tools-peek))), 0);
     overflow: hidden;
     isolation: isolate;
     border-radius: 16px 16px 0 0;
     box-shadow: 0 -10px 38px color-mix(in srgb, #000 26%, transparent);
-    transition: top 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
     z-index: 62;
-    will-change: top;
+    will-change: transform;
     /* Isolate the sheet's layout/paint from the editor behind it. Without this,
        every re-layout inside the sheet (opening a tool, expanding a section)
        invalidates layout for the whole document — and CodeMirror forces a
        synchronous layout on each keystroke, so that cost lands on typing. */
     contain: layout paint style;
+  }
+
+  /* The body has to stop where the screen does, not where the (full-height)
+     panel does, or the last tools are unreachable below the fold. */
+  .tools-panel .tools-scroll-body {
+    max-height: calc(100dvh - var(--sheet-y, 0px));
   }
 
   /* Live drag — no transition while the finger is down, or the sheet lags behind. */
@@ -315,57 +332,6 @@
   }
 }
 
-/* ============================================================================
- * Title row: an explicit way back to collapsed.
- *
- * The meta row previously folded away only in the title input's onBlur, and only
- * when m.title was non-empty — so opening it on an unnamed draft (the default
- * state on a phone) left no way to shut it again. "Done" is that way.
- * ========================================================================== */
-@media (max-width: 899px) {
-  .title-row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .title-row label {
-    flex: 0 0 100%;
-  }
-
-  .title-row input {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .editor-meta-collapse-btn {
-    flex: 0 0 auto;
-    min-height: var(--btn-height-md);
-    padding: 0 0.75rem;
-    border-radius: 8px;
-    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
-    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
-    color: var(--accent);
-    font: inherit;
-    font-size: 0.85rem;
-    font-weight: 650;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-
-  .editor-meta-collapse-btn:active {
-    background: color-mix(in srgb, var(--accent) 22%, var(--surface));
-  }
-}
-
-/* Desktop keeps the always-open meta grid, so the collapse affordance would be
-   a button that does nothing visible. */
-@media (min-width: 900px) {
-  .editor-meta-collapse-btn {
-    display: none;
-  }
-}
 
 /* ============================================================================
  * Tools sheet: stowed state, keyboard avoidance, header actions
@@ -427,9 +393,9 @@
     touch-action: manipulation;
   }
 
-  /* Stowed: slide the sheet off the bottom. .tools-stow-tab is what remains. */
+  /* Stowed: slide the sheet fully off. .tools-stow-tab is what remains. */
   .tools-panel.is-stowed {
-    top: 100dvh !important;
+    transform: translate3d(0, 100dvh, 0) !important;
   }
 
   .tools-stow-tab {
@@ -480,8 +446,8 @@
  * vp-keyboard-open is set by useVirtualKeyboardClass from visualViewport. */
 @media (max-width: 899px) {
   html.vp-keyboard-open .tools-panel {
-    top: 100dvh !important;
-    transition: top 0.2s ease;
+    transform: translate3d(0, 100dvh, 0) !important;
+    transition: transform 0.2s ease;
   }
 
   html.vp-keyboard-open .tools-stow-tab,
@@ -491,5 +457,102 @@
 
   html.vp-keyboard-open .editor-panel {
     padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* ============================================================================
+ * Phone editor: a smaller title, a narrower gutter, and more width for the poem
+ * ========================================================================== */
+@media (max-width: 899px) {
+  /* The title is a small optional field now, not a heading. It was set in the
+     poem serif at 1.15rem, which read as a title *of* the page and took a
+     disproportionate slice of a 713px screen. */
+  .title-row {
+    display: flex;
+    /* The element also carries `.row`, which sets flex-direction: column — so
+       without this the label sits above the field (and `align-items: center`
+       centres it), costing two stacked lines for one optional input. */
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .title-row label {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .title-row input#poem-title {
+    flex: 1 1 auto;
+    /* width: auto is load-bearing. The base rule sets `.title-row input` to
+       width: 100%, which as a flex item means it asks for the full row on its
+       own and pushes the label onto a line of its own — the label and field
+       ended up stacked, 65px tall, for a single optional input. */
+    width: auto;
+    min-width: 0;
+    font-family: var(--font-ui);
+    font-size: 0.88rem;
+    font-weight: 550;
+    min-height: 2.1rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  /* Give the poem the side margins back. 1.35rem each side is ~47px of a 384px
+     screen — over 12% of the width spent on panel padding. */
+  .editor-panel {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+  }
+
+  /* Trim the editor's own inner padding too, so the two don't compound. */
+  .poem-cm-wrap .cm-content {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  /* ── Line-number gutter ──────────────────────────────────────────────────
+     Two separate problems, one rule each.
+
+     Width: the gutter was sized for 2 characters plus padding on both sides,
+     which on a phone is width taken directly from the poem.
+
+     Opacity: CodeMirror pins the gutter with position:sticky INSIDE the
+     horizontally scrolling area, so content scrolls underneath it. The theme
+     set its background to transparent, so on a long line — exactly when the
+     scroller has somewhere to scroll — the text showed through and appeared to
+     slide into the numbers. It needs to be opaque to do its job. */
+  .poem-cm-wrap .cm-gutters {
+    /* Must match .editor-panel's mobile background exactly (set in
+       PoemWorkshop.css) — the editor and its scroller are both transparent, so
+       this is the colour the gutter is sitting on. Any other value reads as a
+       stripe down the left of the poem. */
+    background-color: color-mix(in srgb, var(--surface) 93%, var(--bg)) !important;
+  }
+
+  .poem-cm-wrap .cm-lineNumbers .cm-gutterElement {
+    padding: 0 0.25rem 0 0.15rem;
+    min-width: 1.25ch;
+    font-size: 0.72em;
+  }
+
+  /* The fold gutter is 6px of the 36 and does nothing here — poems have no
+     foldable ranges. Cheapest width to give back to the poem.
+     !important because CodeMirror injects its own gutter styles at the same
+     specificity from JS, and those land after this stylesheet. */
+  .poem-cm-wrap .cm-foldGutter {
+    display: none !important;
+  }
+}
+
+/* Copy is a phone affordance only — it exists here because the editor's own copy
+   button is hidden on mobile. Desktop keeps that one, so showing both would be
+   two buttons for one action. */
+@media (min-width: 900px) {
+  .tools-copy-btn {
+    display: none;
   }
 }
