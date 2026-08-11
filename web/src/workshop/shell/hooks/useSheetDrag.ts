@@ -192,7 +192,7 @@ export function useSheetDrag({ toolsPanelRef }: UseSheetDragOptions) {
     if (drag.velocity < -FLICK_VELOCITY) { commit(openTop, { stow: false }); return; }
 
     commit(landed, { stow: landed >= max - STOWED_SLACK_PX });
-  }, [bounds, commit, toolsPanelRef]);
+  }, [commit, toolsPanelRef]);
 
   // React owns the value between gestures. Clamping happens here rather than in a
   // state-setting effect: a position restored from localStorage may have been saved

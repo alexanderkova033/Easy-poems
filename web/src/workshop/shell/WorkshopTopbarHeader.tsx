@@ -1,6 +1,7 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
 import { SessionTimer } from "./components/SessionTimer";
+import { useFullscreen } from "./hooks/useFullscreen";
 import type { usePoemWorkshopModel } from "./usePoemWorkshopModel";
 
 type Model = ReturnType<typeof usePoemWorkshopModel>;
@@ -69,6 +70,7 @@ export function WorkshopTopbarHeader(props: Props) {
   } = props;
 
   const hint = useHoverHintBinder();
+  const fullscreen = useFullscreen();
 
   const topbarLinesHint =
     m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
@@ -251,6 +253,39 @@ export function WorkshopTopbarHeader(props: Props) {
                   />
                 </svg>
               </button>
+
+              {/* Phone-only: fullscreen. The workshop pins the viewport, so the
+                  browser's own top and bottom bars never retract on their own —
+                  see useFullscreen for why that can't be fixed in CSS. This is
+                  the only control that gets those ~110px back. */}
+              {fullscreen.supported && (
+                <button
+                  type="button"
+                  className={`topbar-ghost-btn topbar-mobile-action${fullscreen.isFullscreen ? " is-selected" : ""}`}
+                  onClick={fullscreen.toggle}
+                  aria-pressed={fullscreen.isFullscreen}
+                  aria-label={fullscreen.isFullscreen ? "Exit fullscreen" : "Fullscreen"}
+                  {...hint(fullscreen.isFullscreen
+                    ? "Leave fullscreen"
+                    : "Fullscreen — hides the browser's own bars for more writing space")}
+                >
+                  <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                    {fullscreen.isFullscreen ? (
+                      <path
+                        fill="none" stroke="currentColor" strokeWidth="1.75"
+                        strokeLinecap="round" strokeLinejoin="round"
+                        d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"
+                      />
+                    ) : (
+                      <path
+                        fill="none" stroke="currentColor" strokeWidth="1.75"
+                        strokeLinecap="round" strokeLinejoin="round"
+                        d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+                      />
+                    )}
+                  </svg>
+                </button>
+              )}
 
               {/* Stats popover */}
               <div className="topbar-stats-wrap" ref={statsPopoverRef}>
