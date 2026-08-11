@@ -741,15 +741,34 @@ export function PoemWorkshop() {
   const [mobileAiOpen, setMobileAiOpen] = useState(false);
   const [mobileIsAnalyzing, setMobileIsAnalyzing] = useState(false);
 
-  // Safety net: when the sheet flips open, force-fire the analyze fn after a
-  // short delay if the autoTrigger path didn't catch it (e.g. AiAnalysis hadn't
-  // populated the ref yet at toggle time). Idempotent — handleAnalyze early-returns
-  // when status is already "loading".
+  // Once opened, the sheet stays mounted and hides instead of unmounting, so a
+  // read in flight survives a close. Unmounting aborted it client-side — the
+  // server had already taken the request and billed it — and left the remounted
+  // panel at status "idle", so reopening looked like nothing was happening and
+  // fired a second read straight into the rate limit.
+  const [mobileAiEverOpened, setMobileAiEverOpened] = useState(false);
   useEffect(() => {
-    if (!mobileAiOpen) return;
+    if (mobileAiOpen) setMobileAiEverOpened(true);
+  }, [mobileAiOpen]);
+
+  // The ONE place a read starts when the sheet opens. There were two: the ref
+  // callback fired the moment AiAnalysis registered its analyze fn, and a
+  // timer fired again 200ms later "in case the first didn't catch". Both fired,
+  // every time, and the second aborted the first mid-flight and re-requested —
+  // so one tap on Analyse cost two API calls, and the rate limit arrived at
+  // half the taps it should have.
+  //
+  // Gated on the flag the Analyse action sets, so opening the sheet any other
+  // way — tapping the score pill to read the notes, jumping to an issue — never
+  // starts a read on its own. The short delay lets AiAnalysis mount and register
+  // first; a repeat call would be free anyway, since handleAnalyze returns early
+  // while a read is in flight.
+  useEffect(() => {
+    if (!mobileAiOpen || !mobileSheetAutoTrigger.current) return;
     const id = window.setTimeout(() => {
+      mobileSheetAutoTrigger.current = false;
       mobileSheetAnalyzeFn.current?.();
-    }, 200);
+    }, 250);
     return () => window.clearTimeout(id);
   }, [mobileAiOpen]);
 
@@ -769,15 +788,13 @@ export function PoemWorkshop() {
   const mobileSheetAutoTrigger = useRef(false);
   const mobileSheetAnalyzeFn = useRef<(() => void) | null>(null);
 
-  // Stable ref callback — stores the analyze fn and auto-triggers when the
-  // sheet was just opened. Two paths to fire: (1) the autoTrigger flag set by
-  // the Analyse tap, (2) sheet flipped open and idle status (safety net).
+  // Stores the analyze fn, and nothing else. It used to fire the read here as
+  // well; firing belongs to the effect above, which is the single trigger.
+  // Registration happens more than once anyway — the effect that publishes this
+  // re-runs whenever handleAnalyze's identity changes — so it is the wrong place
+  // to decide that a read should start.
   const mobileSheetAiRef = useCallback((fn: (() => void) | null) => {
     mobileSheetAnalyzeFn.current = fn;
-    if (mobileSheetAutoTrigger.current && fn) {
-      mobileSheetAutoTrigger.current = false;
-      fn();
-    }
   }, []);
 
   const overlayOpenCount =
@@ -2052,7 +2069,11 @@ export function PoemWorkshop() {
         >
           <div className="editor-print-hide">
             <div className="editor-stack">
-              {aiResult && (
+              {/* Desktop floats the score at the top-right of the editor. On a
+                  phone it takes the Analyse button's place on the title row
+                  instead (see the title row below) — there is no room beside it,
+                  and the two were saying the same thing anyway. */}
+              {aiResult && !isNarrow && (
                 <div className="ai-summary-titlebar">
                   <AiSummaryPopover
                     result={aiResult}
@@ -2095,24 +2116,41 @@ export function PoemWorkshop() {
                   >
                     Aa
                   </button>
-                  <button
-                    type="button"
-                    className={`editor-analyse-btn${mobileIsAnalyzing ? " is-busy" : ""}`}
-                    onClick={() => {
-                      if (mobileAiOpen) {
-                        mobileSheetAnalyzeFn.current?.();
-                      } else {
-                        mobileSheetAutoTrigger.current = true;
-                        setMobileAiOpen(true);
-                      }
-                    }}
-                    disabled={mobileIsAnalyzing}
-                    aria-label="Analyse poem with AI"
-                    {...hint("Run AI analysis on this poem")}
-                  >
-                    <span aria-hidden>✦</span>
-                    <span className="editor-analyse-label">Analyse</span>
-                  </button>
+                  {/* Once there's a score, it stands in for Analyse in the same
+                      slot and at the same size — a phone row has space for one
+                      of the two, and the pill is the more useful one: it carries
+                      the number and opens the read that produced it. Re-running
+                      lives on Refine, inside that sheet. */}
+                  {aiResult && isNarrow ? (
+                    <div className="editor-score-slot">
+                      <AiSummaryPopover
+                        result={aiResult}
+                        scoringEnabled={aiScoringEnabled}
+                        onJumpToLine={m.goToLine}
+                        onOpenTab={openAiTab}
+                        visibleIssueCount={aiVisibleIssues.length}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      className={`editor-analyse-btn${mobileIsAnalyzing ? " is-busy" : ""}`}
+                      onClick={() => {
+                        if (mobileAiOpen) {
+                          mobileSheetAnalyzeFn.current?.();
+                        } else {
+                          mobileSheetAutoTrigger.current = true;
+                          setMobileAiOpen(true);
+                        }
+                      }}
+                      disabled={mobileIsAnalyzing}
+                      aria-label="Analyse poem with AI"
+                      {...hint("Run AI analysis on this poem")}
+                    >
+                      <span aria-hidden>✦</span>
+                      <span className="editor-analyse-label">Analyse</span>
+                    </button>
+                  )}
                 </div>
               </div>
               <FindReplaceBar
@@ -2392,6 +2430,33 @@ export function PoemWorkshop() {
           </button>
         )}
 
+        {/* Copy goes down with the sheet. Its only home on a phone is the sheet
+            header, so stowing the sheet took the action off screen at exactly
+            the moment the poem is the only thing left on it. */}
+        {sheetIsStowed && (
+          <button
+            type="button"
+            className={`tools-copy-btn tools-copy-stowed${m.quickCopyFlash ? " is-copied" : ""}`}
+            onClick={() => void m.onQuickCopyPlain()}
+            aria-label="Copy poem body as plain text"
+          >
+            {m.quickCopyFlash ? (
+              <span className="tools-copy-label">Copied</span>
+            ) : (
+              <>
+                <svg className="tools-copy-icon" viewBox="0 0 24 24" aria-hidden>
+                  <path
+                    fill="none" stroke="currentColor" strokeWidth="1.75"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
+                </svg>
+                <span className="tools-copy-label">Copy</span>
+              </>
+            )}
+          </button>
+        )}
+
         <div className="tools-panel-cell">
         <aside
           ref={toolsPanelRef}
@@ -2554,9 +2619,15 @@ export function PoemWorkshop() {
           ~58px of permanent vertical space to switch between things that are now
           all reachable without it. */}
 
-      {/* Mobile AI analysis bottom sheet */}
-      {mobileAiOpen && (
-        <div className="mobile-ai-sheet" role="dialog" aria-label="AI Analysis">
+      {/* Mobile AI analysis bottom sheet. Rendered from the first open onward and
+          hidden when closed, not unmounted — see mobileAiEverOpened above. */}
+      {mobileAiEverOpened && (
+        <div
+          className={`mobile-ai-sheet${mobileAiOpen ? "" : " is-hidden"}`}
+          role="dialog"
+          aria-label="AI Analysis"
+          aria-hidden={!mobileAiOpen}
+        >
           <div className="mobile-ai-sheet-backdrop" onClick={() => { setMobileAiOpen(false); setMobileIsAnalyzing(false); }} />
           <div className="mobile-ai-sheet-panel">
             <div className="mobile-ai-sheet-grip" aria-hidden />

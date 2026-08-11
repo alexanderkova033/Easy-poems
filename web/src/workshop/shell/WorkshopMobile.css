@@ -146,6 +146,19 @@
     max-height: calc(100dvh - var(--sheet-y-settled, calc(100dvh - var(--tools-peek))));
   }
 
+  /* …except while the finger is down, when the bound is simply the screen.
+     Deferring max-height to the release keeps layout out of the gesture, but it
+     also meant dragging the sheet open uncovered a band of empty surface that
+     only filled with tools once you let go — the sheet looked broken for the
+     length of every drag. The panel is full-height anyway, so lifting the bound
+     for the duration lets the content follow the top edge up in real time; it
+     costs one layout when the gesture starts and one when it ends, not one per
+     frame, and the release re-applies the real bound so nothing ends up parked
+     below the fold. */
+  .tools-panel.is-dragging .tools-scroll-body {
+    max-height: 100dvh;
+  }
+
   /* Live drag — no transition while the finger is down, or the sheet lags behind.
      useSheetDrag puts .is-dragging on the panel itself for exactly this rule. It
      used to only land on the drag surface (.tools-sticky-head), which neither of
@@ -456,6 +469,22 @@
     background: color-mix(in srgb, var(--surface) 84%, var(--accent));
   }
 
+  /* Copy follows the sheet down. It lives in the sheet header, which is the one
+     place on a phone where it is always on screen — right up until the sheet is
+     stowed, and then the poem is the only thing on screen and copying it is the
+     likeliest thing you want. Mirrors the stow tab across the bottom edge:
+     Copy left, Tools right, both clear of the gesture strip. */
+  .tools-copy-stowed {
+    position: fixed;
+    left: 0.75rem;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 63;
+    min-height: 2.4rem;
+    padding: 0 0.85rem;
+    border-radius: 99px;
+    box-shadow: 0 4px 16px color-mix(in srgb, #000 30%, transparent);
+  }
+
   .tools-stow-tab-chevron {
     font-size: 0.9rem;
     line-height: 1;
@@ -654,6 +683,33 @@
 
   .editor-analyse-btn:disabled {
     opacity: 0.55;
+  }
+
+  /* The score pill inherits the Analyse button's slot and its metrics, so the
+     row doesn't change shape when a read comes back — same height, same pill
+     radius, same place. */
+  .editor-score-slot {
+    flex: 0 0 auto;
+  }
+
+  .editor-score-slot .ai-pop-wrap {
+    position: relative;
+    top: auto;
+    right: auto;
+  }
+
+  .editor-score-slot .ai-pop-trigger {
+    min-height: 2.1rem;
+    padding: 0 0.6rem;
+    border-radius: 99px;
+    border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+    background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  }
+
+  /* Anchor the popover to the pill's right edge — it opens under a control
+     that now sits mid-row, so left-aligning it would run it off the screen. */
+  .editor-score-slot .ai-pop-panel {
+    right: 0;
   }
 
   .editor-analyse-btn:active:not(:disabled) {

@@ -187,6 +187,13 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
 
   const handleAnalyze = useCallback(async () => {
     if (!hasPoem) return;
+    // A read is already in flight — leave it alone. The abort below only stops
+    // the browser listening; the server has already taken the request, counted
+    // it against the rate limit and started paying for it. So a second trigger
+    // costs a full call and buys nothing, and the ways to fire one are ordinary:
+    // tapping Analyse twice, or the sheet's open-time trigger landing on top of
+    // the tap that opened it.
+    if (status === "loading") return;
     // Don't even attempt a new request while the rate-limit countdown is active —
     // the prior result should stay on screen, and we shouldn't churn the UI into
     // a loading state just to hit a 429 again.
@@ -284,7 +291,17 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
       setSessionNonce((n) => n + 1);
       setStatus("done");
     } catch (err) {
-      if ((err as Error).name === "AbortError") return;
+      if ((err as Error).name === "AbortError") {
+        // Aborted reads used to just return, which left status pinned at
+        // "loading" — the panel span "Reading the lines…" forever, with no way
+        // out but a reload. Every abort has a cause and none of them mean "still
+        // reading": a newer run replacing this one, the poem being switched, the
+        // component unmounting. Hand the UI back to its resting state, unless a
+        // newer run has already taken ownership (abortRef moved on), in which
+        // case that run is the one driving status now.
+        if (abortRef.current === ctrl) setStatus(result ? "done" : "idle");
+        return;
+      }
       const e = err as Error & { retryAfterSec?: number };
       const msg = e.message ?? "Unknown error";
       const isRateLimit = typeof e.retryAfterSec === "number" && e.retryAfterSec > 0;
@@ -306,7 +323,7 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
         setStatus("error");
       }
     }
-  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, getToolStats, goals, onAnalysisDone, result, retryAfterSec, draftMode]);
+  }, [canCompare, hasPoem, harshness, lines, mainIdea, savedLines, savedResult, title, scoreHistory, poemId, localAnalysis, getToolStats, goals, onAnalysisDone, result, retryAfterSec, draftMode, status]);
 
 
   useEffect(() => {

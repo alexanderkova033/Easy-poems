@@ -168,8 +168,15 @@
     padding-inline: 0.85rem;
   }
 
+  /* Phones read a step smaller than the desktop setting, but they still read the
+     SETTING. This was a flat `font-size: 0.92rem !important`, which beat the
+     editor theme's `font-size: var(--poem-font-size)` outright — so every size in
+     the Aa menu produced identical text on a phone, and the control looked
+     broken because it was. Scaling the same variable keeps the five steps
+     working and lands the default (md, 1.2rem) at ~1.02rem here, near the fixed
+     size it replaces, so nobody's draft reflows for having changed nothing. */
   .cm-editor {
-    font-size: 0.92rem !important;
+    font-size: calc(var(--poem-font-size, 1rem) * 0.85) !important;
     line-height: 1.72 !important;
   }
 
@@ -7105,6 +7112,13 @@
     position: fixed;
     inset: 0;
     z-index: 80;
+  }
+
+  /* Closed, but still mounted: a read in flight keeps running and its state is
+     there when the sheet comes back. display:none rather than opacity, so it
+     takes no hit-testing and no paint while it waits. */
+  .mobile-ai-sheet.is-hidden {
+    display: none;
   }
 
   .mobile-ai-sheet-backdrop {
