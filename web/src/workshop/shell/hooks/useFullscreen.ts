@@ -37,10 +37,18 @@ export function useFullscreen() {
     else void document.documentElement.requestFullscreen?.().catch(() => {});
   }, []);
 
+  const supported = typeof document !== "undefined"
+    && typeof document.documentElement.requestFullscreen === "function";
+
   return {
-    supported: typeof document !== "undefined"
-      && typeof document.documentElement.requestFullscreen === "function",
+    supported,
     isFullscreen,
+    /** True when the page is already running as an installed app, in which case
+     *  there is no browser chrome left to reclaim and the control has nothing to
+     *  offer. Covers both the standard display-mode query and iOS's own flag. */
+    installed: typeof window !== "undefined"
+      && (window.matchMedia?.("(display-mode: standalone)").matches
+        || (navigator as Navigator & { standalone?: boolean }).standalone === true),
     toggle,
   };
 }

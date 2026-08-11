@@ -257,6 +257,15 @@
   pointer-events: none;
   line-height: 1;
   vertical-align: middle;
+  /* Pinned to the right edge of the scrollport for lines wide enough to leave
+     it. The badge is appended after the text, so on a line that overflows it
+     sat past the right edge and was clipped away — and the lines that overflow
+     are exactly the long ones the auto-shrink couldn't rescue, since it floors
+     at 8px. On a phone that read as "the syllable count doesn't always work",
+     and it was reliably the same lines every time. Sticky costs nothing on
+     lines that already fit: the badge is inside the port, so it doesn't move. */
+  position: sticky;
+  right: 0.1rem;
 }
 
 .cm-rhythm-bar {

@@ -1,5 +1,6 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { useHoverHintBinder } from "@/workshop/hints/HoverHintsContext";
+import { useToast } from "@/shared/toast/ToastContext";
 import { SessionTimer } from "./components/SessionTimer";
 import { useFullscreen } from "./hooks/useFullscreen";
 import type { usePoemWorkshopModel } from "./usePoemWorkshopModel";
@@ -71,6 +72,7 @@ export function WorkshopTopbarHeader(props: Props) {
 
   const hint = useHoverHintBinder();
   const fullscreen = useFullscreen();
+  const { toast } = useToast();
 
   const topbarLinesHint =
     m.quickDocStats.totalLines !== m.quickDocStats.nonEmptyLines
@@ -254,16 +256,50 @@ export function WorkshopTopbarHeader(props: Props) {
                 </svg>
               </button>
 
+              {/* Phone-only: focus mode. Everything the app draws gets out of the
+                  way — topbar, title row, tools sheet — leaving the poem and one
+                  button to come back. */}
+              <button
+                type="button"
+                className="topbar-ghost-btn topbar-mobile-action"
+                onClick={() => setIsFocusMode(true)}
+                aria-label="Focus mode"
+                {...hint("Focus mode — just the poem, nothing else")}
+              >
+                <svg className="topbar-ghost-icon" viewBox="0 0 24 24" aria-hidden focusable="false">
+                  <path
+                    fill="none" stroke="currentColor" strokeWidth="1.75"
+                    strokeLinecap="round" strokeLinejoin="round"
+                    d="M4 8V5.5A1.5 1.5 0 015.5 4H8M16 4h2.5A1.5 1.5 0 0120 5.5V8M20 16v2.5a1.5 1.5 0 01-1.5 1.5H16M8 20H5.5A1.5 1.5 0 014 18.5V16"
+                  />
+                  <path d="M8.5 12h7" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                </svg>
+              </button>
+
               {/* Phone-only: fullscreen. The workshop pins the viewport, so the
                   browser's own top and bottom bars never retract on their own —
-                  see useFullscreen for why that can't be fixed in CSS. This is
-                  the only control that gets those ~110px back. */}
-              {fullscreen.supported && (
+                  see useFullscreen for why that can't be fixed in CSS. Where the
+                  API exists (Android) this is the only control that gets those
+                  ~110px back; iOS has no element fullscreen at all, so the button
+                  hides itself there and installing to the home screen is the way
+                  — see the manifest in index.html. */}
+              {!fullscreen.installed && (
                 <button
                   type="button"
                   className={`topbar-ghost-btn topbar-mobile-action${fullscreen.isFullscreen ? " is-selected" : ""}`}
-                  onClick={fullscreen.toggle}
-                  aria-pressed={fullscreen.isFullscreen}
+                  onClick={() => {
+                    if (fullscreen.supported) { fullscreen.toggle(); return; }
+                    // iOS: no element fullscreen for web pages, at all. Say so
+                    // rather than hiding the control, which just looked like the
+                    // button was missing, and point at the one thing that does
+                    // work there — the app is installable now (see the manifest).
+                    toast(
+                      "iPhone browsers can't go fullscreen. Share → Add to Home Screen opens easywriting with no browser bars at all.",
+                      "info",
+                      6000,
+                    );
+                  }}
+                  aria-pressed={fullscreen.supported ? fullscreen.isFullscreen : undefined}
                   aria-label={fullscreen.isFullscreen ? "Exit fullscreen" : "Fullscreen"}
                   {...hint(fullscreen.isFullscreen
                     ? "Leave fullscreen"

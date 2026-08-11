@@ -54,12 +54,21 @@ const lineFontScaleField = StateField.define<DecorationSet>({
 // over-long line is still full size, and buys back the per-keystroke cost.
 const LINE_FONT_SCALE_SETTLE_MS = 180;
 
+/** The poem size the appearance settings have applied, as a raw string. */
+function readPoemFontSize(): string {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue("--poem-font-size")
+    .trim();
+}
+
 const lineFontScalePlugin = ViewPlugin.fromClass(
   class {
     private rafId = 0;
     private timer: ReturnType<typeof setTimeout> | undefined;
     private lastW = 0;
     private ro: ResizeObserver;
+    private mo: MutationObserver;
+    private lastFontSize = "";
     constructor(view: EditorView) {
       this.lastW = view.scrollDOM.clientWidth;
       this.ro = new ResizeObserver((entries) => {
@@ -70,6 +79,23 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
         }
       });
       this.ro.observe(view.scrollDOM);
+
+      // A size change from the Aa menu is neither a doc change nor a width
+      // change, so nothing above notices it — and the scale decorations below
+      // are absolute px, baked in at the size they were measured at. The result
+      // was that every line short enough to sit at its natural size resized with
+      // the setting and every line that had been shrunk to fit stayed exactly as
+      // it was. Appearance writes --poem-font-size to the root element's inline
+      // style; watch for that landing and re-measure.
+      this.lastFontSize = readPoemFontSize();
+      this.mo = new MutationObserver(() => {
+        const next = readPoemFontSize();
+        if (next === this.lastFontSize) return;
+        this.lastFontSize = next;
+        this.schedule(view);
+      });
+      this.mo.observe(document.documentElement, { attributes: true, attributeFilter: ["style"] });
+
       this.schedule(view);
     }
     update(u: ViewUpdate) {
@@ -151,11 +177,21 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
 
       // Step 3: apply the new scale decorations (CM owns these, won't reset them)
       view.dispatch({ effects: setLineFontScaleDecos.of(decos.length ? Decoration.set(decos) : Decoration.none) });
+
+      // Every line fits now, by construction — so any horizontal scroll left on
+      // the scroller is stale, and it is not harmless. Typing past the right
+      // edge makes CodeMirror scroll sideways to keep the caret in view (it does
+      // that even with overflow-x hidden, since scrollLeft still moves), and the
+      // scroll stays put when the line is then shrunk to fit. Start a new line
+      // and you are typing into a view scrolled away from the left margin, with
+      // the beginnings of every line off screen to the left.
+      if (scroller.scrollLeft !== 0) scroller.scrollLeft = 0;
     }
     destroy() {
       cancelAnimationFrame(this.rafId);
       clearTimeout(this.timer);
       this.ro.disconnect();
+      this.mo.disconnect();
     }
   }
 );
