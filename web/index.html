@@ -12,6 +12,25 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+
+    <!--
+      Installable, and the reason is space rather than novelty.
+
+      The workshop pins the viewport on mobile, and Android Chrome only retracts
+      its address bar and bottom toolbar when the root scroller moves — so inside
+      the workshop those two bars are permanent, roughly 110px of a 730px screen.
+      "display: standalone" is the one setting that removes them for good:
+      installed from the browser menu, the app opens with no browser chrome at
+      all. The in-app fullscreen button does the same thing per-session for
+      anyone who would rather not install it.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#090f08" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="easywriting" />
 
     <!-- Open Graph / social preview -->
     <meta property="og:type" content="website" />
