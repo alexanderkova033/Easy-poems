@@ -248,6 +248,8 @@ export function AiAnalysis({ title, lines, mainIdea, poemId, localAnalysis, getT
             localAnalysis: localWithTools, goals: goalsPlain, writingFocus,
             scoreHistory: scoreHistory.slice(-3),
             previousWeaknesses: savedResult!.weaknesses,
+            previousStrengths: savedResult!.strengths,
+            previousStrongestLine: savedResult!.strongest_line,
             previousIssues: savedResult!.issues
               .filter((i) => i.severity !== "low")
               .slice(0, 6)

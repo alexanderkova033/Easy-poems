@@ -19,7 +19,7 @@ import { parseRejectedIssues, rejectedIssuesBlock } from "./_rejected-issues";
 // same diff, same prior context) return the cached response without burning cooldown.
 // Hit cases: edit a line → compare → refresh page → compare again.
 const COMPARE_CACHE_MS = 24 * 60 * 60 * 1000;
-const COMPARE_CACHE_VERSION = "v31"; // bump when prompt structure changes
+const COMPARE_CACHE_VERSION = "v32"; // bump when prompt structure changes
 
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value);
@@ -38,6 +38,8 @@ function compareCacheKey(inputs: {
   changesText: string;
   previousScores: unknown;
   previousWeaknesses: string[];
+  previousStrengths: string[];
+  previousStrongestLine: { line: number; why?: string } | null;
   previousIssues: unknown;
   model: string;
   localAnalysis: unknown;
@@ -122,8 +124,8 @@ Every field below caps its words. Stay UNDER the cap; a poet reads a short note 
 Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from what you actually saw.
 {
   "warm_reaction": "<≤7 words — your honest first feeling on the current draft>",
-  "strengths": ["<point at a specific line/move, then what it does — ≤10 words>", ...1-2 items],
-  "weaknesses": ["<the line, then the precise flaw — ≤10 words. DIAGNOSE, no rewrite>", ...0-2 items],
+  "strengths": ["<ONE sentence, ≤16 words: an overall quality of this poem — its tone, the way it moves, what it achieves. No line quotes; speak about the poem as a whole.>", ...1-2 items],
+  "weaknesses": ["<ONE sentence, ≤16 words: an overall quality that holds the poem back — a pattern, a tendency. No line quotes.>", ...0-2 items],
   "pillar_scores": {"chord": <int 0-25>, "craft": <int 0-25>, "spark": <int 0-25>, "echo": <int 0-25>},
   "overall_score": <int 1-100 for the CURRENT draft, MUST equal chord+craft+spark+echo>,
   "strongest_line": {"line": <int, 1-based>, "why": "<one vivid clause, ≤7 words — why this is the best line>"},  // OMIT if no single line clearly stands out
@@ -152,8 +154,8 @@ Read and perceive FIRST (warm_reaction, strengths, weaknesses), then score from 
 DISCIPLINE:
 - tool_tip is a footnote, not a finding: cite a reading you were actually given, name one thing to try with it, and stop. It must not restate an issue, a weakness, or a comparison item, and it must never carry the draft's main point. If no reading points anywhere useful, OMIT it.
 EXAMPLE tool_tip (good): {"tool": "Repeats", "tip": "\\"and I\\" now opens 4 lines — break the pattern once?"}
-- strengths & weaknesses must each QUOTE or point at an actual line — never abstract.
-- A strength is a real craft move (a fresh image, a turn, a deliberate echo, controlled syntax), NOT a restated idea or topic ("honest voice", "important message" → omit).
+- strengths & weaknesses are OVERALL observations about the poem as a whole — patterns, tendencies, how it moves. Do not quote individual lines or pin to specific moments; that belongs in issues[]. (This matches the fresh read exactly, on purpose: the two used to disagree, so a Refine turned the poem-level notes into a second list of line fixes and the panel looked like it had changed its mind about what those sections are for.)
+- A strength is a real quality of the poem (its restraint, the consistency of its voice, the way tension builds), NOT a restatement of topic ("important message" → omit).
 - issues: 0-3, and prefer the FEWEST that matter — two sharp issues beat three padded ones. Diagnosis only, no rewrite field ever. Prefer single-line. Strong drafts can have zero — never manufacture issues to justify a score.
 - NO DOUBLE-COUNTING: anything praised in strengths[] cannot also appear in weaknesses[] or issues[].
 - NO SELF-CONTRADICTION. Before returning, read strengths[] against weaknesses[] — and both against comparison{} — as a set. If any two items praise and fault the SAME quality ("the restraint gives it power" beside "it holds too much back"), you have not decided. Pick the reading you actually believe, drop the other. A poem may hold a tension; your feedback may not.
@@ -264,6 +266,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     goals?: unknown;
     writingFocus?: unknown;
     previousWeaknesses?: unknown;
+    previousStrengths?: unknown;
+    previousStrongestLine?: unknown;
     previousIssues?: unknown;
     previousMatchedProfile?: unknown;
     previousPillarScores?: unknown;
@@ -302,6 +306,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         .slice(0, 6)
         .map((s) => s.trim().slice(0, 120))
     : [];
+
+  const previousStrengths = Array.isArray(body.previousStrengths)
+    ? (body.previousStrengths as unknown[])
+        .filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+        .slice(0, 4)
+        .map((s) => s.trim().slice(0, 120))
+    : [];
+
+  const prevStrongestRaw = body.previousStrongestLine as { line?: unknown; why?: unknown } | undefined;
+  const previousStrongestLine = prevStrongestRaw && typeof prevStrongestRaw.line === "number"
+    ? {
+        line: Math.max(1, Math.round(prevStrongestRaw.line)),
+        why: typeof prevStrongestRaw.why === "string" ? prevStrongestRaw.why.slice(0, 120) : undefined,
+      }
+    : null;
 
   const previousIssues = Array.isArray(body.previousIssues)
     ? (body.previousIssues as unknown[])
@@ -344,7 +363,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // precheckSpend so cache hits don't burn the per-IP cooldown. compare is
   // deterministic on its inputs.
   const cacheKey = compareCacheKey({
-    title, lines, changesText, previousScores: prevScores, previousWeaknesses,
+    title, lines, changesText, previousScores: prevScores, previousWeaknesses, previousStrengths, previousStrongestLine,
     previousIssues, model, localAnalysis: local, goals, writingFocus,
     previousMatchedProfile, previousPillarScores, rejectedIssues,
   });
@@ -414,8 +433,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   let prevFlagged = "";
-  if (previousWeaknesses.length > 0 || previousIssues.length > 0) {
+  if (previousWeaknesses.length > 0 || previousIssues.length > 0
+    || previousStrengths.length > 0 || previousStrongestLine) {
     const sections: string[] = ["Context from the prior reading (already priced into past pillar scores — surface in comparison{} but treat as CARRY-OVER per SCORE CONTINUITY rules, not as fresh evidence that drops pillar scores):"];
+    // What the last read PRAISED travels with what it faulted. Without it the
+    // re-read has no record of its own verdict, and reversing one silently is
+    // the single thing that most undermines a poet's trust in the score: a line
+    // called the best in the poem, then called senseless, with the line itself
+    // untouched in between.
+    if (previousStrengths.length > 0) {
+      sections.push(`Past strengths: ${previousStrengths.map((s) => `"${s}"`).join("; ")}`);
+    }
+    if (previousStrongestLine) {
+      sections.push(`Past strongest line: L${previousStrongestLine.line}${previousStrongestLine.why ? ` — "${previousStrongestLine.why}"` : ""}`);
+    }
     if (previousWeaknesses.length > 0) {
       sections.push(`Past weaknesses: ${previousWeaknesses.map((w) => `"${w}"`).join("; ")}`);
     }
@@ -427,6 +458,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
     sections.push("If addressed → list under comparison.improvements. If still present → optionally raise in issues[] for the writer's attention, but as a carry-over (does NOT lower pillar scores below where a blind rubric read would land them). If a past issue was a borderline taste call, omit it now — don't re-flag low-confidence misses across revisions.");
+    sections.push("DO NOT REVERSE A PAST CALL ON UNCHANGED TEXT. If the diff did not touch what was praised, it stays praised — you may find it less remarkable than the rest of the revision, but you may not now call it confused, senseless, or a flaw. The same holds the other way: a line faulted last time and left untouched has not fixed itself. Reverse a verdict ONLY when the revision changed that line or its surroundings, and when you do, say what changed in comparison{}. Reversals with nothing behind them are what make a re-read look arbitrary.");
     prevFlagged = "\n" + sections.join("\n") + "\n";
   }
   const contextBlock = buildContextHints(lines, local, goals, writingFocus);

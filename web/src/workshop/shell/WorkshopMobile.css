@@ -160,6 +160,9 @@
        very first render — before any drag has written a value — is bounded
        correctly rather than running a full viewport past the bottom. */
     max-height: calc(100dvh - var(--sheet-y-settled, calc(100dvh - var(--tools-peek))));
+    /* Same browser-toolbar allowance as the AI sheet: the last tool in the list
+       is otherwise scrolled to a position behind the browser's own bar. */
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--vv-bottom-gap, 0px));
   }
 
   /* …except while the finger is down, when the bound is simply the screen.
@@ -540,65 +543,6 @@
      since the sheet covering the screen is the analysis. */
   .poem-workshop.has-sheet-expanded .ai-summary-titlebar {
     display: none;
-  }
-
-  /* ── Focus mode on a phone ────────────────────────────────────────────────
-     The desktop version narrows the editor to a centred page and quietens the
-     decorations; the shared rules do the second half already. What a phone
-     needs is the first half taken further: there is no room for a page with
-     margins, so the poem simply takes the screen. Everything the app draws goes
-     — topbar, title row, format row, the tools sheet and its edge tabs — and
-     the only thing left over the writing surface is .focus-back-btn.
-
-     Entered from the topbar (see WorkshopTopbarHeader). This does NOT touch the
-     browser's own bars: nothing on the page can, which is what fullscreen and
-     installing to the home screen are for. */
-  .poem-workshop.is-focus-mode .topbar {
-    max-height: 0;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    border-width: 0 !important;
-    opacity: 0;
-  }
-
-  .poem-workshop.is-focus-mode .tools-panel,
-  .poem-workshop.is-focus-mode .tools-stow-tab,
-  .poem-workshop.is-focus-mode .tools-copy-stowed,
-  .poem-workshop.is-focus-mode .mobile-sheet-scrim,
-  .poem-workshop.is-focus-mode .tools-swipe-handle,
-  /* Desktop focus mode keeps a notes pad in the corner; on a phone it is one
-     more thing on a screen that is meant to hold the poem and nothing else. */
-  .poem-workshop.is-focus-mode .focus-notes-panel,
-  .poem-workshop.is-focus-mode .focus-notes-toggle {
-    display: none !important;
-  }
-
-  /* With the sheet gone there is nothing at the bottom to clear, so the reserve
-     the peeking sheet needs comes back to the poem. */
-  .poem-workshop.is-focus-mode .editor-panel {
-    padding: 0.6rem 0.7rem calc(1rem + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* Room for the exit button, which floats at the top-left over the first line. */
-  .poem-workshop.is-focus-mode .editor-stack {
-    padding-top: 1.9rem;
-  }
-
-  /* Bigger than the desktop's 2rem: this is a touch target, and it is the only
-     way out of the mode. */
-  .poem-workshop.is-focus-mode .focus-back-btn {
-    width: 2.5rem;
-    height: 2.5rem;
-    top: calc(0.5rem + env(safe-area-inset-top, 0px));
-    left: 0.5rem;
-  }
-
-  /* The idle fade drops the exit button to 18%, which is fine on a desktop where
-     any mouse movement brings it straight back. A phone has no equivalent of
-     "moved the mouse" — you would have to guess where to tap to find the way
-     out — so it fades to something still legible. */
-  :root[data-focus-idle] .poem-workshop.is-focus-mode .focus-back-btn {
-    opacity: 0.55;
   }
 }
 

@@ -657,6 +657,33 @@
 .tools-loading-fallback {
   flex: 1;
   min-height: 4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.tools-loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  /* Own keyframes rather than borrowing the AI panel's: that stylesheet ships
+     with a lazily-loaded chunk, and this indicator's whole job is to be on
+     screen before other chunks have arrived. */
+  animation: tools-loading-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes tools-loading-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50%      { opacity: 1;    transform: scale(1.1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tools-loading-dot { animation: none; opacity: 0.7; }
 }
 
 .tools-panel {
@@ -7219,7 +7246,14 @@
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
-    padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 1rem);
+    /* --vv-bottom-gap is the slice of the layout viewport currently hidden
+       behind the browser's own bottom toolbar (see useVirtualKeyboardClass).
+       The panel is sized against the layout viewport, which runs UNDER that
+       toolbar, so without this the last row in the sheet — the tone buttons,
+       Refine, the chat box — sat behind the browser's chrome and could not be
+       seen. It comes and goes with scrolling, which is what made it look
+       occasional. */
+    padding: 0 0 calc(env(safe-area-inset-bottom, 0px) + 1rem + var(--vv-bottom-gap, 0px));
     display: flex;
     flex-direction: column;
   }

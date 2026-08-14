@@ -1423,7 +1423,19 @@ export function PoemWorkshop() {
   // The active tool's panel. Rendered once, inside whichever accordion row is
   // open (m.toolTab is the single source of truth for which row is expanded).
   const toolPanelsEl = (
-    <Suspense fallback={<div className="tools-loading-fallback" aria-hidden />}>
+    <Suspense
+      fallback={
+        /* Says what it is doing. This was an empty 4rem box, so on a phone —
+           where the panels chunk is ~124KB over mobile data and the word list
+           and stress dictionary are another 3.5MB behind it — opening a tool
+           showed blank space for as long as the download took, and the tools
+           read as broken rather than pending. */
+        <div className="tools-loading-fallback" role="status">
+          <span className="tools-loading-dot" aria-hidden />
+          <span>Loading tools…</span>
+        </div>
+      }
+    >
       <WorkshopToolPanels
         toolTab={m.toolTab}
         docStats={m.docStats}

@@ -426,6 +426,8 @@ export async function comparePoem(
     writingFocus,
     scoreHistory,
     previousWeaknesses,
+    previousStrengths,
+    previousStrongestLine,
     previousIssues,
     previousMatchedProfile,
     previousPillarScores,
@@ -442,6 +444,13 @@ export async function comparePoem(
     writingFocus?: string;
     scoreHistory?: number[];
     previousWeaknesses?: string[];
+    /** What the prior read PRAISED. Sent for the same reason the weaknesses are:
+     *  without it, a re-read has no memory of its own verdict, and can call a
+     *  line the best in the poem one run and senseless the next with the line
+     *  itself untouched in between. */
+    previousStrengths?: string[];
+    /** …and the line it singled out, for the same reason. */
+    previousStrongestLine?: { line: number; excerpt?: string; why?: string };
     previousIssues?: Array<{ line_start: number; line_end: number; headline?: string }>;
     /** A-G letter the prior read landed on. Locked on this refine unless the
      *  revision changed the structural shape. */
@@ -464,7 +473,8 @@ export async function comparePoem(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       title, lines, changesText, previousScores, localAnalysis, goals, writingFocus, scoreHistory,
-      previousWeaknesses, previousIssues, previousMatchedProfile, previousPillarScores, rejectedIssues,
+      previousWeaknesses, previousStrengths, previousStrongestLine,
+      previousIssues, previousMatchedProfile, previousPillarScores, rejectedIssues,
     }),
   });
 
