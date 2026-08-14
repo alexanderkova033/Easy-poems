@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { TemplatesModal } from "./TemplatesModal";
 import { lazyWithReload } from "@/app/lazy-with-reload";
 import type { SharedPoem } from "@/workshop/sharing/sharing";
+import type { ShareFileFormat } from "@/workshop/sharing/share-targets";
 
 // Heavy modals are lazy — first paint of the workshop doesn't need them.
 // Each opens infrequently and ships its own CSS, so deferring them keeps
@@ -36,6 +37,8 @@ interface WorkshopModalsProps {
   // Share
   isShareOpen: boolean;
   onCloseShare: () => void;
+  /** Saves the poem as a file in one of the Share modal-s formats. */
+  onShareSaveAs: (format: ShareFileFormat) => void;
   // Shared poem view
   sharedPoemView: SharedPoem | null;
   onDismissSharedPoem: () => void;
@@ -45,7 +48,7 @@ interface WorkshopModalsProps {
 export function WorkshopModals({
   isTemplatesOpen, onCloseTemplates, onInsertTemplate,
   isReadingMode, onCloseReadingMode, title, formNote, body,
-  isShareOpen, onCloseShare,
+  isShareOpen, onCloseShare, onShareSaveAs,
   sharedPoemView, onDismissSharedPoem, onAddSharedPoemToDrafts,
 }: WorkshopModalsProps) {
   return (
@@ -73,6 +76,7 @@ export function WorkshopModals({
           <ShareModal
             poem={{ title, body }}
             onClose={onCloseShare}
+            onSaveAs={onShareSaveAs}
           />
         </Suspense>
       )}

@@ -21,6 +21,73 @@
   flex-direction: column;
   gap: 0.9rem;
   box-shadow: 0 12px 40px color-mix(in srgb, #000 28%, transparent);
+  /* The modal grew from one link to link + files + posting, which on a short
+     phone screen is taller than the viewport. */
+  max-height: min(90dvh, 44rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.share-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.share-section-title {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.share-format-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.share-format-btn,
+.share-post-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.4rem;
+}
+
+.share-format-ext {
+  font-family: var(--font-metric, ui-monospace, monospace);
+  font-size: 0.72em;
+  opacity: 0.6;
+}
+
+.share-native-btn {
+  flex-shrink: 0;
+}
+
+@media (max-width: 899px) {
+  .share-modal {
+    padding: 1.1rem;
+    /* Clear of the browser's own bottom bar, same allowance as the sheets. */
+    max-height: calc(90dvh - var(--vv-bottom-gap, 0px));
+  }
+
+  /* Two even columns rather than a ragged wrap — six formats read as a grid on
+     a narrow screen, and every target stays thumb-sized. */
+  .share-format-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .share-format-btn,
+  .share-post-btn {
+    justify-content: center;
+    min-height: 2.6rem;
+  }
 }
 
 .share-modal-view {

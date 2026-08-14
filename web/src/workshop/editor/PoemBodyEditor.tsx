@@ -166,11 +166,23 @@ const lineFontScalePlugin = ViewPlugin.fromClass(
         const textW = maxRight - minLeft;
         if (textW > availW + 1) {
           const base = parseFloat(getComputedStyle(el).fontSize);
-          const scaled = Math.max(base * (availW / textW), 8);
+          const ratio = availW / textW;
+          const scaled = Math.max(base * ratio, 8);
+          // Floored and STILL too wide: this line will overflow whatever we do,
+          // so its syllable badge needs pinning to stay on screen (see the
+          // sticky rule in WordLookupPopup.css). Marked per line rather than
+          // pinning every badge, because sticky elements inside a scroller pull
+          // WebKit's scrolling off its fast path — one per line of a long poem
+          // is enough to make scrolling feel wrong on iOS.
+          const stillOverflows = base * ratio < 8;
           const docLine = view.state.doc.line(i + 1);
           decos.push(
-            Decoration.line({ attributes: { style: `font-size:${scaled.toFixed(2)}px` } })
-              .range(docLine.from),
+            Decoration.line({
+              attributes: {
+                style: `font-size:${scaled.toFixed(2)}px`,
+                ...(stillOverflows ? { class: "cm-line-overflows" } : {}),
+              },
+            }).range(docLine.from),
           );
         }
       }

@@ -2697,6 +2697,16 @@ export function PoemWorkshop() {
         body={m.body}
         isShareOpen={isShareOpen}
         onCloseShare={() => setIsShareOpen(false)}
+        onShareSaveAs={(format) => {
+          // Same handlers the Export modal uses — one implementation of each
+          // format, reachable from both places.
+          if (format === "txt") m.onDownloadTxt();
+          else if (format === "md") m.onDownloadMd();
+          else if (format === "docx") void m.onDownloadDocx();
+          else if (format === "pdf") void m.onDownloadPdf();
+          else if (format === "html") void m.onDownloadHtml();
+          else if (format === "png") void m.onDownloadPng();
+        }}
         sharedPoemView={sharedPoemView}
         onDismissSharedPoem={() => { setSharedPoemView(null); window.location.hash = ""; }}
         onAddSharedPoemToDrafts={(poem) => {
